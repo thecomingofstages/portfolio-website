@@ -214,27 +214,45 @@ API.md is the contract between the two sides.
 
 ## Design
 
-Taken from the enrollment site, [enroll.thecomingofstages.com](https://enroll.thecomingofstages.com/), as it rendered on 12 Oct 2026, so both TCOS sites look like one family. This site is dark only, like the enrollment site: no light mode. Its colours look like Tailwind CSS v4's default palette, so the same Tailwind classes give the same colours.
+**Design rules** (from the project lead, 13 Oct 2026). They come first; the rest of this section spells them out.
+
+- **Fonts:** Prompt for headings, Sarabun for articles and long text.
+- **Background:** one picture fills the whole window, behind every page, under a `#000` layer at 75% opacity.
+- **Page width:** content is 90% of the viewport width on phones, and 80% from 768px up. No maximum.
+- **Text colours:** white and light grey only. **No yellow** anywhere.
+
+Layout, type sizes and shapes are taken from the enrollment site, [enroll.thecomingofstages.com](https://enroll.thecomingofstages.com/), as it rendered on 12 Oct 2026, so both TCOS sites look like one family; its gold accent is replaced by light grey. Dark only: no light mode. Greys are Tailwind CSS v4's default palette.
 
 ### Colours
 
-The first six are copied from the enrollment site's `:root` variables.
+| Token             | Value                         | Used for                                                                                 |
+| ----------------- | ----------------------------- | ---------------------------------------------------------------------------------------- |
+| `--background`    | `#000000`                     | Page background, under the background picture                                            |
+| `--overlay`       | `#000000` at 75% opacity      | The layer over the background picture                                                    |
+| `--foreground`    | `#ffffff`                     | Main text, headings, card titles                                                         |
+| `--accent`        | Tailwind `zinc-300` (`#d4d4d8`) | Light grey accent: the active nav link and its underline, primary buttons, badges, secondary button outlines |
+| `--accent-hover`  | `#ffffff`                     | Accent on hover                                                                          |
+| `--muted`         | Tailwind `zinc-400` (`#a1a1aa`) | Light grey text: labels, captions, dates, nav links that are not the current page      |
+| `--card-bg`       | `#1a1a1a`                     | Cards                                                                                    |
+| `--border`        | Tailwind `zinc-800`           | Card borders, dividers                                                                   |
+| `--green`         | `#acd8a7`                     | Success states                                                                           |
+| `--red`           | `#ffb4ab`                     | Closed states                                                                            |
 
-| Token          | Value                | Used for                                                                                                                                         |
-| -------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--background` | `#131311`            | Page background                                                                                                                                  |
-| `--foreground` | `#ededed`            | Main text                                                                                                                                        |
-| `--gold`       | `#d8b85a`            | Accent: active nav link and its underline, primary buttons, price badges, progress bars                                                          |
-| `--gold-hover` | `#e5b83b`            | Gold on hover                                                                                                                                    |
-| `--card-bg`    | `#1a1a1a`            | Cards                                                                                                                                            |
-| `--green`      | `#acd8a7`            | Success states                                                                                                                                   |
-| `--red`        | `#ffb4ab`            | Closed states. The enrollment site writes it as `##ffb4ab`, which browsers ignore, so its closed buttons actually render in Tailwind's `red-300` |
-| muted text     | Tailwind `zinc-500`  | Labels, captions, dates                                                                                                                          |
-| card titles    | Tailwind `zinc-100`  | Card and section headings                                                                                                                        |
-| inactive nav   | Tailwind `stone-300` | Nav links that are not the current page                                                                                                          |
-| borders        | Tailwind `zinc-800`  | Card borders, dividers                                                                                                                           |
+On a primary button, the text is `--background` (black) on `--accent`.
 
-On a primary button, the text is `--background` on `--gold`.
+### Background picture
+
+- One site-wide image at `public/background.jpg` (TODO(background image): the file is not added yet; until then the page is plain `--background`).
+- It covers the whole window (`background-size: cover`) and stays fixed while the page scrolls, with the `--overlay` layer on top so text stays readable.
+
+### Page width
+
+| Viewport           | Content width          |
+| ------------------ | ---------------------- |
+| below 768px        | 90% of viewport width  |
+| 768px and wider    | 80% of viewport width  |
+
+The Nav and every page use the same width, centred.
 
 ### Type
 
@@ -253,14 +271,14 @@ On a primary button, the text is `--background` on `--gold`.
 - Buttons: 2px corners.
 - Cards: 4–6px corners.
 - Nav links: 8px corners.
-- Cards are `--card-bg` with a `zinc-800` border.
-- The image sits on top, edge to edge. A small gold badge (for example, a price) sits on the image's top-right corner.
+- Cards are `--card-bg` with a `--border` border.
+- The image sits on top, edge to edge. A small `--accent` badge sits on the image's top-right corner when a card needs one.
 
 ### How the enrollment site's parts map to this site
 
 | Enrollment site                                                                             | Here                                                                                                              |
 | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Top bar: logo left, links in the middle (icon + label, the current one gold and underlined) | `Nav`: the same logo as the enrollment site (the file is added to `public/` by hand), then Projects, Tracks, Join |
+| Top bar: logo left, links in the middle (icon + label, the current one gold and underlined) | `Nav`: the same logo (`public/logo.png`), then Projects, Tracks, Join; the current one light grey (`--accent`) and underlined |
 | Activity card: poster image, gold price badge, title, progress bar, full-width button       | `RoundCard` (poster, title, dates, Apply button), `TrackCards` and `YearbookCards`                                |
-| Full-width gold "More Info" button                                                          | Primary `button` style                                                                                            |
+| Full-width gold "More Info" button                                                          | Primary `button` style, in `--accent` instead of gold                                                              |
 | Red "Registration Ended" button                                                             | Not needed: `/join` shows only open rounds                                                                        |

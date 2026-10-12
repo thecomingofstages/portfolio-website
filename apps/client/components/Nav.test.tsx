@@ -11,8 +11,8 @@ describe("Nav", () => {
     pathname = "/";
     render(<Nav />);
     const links = screen.getAllByRole("link");
-    expect(links.map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
-      ["TCOS", "/"],
+    expect(screen.getByRole("img", { name: "The Coming of Stages" }).closest("a")?.getAttribute("href")).toBe("/");
+    expect(links.slice(1).map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
       ["Projects", "/projects"],
       ["Tracks", "/tracks"],
       ["Join", "/join"],
@@ -24,7 +24,7 @@ describe("Nav", () => {
     render(<Nav />);
     const current = screen.getAllByRole("link").filter((link) => link.getAttribute("aria-current") === "page");
     expect(current.map((link) => link.textContent)).toEqual(["Projects"]);
-    expect(current[0].className).toContain("text-gold");
+    expect(current[0].className).toContain("text-accent");
   });
 
   it("does not treat a shared prefix as the same section", () => {

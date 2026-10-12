@@ -25,9 +25,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="th" className={`${prompt.variable} ${sarabun.variable}`}>
-      <body className="min-h-screen antialiased">
+      <body className="antialiased">
         <Nav />
-        <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">{children}</main>
+        <main className="page-width py-8">{children}</main>
       </body>
     </html>
   );

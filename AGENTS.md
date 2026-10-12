@@ -47,7 +47,11 @@ Many members are minors.
 - **API calls:** fetch data only through `lib/api.ts`, on the Next.js server (server components, route handlers). The browser never calls the Express server.
 - **Types:** use `types/api.ts`; do not write response types inline.
 - **Errors:** a `404` from the API means `notFound()`. Other errors go to `error.tsx`.
-- **Design:** use only the colour tokens, fonts (Prompt for headings, Sarabun for body) and corner sizes in the Design section of docs/FRONTEND.md. The site is dark only.
+- **Design:** use only the colour tokens, fonts and corner sizes in the Design section of docs/FRONTEND.md. The site is dark only. The design rules:
+  - **Fonts:** Prompt for headings, Sarabun for articles and long text.
+  - **Background:** a picture fills the whole window, under a `#000` layer at 75% opacity.
+  - **Width:** content is 90% of the viewport width on phones, 80% from 768px up.
+  - **Text colours:** white and light grey only. No yellow, not even as an accent.
 - **Markdown:** render `article` bodies without raw HTML.
 - **Accessibility:** every image has `alt`. The slideshow and shelf respect reduced motion. The shelf and the track popup work with the keyboard.
 - **Page width:** every page must work at phone width.

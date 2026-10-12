@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -20,15 +21,14 @@ export default function Nav() {
     <header className="border-b border-border">
       <nav
         aria-label="Main"
-        className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3 sm:px-6"
+        className="page-width flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-3"
       >
-        {/* TODO(logo): the project lead adds the enrollment site's logo file to public/; show it here. */}
         <Link
           href="/"
           aria-current={pathname === "/" ? "page" : undefined}
-          className="rounded-nav px-2 py-1 font-heading text-xl font-extrabold text-foreground focus-visible:outline-2 focus-visible:outline-gold"
+          className="block rounded-nav p-1 focus-visible:outline-2 focus-visible:outline-accent"
         >
-          TCOS
+          <Image src="/logo.png" alt="The Coming of Stages" width={412} height={359} priority className="h-10 w-auto" />
         </Link>
         <ul className="flex flex-wrap items-center gap-1 sm:gap-2">
           {NAV_LINKS.map(({ href, label }) => {
@@ -38,10 +38,10 @@ export default function Nav() {
                 <Link
                   href={href}
                   aria-current={current ? "page" : undefined}
-                  className={`block rounded-nav px-3 py-2 underline-offset-8 transition-colors focus-visible:outline-2 focus-visible:outline-gold ${
+                  className={`block rounded-nav px-3 py-2 underline-offset-8 transition-colors focus-visible:outline-2 focus-visible:outline-accent ${
                     current
-                      ? "text-gold underline decoration-2"
-                      : "text-nav-inactive hover:text-gold-hover"
+                      ? "font-bold text-accent underline decoration-2"
+                      : "text-muted hover:text-accent-hover"
                   }`}
                 >
                   {label}

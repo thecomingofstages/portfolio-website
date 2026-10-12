@@ -33,12 +33,12 @@ Leave these as `TODO(<question>)` until the project lead answers:
 - **Files:** project config, `app/layout.tsx` shell, global styles and design tokens, `next.config`, `.env.example`
 - **Do:**
   - Set up Next.js (App Router) with Tailwind CSS.
-  - Add the colour tokens from FRONTEND.md "Colours", dark only, with no light mode.
+  - Add the colour tokens from FRONTEND.md "Colours", dark only, with no light mode, plus the background picture and page width from FRONTEND.md "Design".
   - Load Prompt (headings) and Sarabun (body) with `next/font/google`, using the `thai` and `latin` subsets.
   - Allow `MEDIA_BASE_URL` in `images.remotePatterns`.
 - **Done when:**
   - The app builds, and lint and type checks run.
-  - A test page shows h1–h3 in Prompt and body text in Sarabun, on `#131311`.
+  - A test page shows h1–h3 in Prompt and body text in Sarabun, on `#000`.
   - Add the lint, type check and test commands to AGENTS.md.
 
 ### F2. API types, client and fixtures
@@ -62,7 +62,7 @@ Leave these as `TODO(<question>)` until the project lead answers:
 - **Files:** `app/layout.tsx`, `components/Nav.tsx`, `public/` (the logo file is added by the project lead)
 - **Do:**
   - Logo on the left, linking to `/`. Then Projects, Tracks and Join.
-  - The current page's link is gold and underlined.
+  - The current page's link is light grey (`--accent`) and underlined.
   - All four links show from sprint 1; `/tracks` and `/join` show the 404 page until they exist.
 - **Done when:** the Nav works at phone width and with the keyboard.
 
@@ -153,7 +153,7 @@ Leave these as `TODO(<question>)` until the project lead answers:
 - **Read:** DATABASE.md "button"; FRONTEND.md "Shapes"
 - **Files:** `components/blocks/ButtonBlock.tsx`
 - **Done when:**
-  - `primary` is gold with dark text, and `secondary` is the outline style.
+  - `primary` is light grey (`--accent`) with black text, and `secondary` is the outline style.
   - `align` works.
   - `mailto:` and external links work.
 

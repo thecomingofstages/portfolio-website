@@ -13,7 +13,7 @@ export default function Error({ retry }: { error: Error & { digest?: string }; r
       <button
         type="button"
         onClick={() => retry()}
-        className="rounded-button bg-gold px-4 py-2 text-background hover:bg-gold-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+        className="rounded-button bg-accent px-4 py-2 text-background hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         {RETRY_LABEL}
       </button>

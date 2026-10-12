@@ -2,33 +2,34 @@
 
 /*
  * Design tokens from docs/FRONTEND.md "Design". Dark only: no light mode.
- * The first six colours are the enrollment site's :root variables.
+ * Text is white and light grey only; no yellow.
  */
 :root {
-  --background: #131311;
-  --foreground: #ededed;
-  --gold: #d8b85a;
-  --gold-hover: #e5b83b;
+  --background: #000000;
+  --overlay: rgb(0 0 0 / 0.75);
+  --foreground: #ffffff;
+  --accent: var(--color-zinc-300);
+  --accent-hover: #ffffff;
+  --muted: var(--color-zinc-400);
   --card-bg: #1a1a1a;
+  --border: var(--color-zinc-800);
   --green: #acd8a7;
   --red: #ffb4ab;
+  /* TODO(background image): set to url("/background.jpg") once the file is in public/. */
+  --background-image: none;
   color-scheme: dark;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-gold: var(--gold);
-  --color-gold-hover: var(--gold-hover);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-muted: var(--muted);
   --color-card-bg: var(--card-bg);
+  --color-border: var(--border);
   --color-green: var(--green);
   --color-red: var(--red);
-
-  /* Named uses of Tailwind's default palette */
-  --color-muted: var(--color-zinc-500);
-  --color-card-title: var(--color-zinc-100);
-  --color-nav-inactive: var(--color-stone-300);
-  --color-border: var(--color-zinc-800);
 
   /* Prompt for headings, Sarabun for body text (loaded in app/layout.tsx) */
   --font-heading: var(--font-prompt);
@@ -41,13 +42,41 @@
   --radius-nav: 8px;
 }
 
+/* Page width: 90% of the viewport on phones, 80% from 768px up, centred. */
+@utility page-width {
+  width: 90%;
+  margin-inline: auto;
+  @media (width >= 768px) {
+    width: 80%;
+  }
+}
+
 @layer base {
-  body {
+  html {
     background-color: var(--background);
+  }
+
+  body {
+    min-height: 100vh;
     color: var(--foreground);
     font-family: var(--font-body), sans-serif;
     font-size: 1rem;
     line-height: 1.6;
+  }
+
+  /*
+   * The background picture fills the window, under a #000 layer at 75%. A fixed
+   * layer behind the page (not background-attachment: fixed, which iOS ignores).
+   */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--background);
+    background-image: linear-gradient(var(--overlay), var(--overlay)), var(--background-image);
+    background-size: cover;
+    background-position: center;
   }
 
   h1,
@@ -70,6 +99,5 @@
   h3 {
     font-size: 20px;
     font-weight: 600;
-    color: var(--color-card-title);
   }
 }
