@@ -51,7 +51,7 @@ Many members are minors.
   - **Fonts:** Prompt for headings, Sarabun for articles and long text.
   - **Background:** a picture fills the whole window, under a `#000` layer at 75% opacity.
   - **Width:** content is 90% of the viewport width on phones, 80% from 768px up.
-  - **Text colours:** white and light grey only. No yellow, not even as an accent.
+  - **Text colours:** white and light grey. Gold (`--accent`, `#d8b85a`) is the accent: the active nav link, primary buttons and badges.
 - **One stylesheet:** every font family, font size and colour comes ONLY from `apps/client/app/globals.css`, through its tokens (`text-h1`, `text-body`, `text-muted`, `bg-card-bg`, `font-heading` ...). Do not write colour values (hex, `rgb()`, named colours), font sizes or font families anywhere else: not in components, not in inline `style`, not as arbitrary Tailwind values (`text-[17px]`, `bg-[#111]`). Tailwind's own colours, sizes and fonts are switched off, so classes like `text-sm` or `text-zinc-400` do nothing. A new token goes into `globals.css` and the Design section of docs/FRONTEND.md first, with the project lead's approval.
 - **Markdown:** render `article` bodies without raw HTML.
 - **Accessibility:** every image has `alt`. The slideshow and shelf respect reduced motion. The shelf and the track popup work with the keyboard.

@@ -219,10 +219,10 @@ API.md is the contract between the two sides.
 - **Fonts:** Prompt for headings, Sarabun for articles and long text.
 - **Background:** one picture fills the whole window, behind every page, under a `#000` layer at 75% opacity.
 - **Page width:** content is 90% of the viewport width on phones, and 80% from 768px up. No maximum.
-- **Text colours:** white and light grey only. **No yellow** anywhere.
+- **Text colours:** white and light grey. **Gold** (`#d8b85a`) is the accent: the active nav link, primary buttons and badges.
 - **One stylesheet:** every colour, font family and font size is a token in `apps/client/app/globals.css`, and nothing else is used (see AGENTS.md).
 
-Layout, type sizes and shapes are taken from the enrollment site, [enroll.thecomingofstages.com](https://enroll.thecomingofstages.com/), as it rendered on 12 Oct 2026, so both TCOS sites look like one family; its gold accent is replaced by light grey. Dark only: no light mode. Greys are Tailwind CSS v4's default palette.
+Layout, type sizes and shapes are taken from the enrollment site, [enroll.thecomingofstages.com](https://enroll.thecomingofstages.com/), as it rendered on 12 Oct 2026, so both TCOS sites look like one family; including its gold accent. Dark only: no light mode. Greys are Tailwind CSS v4's default palette.
 
 ### Colours
 
@@ -231,15 +231,15 @@ Layout, type sizes and shapes are taken from the enrollment site, [enroll.thecom
 | `--background`    | `#000000`                     | Page background, under the background picture                                            |
 | `--overlay`       | `#000000` at 75% opacity      | The layer over the background picture                                                    |
 | `--foreground`    | `#ffffff`                     | Main text, headings, card titles                                                         |
-| `--accent`        | Tailwind `zinc-300` (`#d4d4d8`) | Light grey accent: the active nav link and its underline, primary buttons, badges, secondary button outlines |
-| `--accent-hover`  | `#ffffff`                     | Accent on hover                                                                          |
+| `--accent`        | `#d8b85a` (gold)              | Accent: the active nav link and its underline, primary buttons, badges, secondary button outlines |
+| `--accent-hover`  | `#e5b83b`                     | Accent on hover                                                                          |
 | `--muted`         | Tailwind `zinc-400` (`#a1a1aa`) | Light grey text: labels, captions, dates, nav links that are not the current page      |
 | `--card-bg`       | `#1a1a1a`                     | Cards                                                                                    |
 | `--border`        | Tailwind `zinc-800`           | Card borders, dividers                                                                   |
 | `--green`         | `#acd8a7`                     | Success states                                                                           |
 | `--red`           | `#ffb4ab`                     | Closed states                                                                            |
 
-On a primary button, the text is `--background` (black) on `--accent`.
+On a primary button, the text is `--background` (black) on `--accent` (gold).
 
 ### Background picture
 
@@ -279,7 +279,7 @@ The Nav and every page use the same width, centred.
 
 | Enrollment site                                                                             | Here                                                                                                              |
 | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Top bar: logo left, links in the middle (icon + label, the current one gold and underlined) | `Nav`: the same logo (`public/logo.png`), then Projects, Tracks, Join; the current one light grey (`--accent`) and underlined |
+| Top bar: logo left, links in the middle (icon + label, the current one gold and underlined) | `Nav`: the same logo (`public/logo.png`), then Projects, Tracks, Join; the current one gold (`--accent`) and underlined |
 | Activity card: poster image, gold price badge, title, progress bar, full-width button       | `RoundCard` (poster, title, dates, Apply button), `TrackCards` and `YearbookCards`                                |
-| Full-width gold "More Info" button                                                          | Primary `button` style, in `--accent` instead of gold                                                              |
+| Full-width gold "More Info" button                                                          | Primary `button` style (`--accent`)                                                                                |
 | Red "Registration Ended" button                                                             | Not needed: `/join` shows only open rounds                                                                        |

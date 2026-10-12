@@ -3,8 +3,8 @@
 /*
  * The only source of styling: every colour, font family and font size used on
  * the site is defined in this file (AGENTS.md "Design"). Values follow
- * docs/FRONTEND.md "Design". Dark only: no light mode. White and light grey
- * text only; no yellow.
+ * docs/FRONTEND.md "Design". Dark only: no light mode. Text is white and light
+ * grey; gold is the accent (active nav link, primary buttons, badges).
  *
  * Tailwind's built-in colours, font sizes and font families are switched off
  * below, so a class that is not defined here (e.g. text-red-500, text-sm)
@@ -14,8 +14,9 @@
   --background: #000000;
   --overlay: rgb(0 0 0 / 0.75);
   --foreground: #ffffff;
-  --accent: oklch(87.1% 0.006 286.286); /* Tailwind zinc-300 */
-  --accent-hover: #ffffff;
+  /* Gold accent, as on the enrollment site */
+  --accent: #d8b85a;
+  --accent-hover: #e5b83b;
   --muted: oklch(70.5% 0.015 286.067); /* Tailwind zinc-400 */
   --card-bg: #1a1a1a;
   --border: oklch(27.4% 0.006 286.033); /* Tailwind zinc-800 */

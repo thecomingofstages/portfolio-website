@@ -62,7 +62,7 @@ Leave these as `TODO(<question>)` until the project lead answers:
 - **Files:** `app/layout.tsx`, `components/Nav.tsx`, `public/` (the logo file is added by the project lead)
 - **Do:**
   - Logo on the left, linking to `/`. Then Projects, Tracks and Join.
-  - The current page's link is light grey (`--accent`) and underlined.
+  - The current page's link is gold (`--accent`) and underlined.
   - All four links show from sprint 1; `/tracks` and `/join` show the 404 page until they exist.
 - **Done when:** the Nav works at phone width and with the keyboard.
 
@@ -153,7 +153,7 @@ Leave these as `TODO(<question>)` until the project lead answers:
 - **Read:** DATABASE.md "button"; FRONTEND.md "Shapes"
 - **Files:** `components/blocks/ButtonBlock.tsx`
 - **Done when:**
-  - `primary` is light grey (`--accent`) with black text, and `secondary` is the outline style.
+  - `primary` is gold (`--accent`) with black text, and `secondary` is the outline style.
   - `align` works.
   - `mailto:` and external links work.
 
