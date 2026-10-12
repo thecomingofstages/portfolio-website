@@ -220,6 +220,7 @@ API.md is the contract between the two sides.
 - **Background:** one picture fills the whole window, behind every page, under a `#000` layer at 75% opacity.
 - **Page width:** content is 90% of the viewport width on phones, and 80% from 768px up. No maximum.
 - **Text colours:** white and light grey only. **No yellow** anywhere.
+- **One stylesheet:** every colour, font family and font size is a token in `apps/client/app/globals.css`, and nothing else is used (see AGENTS.md).
 
 Layout, type sizes and shapes are taken from the enrollment site, [enroll.thecomingofstages.com](https://enroll.thecomingofstages.com/), as it rendered on 12 Oct 2026, so both TCOS sites look like one family; its gold accent is replaced by light grey. Dark only: no light mode. Greys are Tailwind CSS v4's default palette.
 

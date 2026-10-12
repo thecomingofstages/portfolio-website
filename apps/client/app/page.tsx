@@ -7,7 +7,7 @@ export default function Home() {
       <h2>เด็กไทยติดเวที</h2>
       <h3>The Coming of Stages · เด็กไทยติดเวที</h3>
       <p>The Coming of Stages · เด็กไทยติดเวที</p>
-      <p className="text-sm text-muted">The Coming of Stages · เด็กไทยติดเวที</p>
+      <p className="text-muted">The Coming of Stages · เด็กไทยติดเวที</p>
     </div>
   );
 }
