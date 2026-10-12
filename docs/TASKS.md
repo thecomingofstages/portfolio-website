@@ -270,7 +270,7 @@ Leave these as `TODO(<question>)` until the project lead answers:
 - **Files:** `app/join/page.tsx`
 - **Do:**
   - Show the open rounds from `GET /api/join`, in the order sent (closing soonest first).
-  - When there are none, show the empty-state message: one constant at the top of the file, set to `<...>` until the wording is decided.
+  - When there are none, show the empty-state message: one constant at the top of the `Join` component (`components/blocks/Join.tsx`, task 2.5), imported here, set to `<...>` until the wording is decided.
   - Refresh once a day (`revalidate = 86400`).
 - **Done when:** both states render, and an empty list never looks like an error.
 
