@@ -1,8 +1,10 @@
 # TCOS portfolio: client implementation plan
 
-This is the plan for the Next.js client: the public site. The data comes from the server API in [API.md](API.md), and the data model is in [DATABASE.md](DATABASE.md). The page layouts follow the FigJam board "TCOS portfolio – UI flow POC". Values not decided yet are `<...>`.
+This is the plan for the Next.js client: the public site. The data comes from the server API in [API.md](API.md), and the data model is in [DATABASE.md](DATABASE.md). The page layouts follow the UI flow board "TCOS portfolio – UI flow POC" (`tcos_ui_flow.drawio`, open in diagrams.net). Values not decided yet are `<...>`.
 
 The admin side is out of scope here: for now it is direct calls to the admin API, and a separate admin interface comes later.
+
+**Hosting:** the client runs on Cloudflare Workers through OpenNext (`@opennextjs/cloudflare`). Its environment values are Worker secrets and vars, and `.env.local` / `.dev.vars` for local runs.
 
 ## Sprints
 
@@ -122,7 +124,7 @@ types/api.ts                         response types, matching API.md
 | Component    | Does                                                                                                                                                                                                                                                                                                                                                                  |
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `RoundCard`  | One open round: `title`, `poster`, `opens_at`–`closes_at` (or `extended_to` when set), project name, `qualifications` (ages, `age_note`, `items`), `positions` (`dept_name`, `unit_name`, `title`, `description`, `requirements`, the portfolio and onsite flags, and `audition` details), `timeline` (`location: null` = online), and the Apply button (`apply_url`) |
-| `/join` page | The open rounds, closing soonest first. When none is open, it shows a message written in the client code, kept as one constant at the top of the `Join` component so it is easy to find and change. Changing it needs a code change and a deploy                                                                                                                      |
+| `/join` page | The open rounds, closing soonest first. When none is open, it shows a message written in the client code, kept as one constant at the top of `app/join/page.tsx` so it is easy to find and change. (The Home `join` block shows its own `empty_text` instead.) Changing it needs a code change and a deploy                                                                                                                      |
 
 ### Sprint 3: Track, Yearbook
 
@@ -159,6 +161,7 @@ types/api.ts                         response types, matching API.md
 | `API_URL`           | The Express server's base URL                                                      |
 | `REVALIDATE_SECRET` | The same value as on the server                                                    |
 | `MEDIA_BASE_URL`    | The R2 media bucket's public URL, allowed in `next.config` `images.remotePatterns` |
+| `USE_FIXTURES`      | `true` serves the fixtures instead of calling `API_URL` (see below)                |
 
 ### Images
 
@@ -181,7 +184,7 @@ API.md is the contract between the two sides.
 
 - **Fixtures:** until an endpoint exists, `lib/api.ts` can return JSON fixtures shaped like its response, built from the examples in DATABASE.md.
 - **Placeholders:** fixture values the sources do not give stay `"<...>"`.
-- **Switching:** one environment flag switches between the fixtures and the real `API_URL`.
+- **Switching:** `USE_FIXTURES=true` serves the fixtures; otherwise `lib/api.ts` calls the real `API_URL`.
 
 ## Done for each sprint
 
@@ -190,7 +193,7 @@ API.md is the contract between the two sides.
 - Each page renders from the real API, not fixtures.
 - Hidden documents return the 404 page.
 - Pages work at phone width.
-- The page matches its screen on the FigJam board.
+- The page matches its screen on the UI flow board (`tcos_ui_flow.drawio`).
 
 **Sprint 1, Home and Project:**
 

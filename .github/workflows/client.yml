@@ -1,0 +1,35 @@
+# Checks for the client (apps/client). Deploys are done by Cloudflare Workers
+# Builds (Git integration), set up in the Cloudflare dashboard: see apps/client/README.md.
+name: client
+
+on:
+  push:
+    branches: [main]
+    paths: ["apps/client/**", ".github/workflows/client.yml"]
+  pull_request:
+    paths: ["apps/client/**", ".github/workflows/client.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/client
+    env:
+      USE_FIXTURES: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/client/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      # The Workers build (next build + OpenNext bundle), as Cloudflare runs it
+      - run: npx opennextjs-cloudflare build

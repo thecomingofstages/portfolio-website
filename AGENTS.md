@@ -8,8 +8,8 @@ The portfolio website of The Coming of Stages (TCOS, เด็กไทยติ
 
 | Part | Stack | Plan |
 | --- | --- | --- |
-| client | Next.js (App Router): the public site | [docs/FRONTEND.md](docs/FRONTEND.md) |
-| server | Express.js on Cloudflare Workers, with the official `mongodb` driver: public read API and admin API | [docs/API.md](docs/API.md) |
+| client (`apps/client`) | Next.js (App Router) on Cloudflare Workers through OpenNext: the public site | [docs/FRONTEND.md](docs/FRONTEND.md) |
+| server (`apps/server`) | Express.js on Cloudflare Workers, with the official `mongodb` driver: public read API and admin API | [docs/API.md](docs/API.md) |
 | database | MongoDB with `$jsonSchema` validators | [docs/DATABASE.md](docs/DATABASE.md), [tcos_schema.mongodb.js](tcos_schema.mongodb.js) |
 
 ## Sources of truth
@@ -78,5 +78,7 @@ Many members are minors.
 2. **Stay in your files.** Change only the files the task names. Shared parts have one owner each: `Shelf`, `RoundCard`, `YearbookGrid`, `lib/api.ts`, `types/api.ts`, `BlockRenderer`, the design tokens, and on the server `db.ts` and the visibility filter. Ask the owner rather than editing them.
 3. **Changing the plan.** A change to an endpoint, a response shape, a field or a path needs the matching doc in `docs/` updated first, and approval from the project lead. Do not change docs to match your code without that approval.
 4. **Open questions.** When the docs leave something open, leave a `TODO(<question>)` and use `<...>`. Do not decide it in code.
-5. **Before finishing.** Run lint, type checks and tests, and check the page at phone width. The commands will be listed here once the project is set up: `<...>`.
+5. **Before finishing.** Run lint, type checks and tests, and check the page at phone width.
+   - Client, in `apps/client`: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`. Run it locally with `npm run dev` (Node) or `npm run preview` (the Cloudflare Workers runtime).
+   - Server: `<...>` (task S1).
 6. **Pull requests.** One task per pull request, with its ID in the title. A person reviews every pull request before it merges, especially anything touching names, photos or consent.

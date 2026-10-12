@@ -44,6 +44,10 @@ Server values are Worker settings: **secrets** are set with `npx wrangler secret
 | `REVALIDATE_URL` | server | var | Where to tell Next.js a page changed |
 | `API_URL` | client | env | The server's base URL (the Worker's URL) |
 | `REVALIDATE_SECRET` | client | env | Checks calls to `/api/revalidate` |
+| `MEDIA_BASE_URL` | client | env | The same bucket URL, allowed for `next/image` (read at build time) |
+| `USE_FIXTURES` | client | env | `true` serves the client's fixtures instead of calling `API_URL` (see FRONTEND.md "Developing before the server is ready") |
+
+The client (Next.js) also runs on Cloudflare Workers, through OpenNext (`@opennextjs/cloudflare`). Its values are Worker secrets and vars too, and `.env.local` / `.dev.vars` for local runs.
 
 ## Database access
 
@@ -95,6 +99,90 @@ No token. Read-only. Shown items only. A hidden or missing document returns `404
 | `sponsors` | Shown sponsors filtered by `tiers`. On Home, across all shown projects |
 | `highlights` | Shown highlights, up to `limit`. On Home, across all shown projects |
 
+### Response shapes
+
+The exact JSON of each public response. The client's `types/api.ts` follows this section.
+
+**Rules for every public response**
+
+- The body is the data itself, with no wrapper. Errors are `{ "error": "<message>" }` with the status code.
+- Dates are ISO 8601 strings, e.g. `"2025-06-28T00:00:00.000Z"`.
+- Field names are the schema's. Response-only keys are marked *(response)* below.
+- **Left out of every public response:** `_id` (documents and list items), `is_shown`, `is_photo_allowed`, `logo_permission`. Only shown things are sent, so the flags carry no information.
+- `photo` is `null` unless `is_photo_allowed`, and `logo` is `null` unless `logo_permission`.
+- **`pics[0]`** is sent as `pics` with at most one item (`[]` when the project has none), so the field keeps its schema name.
+- An optional field the document does not have is sent as `null` (strings, dates, numbers) or `[]` (lists).
+
+**Shared pieces**
+
+```ts
+ProjectCard   = { slug, name, start_date, pics }          // pics: at most one
+TrackCard     = { key, display_name, desc, pics }         // pics: at most one
+YearbookCard  = { slug, name, pics }                      // pics: at most one
+Member        = { name, nickname, position, photo }
+Department    = { dept_key, dept_name, members: Member[] } // (response) grouping
+Sponsor       = { name, logo, tier }
+Highlight     = { event_name, date, venue, desc, pics }
+Round         = { title, poster, opens_at, closes_at, extended_to,
+                  qualifications: { age_min, age_max, age_note, items },
+                  positions: Position[], timeline: TimelineEvent[],
+                  apply_url,
+                  project_name }                          // (response) the project's name, null when project_slug is null
+Position      = { dept_key, dept_name, unit_name, title, description, requirements,
+                  portfolio_required, onsite_required,
+                  audition: { clip_required, clip_brief, clip_max_minutes, clip_file_name,
+                              clip_upload, pieces, onsite } | null }
+TimelineEvent = { start_date, end_date, event_name, event_description, location }
+```
+
+Departments are sorted by `dept_name`, as in the yearbook query in DATABASE.md. Members keep their order in `team`.
+
+**Endpoints**
+
+| Endpoint | Body |
+| --- | --- |
+| `GET /api/pages/home` | `{ key, title, blocks: Block[] }` |
+| `GET /api/projects` | `ProjectCard[]`, newest first |
+| `GET /api/projects/:slug` | `{ slug, name, start_date, end_date, venue, pics, is_yearbook_shown, blocks: Block[] }` (`pics`: at most one) |
+| `GET /api/projects/:slug/yearbook` | `{ slug, name, pics, departments: Department[] }` (`pics`: at most one) |
+| `GET /api/tracks` | `{ key, display_name, desc }[]`, by `order` |
+| `GET /api/tracks/:key` | `{ key, display_name, desc, pics, achievements: { year, text, pics, project_name }[] }` (`project_name` *(response)*: the project's name as text) |
+| `GET /api/join` | `Round[]`, closing soonest first |
+
+**Blocks.** Every block keeps its stored fields (`id`, `type`, `title` and its own fields, without `is_shown`). Content blocks are sent as stored. Each data block also gets one *(response)* key with its data:
+
+| `type` | Added key(s) |
+| --- | --- |
+| `projects` | `projects: ProjectCard[]` |
+| `tracks` | `tracks: TrackCard[]` |
+| `yearbook` | `projects: YearbookCard[]` |
+| `join` | `rounds: Round[]` |
+| `team` | `departments: Department[]`, and `org_chart_image` (a URL, or `null` unless `show_org_chart`) |
+| `sponsors` | `sponsors: Sponsor[]` |
+| `highlights` | `highlights: Highlight[]` |
+
+For example, a filled `team` block:
+
+```json
+{
+  "id": "team",
+  "type": "team",
+  "title": null,
+  "project_slug": null,
+  "dept_keys": [],
+  "show_org_chart": true,
+  "layout": "list",
+  "org_chart_image": "<...>",
+  "departments": [
+    {
+      "dept_key": "<track to confirm>",
+      "dept_name": "ทีมโฆษณา (Advertising)",
+      "members": [{ "name": "<first name surname>", "nickname": "กานต์", "position": "<...>", "photo": null }]
+    }
+  ]
+}
+```
+
 ## Admin API
 
 Needs the token. It returns hidden documents and items too, so editors can see and change them. "CRUD x" means:
@@ -137,7 +225,17 @@ MongoDB's validator rejects wrong shapes. The server also checks what the valida
 
 ### After a write
 
-The server calls `POST <REVALIDATE_URL>` (a Next.js route handler, checked with `REVALIDATE_SECRET`) with the paths that changed, so those pages refresh without a rebuild.
+The server calls `POST <REVALIDATE_URL>` (a Next.js route handler, checked with `REVALIDATE_SECRET`) with the paths that changed, so those pages refresh without a rebuild:
+
+```http
+POST <REVALIDATE_URL>
+Authorization: Bearer <REVALIDATE_SECRET>
+Content-Type: application/json
+
+{ "paths": ["/", "/projects", "/projects/tcos-2-the-hidden-saloon"] }
+```
+
+It answers `200 { "revalidated": [...paths] }`, `401` without the right secret, and `400` when `paths` is not a list of paths starting with `/`.
 
 | Write to | Paths to refresh |
 | --- | --- |
