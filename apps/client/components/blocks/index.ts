@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import type { Block, BlockType } from "@/types/api";
+import Article from "./Article";
 
 /** The props every block component takes: its own filled-in block. */
 export type BlockProps<T extends BlockType> = { block: Extract<Block, { type: T }> };
@@ -16,4 +17,6 @@ export type BlockComponents = { [T in BlockType]?: ComponentType<BlockProps<T>> 
  *   tracks: TrackCards, yearbook: YearbookCards (sprint 3).
  * A type with no entry renders nothing.
  */
-export const blockComponents: BlockComponents = {};
+export const blockComponents: BlockComponents = {
+  article: Article,
+};
