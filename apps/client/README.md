@@ -37,6 +37,12 @@ GitHub Actions runs these on every push and pull request that touches
   - Deploy command: `npx opennextjs-cloudflare deploy`
   - Build variables: `MEDIA_BASE_URL` once the media bucket exists, and
     `USE_FIXTURES=true` until the server is deployed.
+- **Pull request previews (GitHub Actions):** the `preview` job in
+  [client.yml](../../.github/workflows/client.yml) runs `npx wrangler preview` for
+  each pull request and puts the Preview URL in the job summary. It needs two
+  repository secrets: `CLOUDFLARE_API_TOKEN` (a token that can edit Workers
+  scripts) and `CLOUDFLARE_ACCOUNT_ID`. Keep "Builds for Preview branches" off in
+  Workers Builds, so previews are not built twice.
 - **Secrets:** `npx wrangler secret put API_URL` and
   `npx wrangler secret put REVALIDATE_SECRET`. Without `REVALIDATE_SECRET`,
   `/api/revalidate` answers `401` to every call.
