@@ -39,7 +39,8 @@ GitHub Actions runs these on every push and pull request that touches
     `USE_FIXTURES=true` until the server is deployed.
 - **Pull request previews (GitHub Actions):** the `preview` job in
   [client.yml](../../.github/workflows/client.yml) runs `npx wrangler preview` for
-  each pull request and puts the Preview URL in the job summary. It needs two
+  each pull request. The Preview URL is behind the **View deployment** button on
+  the pull request, and in the job summary. It needs two
   repository secrets: `CLOUDFLARE_API_TOKEN` (a token that can edit Workers
   scripts) and `CLOUDFLARE_ACCOUNT_ID`. Keep "Builds for Preview branches" off in
   Workers Builds, so previews are not built twice.
