@@ -1,5 +1,6 @@
-# Checks for the client (apps/client). Deploys are done by Cloudflare Workers
-# Builds (Git integration), set up in the Cloudflare dashboard: see apps/client/README.md.
+# Checks for the client (apps/client), and a Worker Preview for each pull request.
+# Production deploys are done by Cloudflare Workers Builds (Git integration), set up
+# in the Cloudflare dashboard: see apps/client/README.md.
 name: client
 
 on:
@@ -33,3 +34,35 @@ jobs:
       - run: npm test
       # The Workers build (next build + OpenNext bundle), as Cloudflare runs it
       - run: npx opennextjs-cloudflare build
+
+  # A Worker Preview per pull request (`wrangler preview`), named after the PR branch.
+  # Needs the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets.
+  # Skipped for pull requests from forks, which get no secrets.
+  preview:
+    needs: check
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    concurrency:
+      group: preview-${{ github.head_ref }}
+      cancel-in-progress: true
+    defaults:
+      run:
+        working-directory: apps/client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/client/package-lock.json
+      - run: npm ci
+      - run: npx opennextjs-cloudflare build
+      - name: wrangler preview
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # The checkout is a merge commit, not the branch, so pass the name.
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          npx wrangler preview --name "$BRANCH" | tee preview.log
+          grep -E '^(Preview URL|Unique Deployment URL):' preview.log >> "$GITHUB_STEP_SUMMARY"
