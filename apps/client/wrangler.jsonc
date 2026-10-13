@@ -1,34 +1,35 @@
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "portfolio-website",
-	"main": ".open-next/worker.js",
-	"compatibility_date": "2026-10-12",
-	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-	"assets": {
-		"directory": ".open-next/assets",
-		"binding": "ASSETS"
-	},
-	"services": [
-		{
-			// Self-reference, used by OpenNext for caching. Must match "name".
-			"binding": "WORKER_SELF_REFERENCE",
-			"service": "portfolio-website"
-		}
-	],
-	"images": {
-		// next/image optimisation through Cloudflare Images
-		"binding": "IMAGES"
-	},
-	"observability": {
-		"enabled": true
-	},
-	"vars": {
-		// Serve fixtures until the server is deployed (task X3 turns this off per page).
-		"USE_FIXTURES": "true"
-	}
-	// Secrets (API_URL, REVALIDATE_SECRET) are set with `npx wrangler secret put <NAME>`,
-	// and in .dev.vars for `npm run preview`. See .env.example.
-	// TODO(page cache): an incremental cache (R2) and tag cache are needed for
-	// revalidatePath and `revalidate = 86400` to take effect on Workers.
-	// See https://opennext.js.org/cloudflare/caching
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "portfolio-website",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-12",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+  "services": [
+    {
+      // Self-reference, used by OpenNext for caching. Must match "name".
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "portfolio-website",
+    },
+  ],
+  "images": {
+    // next/image optimisation through Cloudflare Images
+    "binding": "IMAGES",
+  },
+  "observability": {
+    "enabled": true,
+  },
+  "previews": {},
+  "vars": {
+    // Serve fixtures until the server is deployed (task X3 turns this off per page).
+    "USE_FIXTURES": "true",
+  },
+  // Secrets (API_URL, REVALIDATE_SECRET) are set with `npx wrangler secret put <NAME>`,
+  // and in .dev.vars for `npm run preview`. See .env.example.
+  // TODO(page cache): an incremental cache (R2) and tag cache are needed for
+  // revalidatePath and `revalidate = 86400` to take effect on Workers.
+  // See https://opennext.js.org/cloudflare/caching
 }
