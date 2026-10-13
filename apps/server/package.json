@@ -1,5 +1,29 @@
 {
+  "name": "portfolio-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "cf-typegen": "wrangler types ./worker-configuration.d.ts",
+    "check:db": "node --env-file=.dev.vars scripts/check-db.mjs"
+  },
   "dependencies": {
-    "express": "^5.3.0"
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "mongodb": "^6.15.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "@types/supertest": "^7.2.1",
+    "supertest": "^7.3.1",
+    "typescript": "^5.8.0",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.20.0"
   }
 }

@@ -66,7 +66,50 @@ Open http://localhost:8787.
 
 ### Server
 
-Not set up yet: task S1 in [docs/TASKS.md](docs/TASKS.md) sets it up, and adds its commands here.
+```bash
+cd apps/server
+npm ci
+cp .dev.vars.example .dev.vars   # fill in MONGODB_URI and the other secrets
+npm run dev
+```
+
+The server runs at http://localhost:8787 in the Cloudflare Workers runtime.
+
+- `GET /api/health` checks the server and the database.
+- API docs (Swagger UI): http://localhost:8787/api/docs, with the raw spec at
+  `/api/openapi.yaml` (the hand-written `apps/server/swagger.yaml`). They are on only
+  when `DOCS_ENABLED=true` (set in `.dev.vars`); production leaves them off.
+- `npm run check:db` checks that `MONGODB_URI` connects and the collections have validators.
+- Postman: import `apps/server/postman/TCOS-Local.postman_environment.json` and a
+  collection (one per domain, or `Full-Suite` for everything).
+
+Checks, in `apps/server`: `npm run typecheck` and `npm test`. After changing
+`wrangler.jsonc`, run `npm run cf-typegen`.
+
+Server layout (`apps/server`):
+
+```
+swagger.yaml            OpenAPI, written by hand
+postman/                one collection per domain + Full-Suite
+scripts/                check-db
+tests/
+  helpers/app.ts        buildTestApp(): the app with no DB connection and no listen
+  helpers/factories.ts  document builders
+  <domain>.test.ts      one file per domain
+src/
+  index.ts              bootstrap: config → app → listen (Workers)
+  app/
+    server.ts           buildApp(config): middleware → routes → errors
+    config/             app.conf / app.keys / db.conf / db.keys / init.ts (zod-checked env)
+    database/db.ts      withDb, toObjectId, withId (shared)
+    models/             one file per collection (types) + index.ts (handles)
+    routes/             one file per domain + init.ts (mounts under /api)
+    controllers/        thin HTTP layer
+    helpers/            business logic
+    schemas/            zod schemas per route
+    middleware/         Security, Validate, ErrorHandler (Auth in S5)
+    utils/              ApiError, Logger, config
+```
 
 ## Checks
 
