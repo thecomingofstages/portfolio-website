@@ -1,0 +1,75 @@
+{
+  "info": {
+    "_postman_id": "dff505f4-d8e7-4b5e-9095-bab2bc19c686",
+    "name": "TCOS - Tracks",
+    "description": "TCOS portfolio API. Import with TCOS-Local.postman_environment.json. Public endpoints (Projects, Tracks, Pages, Join) are planned in task S3; admin requests come with S5/S6. Never save a real token in this file.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "List tracks",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/tracks",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "tracks"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"no hidden flags or _id\", () => {",
+              "  const t = pm.response.text();",
+              "  [\"is_shown\", \"is_photo_allowed\", \"logo_permission\", \"\\\"_id\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get track",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/tracks/{{trackKey}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "tracks",
+            "{{trackKey}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"no hidden flags or _id\", () => {",
+              "  const t = pm.response.text();",
+              "  [\"is_shown\", \"is_photo_allowed\", \"logo_permission\", \"\\\"_id\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

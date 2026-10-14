@@ -85,5 +85,5 @@ Many members are minors.
 4. **Open questions.** When the docs leave something open, leave a `TODO(<question>)` and use `<...>`. Do not decide it in code.
 5. **Before finishing.** Run lint, type checks and tests, and check the page at phone width.
    - Client, in `apps/client`: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`. Run it locally with `npm run dev` (Node) or `npm run preview` (the Cloudflare Workers runtime).
-   - Server: `<...>` (task S1).
+   - Server, in `apps/server`: `npm run typecheck`, `npm test`. Run it locally with `npm run dev` (`wrangler dev`); API docs at `/api/docs` when `DOCS_ENABLED=true`. Layout: see README "Server".
 6. **Pull requests.** One task per pull request, with its ID in the title. A person reviews every pull request before it merges, especially anything touching names, photos or consent.
