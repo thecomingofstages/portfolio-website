@@ -1,0 +1,43 @@
+{
+  "info": {
+    "_postman_id": "55ebf013-faee-49e0-86f0-9cf4a79d678f",
+    "name": "TCOS - Pages",
+    "description": "TCOS portfolio API. Import with TCOS-Local.postman_environment.json. Public endpoints (Projects, Tracks, Pages, Join) are planned in task S3; admin requests come with S5/S6. Never save a real token in this file.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Home",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/pages/home",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "pages",
+            "home"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"no hidden flags or _id\", () => {",
+              "  const t = pm.response.text();",
+              "  [\"is_shown\", \"is_photo_allowed\", \"logo_permission\", \"\\\"_id\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

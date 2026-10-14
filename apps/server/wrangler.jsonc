@@ -1,6 +1,27 @@
 {
+  "$schema": "node_modules/wrangler/config-schema.json",
   "name": "portfolio-server",
-  "main": "src/index.js",
+  "main": "src/index.ts",
   "compatibility_date": "2025-09-15",
+  // Listed explicitly even where the compatibility date turns it on (docs/API.md "Hosting").
   "compatibility_flags": ["nodejs_compat"],
+  // swagger.yaml is imported as text by the docs controller.
+  "rules": [{ "type": "Text", "globs": ["**/*.yaml"], "fallthrough": true }],
+
+  // Vars: not secret. Secrets (MONGODB_URI, JWT_SECRET, REVALIDATE_SECRET) go in with
+  // `npx wrangler secret put <NAME>`, and in .dev.vars for local runs (see .dev.vars.example).
+  "vars": {
+    "MEDIA_BASE_URL": "<...>", // TODO(R2 media bucket): public URL of the site media bucket
+    "REVALIDATE_URL": "<...>", // the client's /api/revalidate
+    // Swagger UI and /api/openapi.json. Off in production; .dev.vars turns it on locally.
+    "DOCS_ENABLED": "false"
+  },
+
+  // The site media bucket only, never the finance bucket (docs/API.md "Uploads").
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "todo-media-bucket" // TODO(R2 media bucket): real bucket name; wrangler rejects "<...>"
+    }
+  ]
 }

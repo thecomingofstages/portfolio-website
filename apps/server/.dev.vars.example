@@ -1,0 +1,8 @@
+# Local secrets for `npx wrangler dev`. Copy to .dev.vars (never committed) and fill in.
+# In production these are set with `npx wrangler secret put <NAME>`.
+MONGODB_URI=
+JWT_SECRET=
+REVALIDATE_SECRET=
+
+# Local only: turns on Swagger UI at http://localhost:8787/api/docs
+DOCS_ENABLED=true
