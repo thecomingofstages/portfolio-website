@@ -85,11 +85,11 @@ function ScrollReveal({
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  // Default to visible if running without IntersectionObserver (e.g., SSR or unsupported environments)
+  const [isVisible, setIsVisible] = useState(() => typeof IntersectionObserver === "undefined");
 
   useEffect(() => {
     if (typeof IntersectionObserver === "undefined") {
-      setIsVisible(true);
       return;
     }
 
