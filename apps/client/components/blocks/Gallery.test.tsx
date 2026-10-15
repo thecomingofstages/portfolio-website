@@ -27,6 +27,15 @@ describe("Gallery", () => {
     expect(image.compareDocumentPosition(desc) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it("puts every image in a 3:2 frame that crops it to fit", () => {
+    const { container } = render(<Gallery block={base} />);
+    for (const item of container.querySelectorAll("li")) {
+      const image = item.querySelector("img")!;
+      expect(image.parentElement?.className).toContain("aspect-[3/2]");
+      expect(image.className).toContain("object-cover");
+    }
+  });
+
   it("uses an empty alt and no caption when an item has neither", () => {
     const { container } = render(<Gallery block={base} />);
     const item = container.querySelectorAll("li")[1];
