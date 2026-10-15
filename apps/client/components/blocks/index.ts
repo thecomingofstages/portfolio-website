@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import type { Block, BlockType } from "@/types/api";
 import Article from "./Article";
+import Gallery from "./Gallery";
 import ImageBlock from "./ImageBlock";
 
 /** The props every block component takes: its own filled-in block. */
@@ -20,5 +21,6 @@ export type BlockComponents = { [T in BlockType]?: ComponentType<BlockProps<T>> 
  */
 export const blockComponents: BlockComponents = {
   article: Article,
+  gallery: Gallery,
   image: ImageBlock,
 };
