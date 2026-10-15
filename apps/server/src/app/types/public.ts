@@ -66,7 +66,10 @@ export type PublicAchievement = {
   pics: string[];
 };
 
-/** A stored block without `is_shown`. S4 adds the data of data blocks. */
+/**
+ * A block in its public shape: `id`, `type`, `title` and its type's fields, each
+ * always present (null / []). Data blocks carry their data key as [] until S4.
+ */
 export type PublicBlock = {
   id: string;
   type: string;

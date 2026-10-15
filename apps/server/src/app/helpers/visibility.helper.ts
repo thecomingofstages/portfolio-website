@@ -148,14 +148,87 @@ export const publicTimeline = (list: readonly TimelineItem[] | null | undefined)
 // ---------------------------------------------------------------------------
 // blocks[] (projects.blocks, pages.blocks)
 
+// Like members and sponsors, each block type copies an allow-list of its fields
+// (docs/DATABASE.md "Blocks", apps/client/types/api.ts), so every field the client
+// expects is always there: a missing value is null, a missing list is [].
+// Block sub-lists (gallery items, buttons, stats, videos) have no flags of their own.
+
+type Raw = Record<string, unknown>;
+const str = (v: unknown): string | null => (typeof v === "string" ? v : null);
+const num = (v: unknown): number | null => (typeof v === "number" ? v : null);
+const bool = (v: unknown): boolean | null => (typeof v === "boolean" ? v : null);
+const strList = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+const objList = <R>(v: unknown, map: (o: Raw) => R): R[] =>
+  Array.isArray(v) ? v.filter((o): o is Raw => !!o && typeof o === "object").map(map) : [];
+
+const button = (o: Raw) => ({ label: str(o.label), url: str(o.url), style: str(o.style) });
+
+/** Fields per block type, after `id`, `type` and `title`. */
+const BLOCK_FIELDS: Record<string, (b: Raw) => Raw> = {
+  // Content blocks
+  hero: (b) => ({
+    media_url: str(b.media_url),
+    subtitle: str(b.subtitle),
+    media_kind: str(b.media_kind),
+    slides: strList(b.slides),
+    slide_seconds: num(b.slide_seconds),
+    buttons: objList(b.buttons, button),
+  }),
+  article: (b) => ({ body: str(b.body), image: str(b.image), image_side: str(b.image_side) }),
+  image: (b) => ({ url: str(b.url), alt: str(b.alt), caption: str(b.caption), credit: str(b.credit), size: str(b.size) }),
+  quote: (b) => ({
+    text: str(b.text),
+    who: str(b.who),
+    role: str(b.role),
+    background_image: str(b.background_image),
+    background_color: str(b.background_color),
+  }),
+  gallery: (b) => ({ items: objList(b.items, (o) => ({ url: str(o.url), alt: str(o.alt), desc: str(o.desc) })) }),
+  video: (b) => ({
+    videos: objList(b.videos, (o) => ({ url: str(o.url), provider: str(o.provider), title: str(o.title), caption: str(o.caption) })),
+  }),
+  button: (b) => ({ buttons: objList(b.buttons, button), align: str(b.align) }),
+  stats: (b) => ({
+    items: objList(b.items, (o) => ({
+      label: str(o.label),
+      value: typeof o.value === "number" || typeof o.value === "string" ? o.value : null,
+      note: str(o.note),
+    })),
+  }),
+
+  // Data blocks: their pointers, plus the data key as [] (or null) until S4 fills it in.
+  highlights: (b) => ({ project_slug: str(b.project_slug), limit: num(b.limit), highlights: [] }),
+  team: (b) => ({
+    project_slug: str(b.project_slug),
+    dept_keys: strList(b.dept_keys),
+    show_org_chart: bool(b.show_org_chart),
+    layout: str(b.layout),
+    org_chart_image: null,
+    departments: [],
+  }),
+  sponsors: (b) => ({ project_slug: str(b.project_slug), tiers: strList(b.tiers), sponsors: [] }),
+  join: (b) => ({ project_slug: str(b.project_slug), empty_text: str(b.empty_text), rounds: [] }),
+  projects: (b) => ({ limit: num(b.limit), projects: [] }),
+  tracks: () => ({ tracks: [] }),
+  yearbook: (b) => ({ limit: num(b.limit), projects: [] }),
+};
+
+/** Block types the API knows. Any other stored type is not sent at all. */
+export const BLOCK_TYPES = Object.keys(BLOCK_FIELDS);
+
 /**
- * A shown block as stored, without `is_shown` (docs/API.md "Blocks").
- * Block sub-lists (gallery items, buttons, stats, videos) have no flags of their own.
- * Data blocks hold only pointers here; S4 fills in their data through the functions above.
+ * A block in its public shape, or null for a type the API does not know.
+ * Unknown fields are dropped; known ones are always present (null / []).
  */
-export function publicBlock(b: Block): PublicBlock {
-  const { is_shown: _hidden, ...rest } = b;
-  return { ...rest, title: orNull(b.title) };
+export function publicBlock(b: Block): PublicBlock | null {
+  const fields = BLOCK_FIELDS[b.type];
+  if (!fields) return null;
+  return { id: b.id, type: b.type, title: orNull(b.title), ...fields(b as Raw) };
 }
 
-export const publicBlocks = (list: readonly Block[] | null | undefined) => shownAs(list, publicBlock);
+/** Shown blocks of known types, in their order. */
+export function publicBlocks(list: readonly Block[] | null | undefined): PublicBlock[] {
+  return shown(list)
+    .map(publicBlock)
+    .filter((b): b is PublicBlock => b !== null);
+}

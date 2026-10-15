@@ -142,7 +142,53 @@ describe("shapes: optional fields are null or []", () => {
     expect(publicPositions([makePosition()])[0]?.audition).toBeNull();
   });
 
-  it("block keeps its own fields and gets title: null", () => {
-    expect(publicBlocks([makeBlock()])).toEqual([{ id: "test-block", type: "article", body: "<...>", title: null }]);
+});
+
+describe("blocks: every field the client expects is present (review on S2)", () => {
+  /** Keys per type, from apps/client/types/api.ts. */
+  const EXPECTED: Record<string, string[]> = {
+    hero: ["media_url", "subtitle", "media_kind", "slides", "slide_seconds", "buttons"],
+    article: ["body", "image", "image_side"],
+    image: ["url", "alt", "caption", "credit", "size"],
+    quote: ["text", "who", "role", "background_image", "background_color"],
+    gallery: ["items"],
+    video: ["videos"],
+    button: ["buttons", "align"],
+    stats: ["items"],
+    highlights: ["project_slug", "limit", "highlights"],
+    team: ["project_slug", "dept_keys", "show_org_chart", "layout", "org_chart_image", "departments"],
+    sponsors: ["project_slug", "tiers", "sponsors"],
+    join: ["project_slug", "empty_text", "rounds"],
+    projects: ["limit", "projects"],
+    tracks: ["tracks"],
+    yearbook: ["limit", "projects"],
+  };
+
+  it.each(Object.entries(EXPECTED))("%s: a bare block gets all its keys as null or []", (type, keys) => {
+    const [b] = publicBlocks([{ id: "x", type, is_shown: true }]);
+    expect(Object.keys(b ?? {}).sort()).toEqual(["id", "type", "title", ...keys].sort());
+    for (const k of ["title", ...keys]) {
+      const v = (b as Record<string, unknown>)[k];
+      expect(v === null || (Array.isArray(v) && v.length === 0)).toBe(true);
+    }
+  });
+
+  it("keeps stored values", () => {
+    const [b] = publicBlocks([makeBlock({ title: "<...>", image: "https://media.test/a.webp", image_side: "left" })]);
+    expect(b).toEqual({ id: "test-block", type: "article", title: "<...>", body: "<...>", image: "https://media.test/a.webp", image_side: "left" });
+  });
+
+  it("fills missing fields inside sub-list items", () => {
+    const [b] = publicBlocks([{ id: "g", type: "gallery", is_shown: true, items: [{ url: "https://media.test/1.webp" }] }]);
+    expect(b?.items).toEqual([{ url: "https://media.test/1.webp", alt: null, desc: null }]);
+  });
+
+  it("drops fields the type does not list, like the member and sponsor allow-lists", () => {
+    const [b] = publicBlocks([makeBlock({ secret_note: "<private>" })]);
+    expect(JSON.stringify(b)).not.toContain("<private>");
+  });
+
+  it("leaves out blocks of an unknown type", () => {
+    expect(publicBlocks([makeBlock({ type: "not-a-type" }), makeBlock()])).toHaveLength(1);
   });
 });
