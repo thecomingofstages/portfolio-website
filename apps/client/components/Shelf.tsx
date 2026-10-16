@@ -196,7 +196,7 @@ export default function Shelf({
         {showSeeAll && (
           <Link
             href="/projects"
-            className="font-heading text-body font-semibold text-accent hover:text-accent-hover transition-colors focus-visible:outline-2 focus-visible:outline-accent rounded-button"
+            className="font-body text-body font-semibold text-accent hover:text-accent-hover transition-colors focus-visible:outline-2 focus-visible:outline-accent rounded-button"
           >
             See all →
           </Link>
@@ -217,9 +217,9 @@ export default function Shelf({
                 onClick={() => {
                   setSelectedYear("all");
                 }}
-                className={`rounded-full px-4 py-1 font-heading text-body font-medium transition-all focus-visible:outline-2 focus-visible:outline-accent ${
+                className={`rounded-full px-4 py-1 font-body text-body font-medium transition-all focus-visible:outline-2 focus-visible:outline-accent ${
                   selectedYear === "all"
-                    ? "bg-accent text-background font-bold shadow-[0_2px_12px_rgba(216,184,90,0.35)]"
+                    ? "bg-accent text-background font-bold"
                     : "text-muted hover:bg-card-bg hover:text-foreground"
                 }`}
                 aria-pressed={selectedYear === "all"}
@@ -233,9 +233,9 @@ export default function Shelf({
                   onClick={() => {
                     setSelectedYear(year);
                   }}
-                  className={`rounded-full px-4 py-1 font-heading text-body font-medium transition-all focus-visible:outline-2 focus-visible:outline-accent ${
+                  className={`rounded-full px-4 py-1 font-body text-body font-medium transition-all focus-visible:outline-2 focus-visible:outline-accent ${
                     selectedYear === year
-                      ? "bg-accent text-background font-bold shadow-[0_2px_12px_rgba(216,184,90,0.35)]"
+                      ? "bg-accent text-background font-bold"
                       : "text-muted hover:bg-card-bg hover:text-foreground"
                   }`}
                   aria-pressed={selectedYear === year}
@@ -335,7 +335,7 @@ export default function Shelf({
                     aria-selected={isSelected}
                     type="button"
                     onClick={() => selectProjectIndex(index)}
-                    className={`absolute cursor-pointer flex flex-col items-center justify-center rounded-2xl transition-all ${
+                    className={`absolute cursor-pointer flex flex-col items-center justify-center rounded-[var(--radius-card)] transition-all ${
                       isSpinningIn
                         ? "duration-150 ease-out"
                         : "duration-1200 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"
@@ -352,14 +352,14 @@ export default function Shelf({
                   >
                     {/* Cover Art Card with clean rounded corners */}
                     <div
-                      className={`relative w-full h-full overflow-hidden rounded-2xl bg-card-bg border shadow-2xl transition-all ${
+                      className={`relative w-full h-full overflow-hidden rounded-[var(--radius-card)] bg-card-bg border transition-all ${
                         isSpinningIn
                           ? "duration-150 ease-out"
                           : "duration-1200 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"
                       } ${
                         isSelected
-                          ? "border-accent ring-2 ring-accent shadow-[0_25px_60px_rgba(0,0,0,0.95),0_0_35px_rgba(216,184,90,0.3)]"
-                          : "border-border/80 shadow-[0_15px_35px_rgba(0,0,0,0.85)] hover:border-accent/40 hover:brightness-110"
+                          ? "border-accent ring-2 ring-accent"
+                          : "border-border/80 hover:border-accent/40"
                       }`}
                     >
                       {cover ? (
@@ -378,8 +378,7 @@ export default function Shelf({
                         />
                       )}
 
-                      {/* Subtle glossy sheen on cover */}
-                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-white/10" />
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-foreground/10" />
                     </div>
                   </button>
                 );
@@ -412,7 +411,7 @@ export default function Shelf({
                     {selectedProject.name}
                   </span>
                   {(selectedYearText ?? selectedDateText) && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-0.5 font-heading text-body font-medium text-accent">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-0.5 font-body text-body font-medium text-accent">
                       ● {selectedYearText ?? selectedDateText}
                     </span>
                   )}
