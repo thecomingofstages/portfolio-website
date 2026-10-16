@@ -1,20 +1,23 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { projectPages } from "@/fixtures/projects";
+import { TCOS2_NAME, TCOS2_SLUG } from "@/fixtures/shared";
 import ProjectHeader from "./ProjectHeader";
 
 describe("ProjectHeader", () => {
+  const fixtureProject = projectPages[TCOS2_SLUG];
   const baseProject = {
-    name: "ทำนองของสายฝน : The Hidden Saloon The Musical",
-    start_date: "2025-06-28",
-    end_date: "2025-06-29",
-    venue: "Lido Connect Hall 2",
-    pics: ["https://media.thecomingofstages.com/projects/tcos2-cover.webp"],
+    name: TCOS2_NAME,
+    start_date: fixtureProject.start_date,
+    end_date: fixtureProject.end_date,
+    venue: fixtureProject.venue,
+    pics: ["/a.webp"],
   };
 
   it("renders project name as h1", () => {
     render(<ProjectHeader project={baseProject} />);
     const heading = screen.getByRole("heading", { level: 1 });
-    expect(heading.textContent).toBe("ทำนองของสายฝน : The Hidden Saloon The Musical");
+    expect(heading.textContent).toBe(TCOS2_NAME);
   });
 
   it("renders date range when end_date exists", () => {
@@ -29,10 +32,10 @@ describe("ProjectHeader", () => {
 
   it("renders venue only when set", () => {
     const { rerender } = render(<ProjectHeader project={baseProject} />);
-    expect(screen.getByText("Lido Connect Hall 2")).not.toBeNull();
+    expect(screen.getByText(fixtureProject.venue!)).not.toBeNull();
 
     rerender(<ProjectHeader project={{ ...baseProject, venue: null }} />);
-    expect(screen.queryByText("Lido Connect Hall 2")).toBeNull();
+    expect(screen.queryByText(fixtureProject.venue!)).toBeNull();
   });
 
   it("renders cover image with alt matching project name", () => {
