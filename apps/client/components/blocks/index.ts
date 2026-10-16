@@ -3,6 +3,7 @@ import type { Block, BlockType } from "@/types/api";
 import Article from "./Article";
 import Gallery from "./Gallery";
 import ImageBlock from "./ImageBlock";
+import Quote from "./Quote";
 
 /** The props every block component takes: its own filled-in block. */
 export type BlockProps<T extends BlockType> = { block: Extract<Block, { type: T }> };
@@ -23,4 +24,5 @@ export const blockComponents: BlockComponents = {
   article: Article,
   gallery: Gallery,
   image: ImageBlock,
+  quote: Quote,
 };
