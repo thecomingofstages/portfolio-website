@@ -4,6 +4,7 @@ import Article from "./Article";
 import Gallery from "./Gallery";
 import ImageBlock from "./ImageBlock";
 import Quote from "./Quote";
+import Video from "./Video";
 
 /** The props every block component takes: its own filled-in block. */
 export type BlockProps<T extends BlockType> = { block: Extract<Block, { type: T }> };
@@ -25,4 +26,5 @@ export const blockComponents: BlockComponents = {
   gallery: Gallery,
   image: ImageBlock,
   quote: Quote,
+  video: Video,
 };
