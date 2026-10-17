@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "743781b7-b2cb-4ea7-b8d1-5c90a95115b2",
+    "_postman_id": "09881ae6-385b-43e7-8c07-69dcf4ce80ff",
     "name": "TCOS - Full-Suite",
-    "description": "TCOS portfolio API. Import with TCOS-Local.postman_environment.json. Public endpoints (Projects, Tracks, Pages, Join) are planned in task S3; admin requests come with S5/S6. Never save a real token in this file. Run this one with the Collection Runner to check everything.",
+    "description": "TCOS portfolio API (public, read-only). Import TCOS-Local.postman_environment.json first. List requests save a real slug/key for the detail requests; with an empty database those are skipped. Never save a real admin token in these files. Run it with the Collection Runner (or newman) to check every public endpoint.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -23,7 +23,8 @@
                 "api",
                 "health"
               ]
-            }
+            },
+            "description": ""
           },
           "event": [
             {
@@ -32,7 +33,38 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"db ok\", () => pm.expect(pm.response.json().db).to.eql(\"ok\"));"
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+                  "pm.test(\"db ok\", () => pm.expect(pm.response.json()).to.eql({ status: \"ok\", db: \"ok\" }));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown path -> 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/does-not-exist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "does-not-exist"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error body { error }\", () => pm.expect(pm.response.json()).to.have.property(\"error\"));"
                 ]
               }
             }
@@ -57,7 +89,8 @@
                 "api",
                 "projects"
               ]
-            }
+            },
+            "description": "Shown projects, newest first. Saves the first slug as {{projectSlug}}."
           },
           "event": [
             {
@@ -66,10 +99,23 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"no hidden flags or _id\", () => {",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+                  "pm.test(\"no _id or consent flags (privacy)\", () => {",
                   "  const t = pm.response.text();",
-                  "  [\"is_shown\", \"is_photo_allowed\", \"logo_permission\", \"\\\"_id\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
-                  "});"
+                  "  [\"\\\"_id\\\"\", \"\\\"is_shown\\\"\", \"\\\"is_photo_allowed\\\"\", \"\\\"logo_permission\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
+                  "});",
+                  "const list = pm.response.json();",
+                  "pm.test(\"is a list\", () => pm.expect(list).to.be.an(\"array\"));",
+                  "list.forEach((p, i) => pm.test(`card ${i}: shape and at most one pic`, () => {",
+                  "  pm.expect(p).to.have.all.keys(\"slug\", \"name\", \"start_date\", \"pics\");",
+                  "  pm.expect(p.pics.length).to.be.at.most(1);",
+                  "}));",
+                  "pm.test(\"newest first\", () => {",
+                  "  const d = list.map((p) => Date.parse(p.start_date));",
+                  "  pm.expect(d).to.eql([...d].sort((a, b) => b - a));",
+                  "});",
+                  "// Save a real slug for the next requests.",
+                  "pm.environment.set(\"projectSlug\", list[0] ? list[0].slug : \"\");"
                 ]
               }
             }
@@ -90,19 +136,35 @@
                 "projects",
                 "{{projectSlug}}"
               ]
-            }
+            },
+            "description": ""
           },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const v = pm.environment.get(\"projectSlug\");",
+                  "if (!v || v === \"<...>\") { console.log(\"skipped: no projectSlug (empty database?)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"no hidden flags or _id\", () => {",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+                  "pm.test(\"no _id or consent flags (privacy)\", () => {",
                   "  const t = pm.response.text();",
-                  "  [\"is_shown\", \"is_photo_allowed\", \"logo_permission\", \"\\\"_id\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
-                  "});"
+                  "  [\"\\\"_id\\\"\", \"\\\"is_shown\\\"\", \"\\\"is_photo_allowed\\\"\", \"\\\"logo_permission\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
+                  "});",
+                  "const p = pm.response.json();",
+                  "pm.test(\"shape: slug, name, start_date, end_date, venue, pics, is_yearbook_shown, blocks\", () => pm.expect(p).to.have.all.keys(\"slug\", \"name\", \"start_date\", \"end_date\", \"venue\", \"pics\", \"is_yearbook_shown\", \"blocks\"));",
+                  "pm.test(\"blocks have id, type, title\", () => p.blocks.forEach((b) => pm.expect(b).to.include.keys(\"id\", \"type\", \"title\")));",
+                  "pm.environment.set(\"yearbookShown\", String(p.is_yearbook_shown));"
                 ]
               }
             }
@@ -124,26 +186,44 @@
                 "{{projectSlug}}",
                 "yearbook"
               ]
-            }
+            },
+            "description": ""
           },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const v = pm.environment.get(\"projectSlug\");",
+                  "if (!v || v === \"<...>\") { console.log(\"skipped: no projectSlug (empty database?)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"no hidden flags or _id\", () => {",
+                  "pm.test(\"no _id or consent flags (privacy)\", () => {",
                   "  const t = pm.response.text();",
-                  "  [\"is_shown\", \"is_photo_allowed\", \"logo_permission\", \"\\\"_id\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
-                  "});"
+                  "  [\"\\\"_id\\\"\", \"\\\"is_shown\\\"\", \"\\\"is_photo_allowed\\\"\", \"\\\"logo_permission\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
+                  "});",
+                  "const shown = pm.environment.get(\"yearbookShown\") === \"true\";",
+                  "pm.test(shown ? \"status 200 (yearbook shown)\" : \"status 404 (yearbook not shown)\", () => pm.response.to.have.status(shown ? 200 : 404));",
+                  "if (shown) {",
+                  "  const y = pm.response.json();",
+                  "  pm.test(\"shape\", () => pm.expect(y).to.have.all.keys(\"slug\", \"name\", \"pics\", \"departments\"));",
+                  "  pm.test(\"members have name, nickname, position, photo\", () => y.departments.forEach((d) =>",
+                  "    d.members.forEach((m) => pm.expect(m).to.have.all.keys(\"name\", \"nickname\", \"position\", \"photo\"))));",
+                  "}"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Missing project → 404",
+          "name": "Missing project -> 404",
           "request": {
             "method": "GET",
             "header": [],
@@ -157,7 +237,8 @@
                 "projects",
                 "does-not-exist"
               ]
-            }
+            },
+            "description": ""
           },
           "event": [
             {
@@ -166,7 +247,70 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"status 404\", () => pm.response.to.have.status(404));",
-                  "pm.test(\"error body\", () => pm.expect(pm.response.json()).to.have.property(\"error\"));"
+                  "pm.test(\"error body { error }\", () => pm.expect(pm.response.json()).to.have.property(\"error\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Impossible slug -> 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/Not..A..Slug",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "Not..A..Slug"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error body { error }\", () => pm.expect(pm.response.json()).to.have.property(\"error\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Missing yearbook -> 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/does-not-exist/yearbook",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "does-not-exist",
+                "yearbook"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error body { error }\", () => pm.expect(pm.response.json()).to.have.property(\"error\"));"
                 ]
               }
             }
@@ -191,7 +335,8 @@
                 "api",
                 "tracks"
               ]
-            }
+            },
+            "description": "Shown tracks by order. Saves the first key as {{trackKey}}."
           },
           "event": [
             {
@@ -200,10 +345,15 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"no hidden flags or _id\", () => {",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+                  "pm.test(\"no _id or consent flags (privacy)\", () => {",
                   "  const t = pm.response.text();",
-                  "  [\"is_shown\", \"is_photo_allowed\", \"logo_permission\", \"\\\"_id\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
-                  "});"
+                  "  [\"\\\"_id\\\"\", \"\\\"is_shown\\\"\", \"\\\"is_photo_allowed\\\"\", \"\\\"logo_permission\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
+                  "});",
+                  "const list = pm.response.json();",
+                  "pm.test(\"is a list\", () => pm.expect(list).to.be.an(\"array\"));",
+                  "list.forEach((t, i) => pm.test(`track ${i}: shape`, () => pm.expect(t).to.have.all.keys(\"key\", \"display_name\", \"desc\")));",
+                  "pm.environment.set(\"trackKey\", list[0] ? list[0].key : \"\");"
                 ]
               }
             }
@@ -224,7 +374,59 @@
                 "tracks",
                 "{{trackKey}}"
               ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const v = pm.environment.get(\"trackKey\");",
+                  "if (!v || v === \"<...>\") { console.log(\"skipped: no trackKey (empty database?)\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+                  "pm.test(\"no _id or consent flags (privacy)\", () => {",
+                  "  const t = pm.response.text();",
+                  "  [\"\\\"_id\\\"\", \"\\\"is_shown\\\"\", \"\\\"is_photo_allowed\\\"\", \"\\\"logo_permission\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
+                  "});",
+                  "const t = pm.response.json();",
+                  "pm.test(\"shape: key, display_name, desc, pics, achievements\", () => pm.expect(t).to.have.all.keys(\"key\", \"display_name\", \"desc\", \"pics\", \"achievements\"));",
+                  "pm.test(\"achievements name their project as text\", () => t.achievements.forEach((a) => {",
+                  "  pm.expect(a).to.have.all.keys(\"year\", \"text\", \"pics\", \"project_name\");",
+                  "  pm.expect(a.project_name).to.be.a(\"string\");",
+                  "}));"
+                ]
+              }
             }
+          ]
+        },
+        {
+          "name": "Missing track -> 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tracks/does-not-exist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tracks",
+                "does-not-exist"
+              ]
+            },
+            "description": ""
           },
           "event": [
             {
@@ -232,11 +434,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"no hidden flags or _id\", () => {",
-                  "  const t = pm.response.text();",
-                  "  [\"is_shown\", \"is_photo_allowed\", \"logo_permission\", \"\\\"_id\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
-                  "});"
+                  "pm.test(\"status 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error body { error }\", () => pm.expect(pm.response.json()).to.have.property(\"error\"));"
                 ]
               }
             }
@@ -262,7 +461,8 @@
                 "pages",
                 "home"
               ]
-            }
+            },
+            "description": ""
           },
           "event": [
             {
@@ -270,11 +470,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"no hidden flags or _id\", () => {",
+                  "pm.test(\"no _id or consent flags (privacy)\", () => {",
                   "  const t = pm.response.text();",
-                  "  [\"is_shown\", \"is_photo_allowed\", \"logo_permission\", \"\\\"_id\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
-                  "});"
+                  "  [\"\\\"_id\\\"\", \"\\\"is_shown\\\"\", \"\\\"is_photo_allowed\\\"\", \"\\\"logo_permission\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
+                  "});",
+                  "// 404 until a Home page is in the database.",
+                  "pm.test(\"status 200, or 404 while there is no Home page\", () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));",
+                  "if (pm.response.code === 200) {",
+                  "  const h = pm.response.json();",
+                  "  pm.test(\"shape\", () => pm.expect(h).to.have.all.keys(\"key\", \"title\", \"blocks\"));",
+                  "  pm.test(\"blocks have id, type, title\", () => h.blocks.forEach((b) => pm.expect(b).to.include.keys(\"id\", \"type\", \"title\")));",
+                  "}"
                 ]
               }
             }
@@ -299,7 +505,8 @@
                 "api",
                 "join"
               ]
-            }
+            },
+            "description": ""
           },
           "event": [
             {
@@ -308,9 +515,24 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"no hidden flags or _id\", () => {",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+                  "pm.test(\"no _id or consent flags (privacy)\", () => {",
                   "  const t = pm.response.text();",
-                  "  [\"is_shown\", \"is_photo_allowed\", \"logo_permission\", \"\\\"_id\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
+                  "  [\"\\\"_id\\\"\", \"\\\"is_shown\\\"\", \"\\\"is_photo_allowed\\\"\", \"\\\"logo_permission\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
+                  "});",
+                  "const list = pm.response.json();",
+                  "pm.test(\"is a list ([] when none is open)\", () => pm.expect(list).to.be.an(\"array\"));",
+                  "list.forEach((r, i) => pm.test(`round ${i}: shape`, () => pm.expect(r).to.have.all.keys(\"title\", \"poster\", \"opens_at\", \"closes_at\", \"extended_to\", \"qualifications\", \"positions\", \"timeline\", \"apply_url\", \"project_name\")));",
+                  "pm.test(\"open now\", () => {",
+                  "  const now = Date.now();",
+                  "  list.forEach((r) => {",
+                  "    pm.expect(Date.parse(r.opens_at)).to.be.at.most(now);",
+                  "    pm.expect(Date.parse(r.extended_to || r.closes_at)).to.be.at.least(now);",
+                  "  });",
+                  "});",
+                  "pm.test(\"closing soonest first (extended_to, else closes_at)\", () => {",
+                  "  const c = list.map((r) => Date.parse(r.extended_to || r.closes_at));",
+                  "  pm.expect(c).to.eql([...c].sort((a, b) => a - b));",
                   "});"
                 ]
               }

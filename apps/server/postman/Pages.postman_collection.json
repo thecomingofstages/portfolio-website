@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "55ebf013-faee-49e0-86f0-9cf4a79d678f",
+    "_postman_id": "17ac78a4-a763-4921-9c24-496fec1edaae",
     "name": "TCOS - Pages",
-    "description": "TCOS portfolio API. Import with TCOS-Local.postman_environment.json. Public endpoints (Projects, Tracks, Pages, Join) are planned in task S3; admin requests come with S5/S6. Never save a real token in this file.",
+    "description": "TCOS portfolio API (public, read-only). Import TCOS-Local.postman_environment.json first. List requests save a real slug/key for the detail requests; with an empty database those are skipped. Never save a real admin token in these files.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -21,7 +21,8 @@
             "pages",
             "home"
           ]
-        }
+        },
+        "description": ""
       },
       "event": [
         {
@@ -29,11 +30,17 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"no hidden flags or _id\", () => {",
+              "pm.test(\"no _id or consent flags (privacy)\", () => {",
               "  const t = pm.response.text();",
-              "  [\"is_shown\", \"is_photo_allowed\", \"logo_permission\", \"\\\"_id\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
-              "});"
+              "  [\"\\\"_id\\\"\", \"\\\"is_shown\\\"\", \"\\\"is_photo_allowed\\\"\", \"\\\"logo_permission\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
+              "});",
+              "// 404 until a Home page is in the database.",
+              "pm.test(\"status 200, or 404 while there is no Home page\", () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));",
+              "if (pm.response.code === 200) {",
+              "  const h = pm.response.json();",
+              "  pm.test(\"shape\", () => pm.expect(h).to.have.all.keys(\"key\", \"title\", \"blocks\"));",
+              "  pm.test(\"blocks have id, type, title\", () => h.blocks.forEach((b) => pm.expect(b).to.include.keys(\"id\", \"type\", \"title\")));",
+              "}"
             ]
           }
         }

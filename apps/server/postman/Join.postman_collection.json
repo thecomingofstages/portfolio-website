@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "f99dd948-8c5b-4db0-930d-55998c492698",
+    "_postman_id": "caa6f4f1-666a-4387-845d-1a06b308f186",
     "name": "TCOS - Join",
-    "description": "TCOS portfolio API. Import with TCOS-Local.postman_environment.json. Public endpoints (Projects, Tracks, Pages, Join) are planned in task S3; admin requests come with S5/S6. Never save a real token in this file.",
+    "description": "TCOS portfolio API (public, read-only). Import TCOS-Local.postman_environment.json first. List requests save a real slug/key for the detail requests; with an empty database those are skipped. Never save a real admin token in these files.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -20,7 +20,8 @@
             "api",
             "join"
           ]
-        }
+        },
+        "description": ""
       },
       "event": [
         {
@@ -29,9 +30,24 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"no hidden flags or _id\", () => {",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "pm.test(\"no _id or consent flags (privacy)\", () => {",
               "  const t = pm.response.text();",
-              "  [\"is_shown\", \"is_photo_allowed\", \"logo_permission\", \"\\\"_id\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
+              "  [\"\\\"_id\\\"\", \"\\\"is_shown\\\"\", \"\\\"is_photo_allowed\\\"\", \"\\\"logo_permission\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
+              "});",
+              "const list = pm.response.json();",
+              "pm.test(\"is a list ([] when none is open)\", () => pm.expect(list).to.be.an(\"array\"));",
+              "list.forEach((r, i) => pm.test(`round ${i}: shape`, () => pm.expect(r).to.have.all.keys(\"title\", \"poster\", \"opens_at\", \"closes_at\", \"extended_to\", \"qualifications\", \"positions\", \"timeline\", \"apply_url\", \"project_name\")));",
+              "pm.test(\"open now\", () => {",
+              "  const now = Date.now();",
+              "  list.forEach((r) => {",
+              "    pm.expect(Date.parse(r.opens_at)).to.be.at.most(now);",
+              "    pm.expect(Date.parse(r.extended_to || r.closes_at)).to.be.at.least(now);",
+              "  });",
+              "});",
+              "pm.test(\"closing soonest first (extended_to, else closes_at)\", () => {",
+              "  const c = list.map((r) => Date.parse(r.extended_to || r.closes_at));",
+              "  pm.expect(c).to.eql([...c].sort((a, b) => a - b));",
               "});"
             ]
           }

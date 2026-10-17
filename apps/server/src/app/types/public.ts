@@ -13,6 +13,13 @@ export type PublicMember = {
   photo: string | null;
 };
 
+/** A project's shown team, grouped (response-only shape). */
+export type Department = {
+  dept_key: string;
+  dept_name: string | null;
+  members: PublicMember[];
+};
+
 export type PublicSponsor = {
   name: string;
   /** null unless the sponsor gave logo permission. */

@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "dff505f4-d8e7-4b5e-9095-bab2bc19c686",
+    "_postman_id": "dd52dfb3-8bcb-45da-8006-ab792bdfd152",
     "name": "TCOS - Tracks",
-    "description": "TCOS portfolio API. Import with TCOS-Local.postman_environment.json. Public endpoints (Projects, Tracks, Pages, Join) are planned in task S3; admin requests come with S5/S6. Never save a real token in this file.",
+    "description": "TCOS portfolio API (public, read-only). Import TCOS-Local.postman_environment.json first. List requests save a real slug/key for the detail requests; with an empty database those are skipped. Never save a real admin token in these files.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -20,7 +20,8 @@
             "api",
             "tracks"
           ]
-        }
+        },
+        "description": "Shown tracks by order. Saves the first key as {{trackKey}}."
       },
       "event": [
         {
@@ -29,10 +30,15 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"no hidden flags or _id\", () => {",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "pm.test(\"no _id or consent flags (privacy)\", () => {",
               "  const t = pm.response.text();",
-              "  [\"is_shown\", \"is_photo_allowed\", \"logo_permission\", \"\\\"_id\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
-              "});"
+              "  [\"\\\"_id\\\"\", \"\\\"is_shown\\\"\", \"\\\"is_photo_allowed\\\"\", \"\\\"logo_permission\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
+              "});",
+              "const list = pm.response.json();",
+              "pm.test(\"is a list\", () => pm.expect(list).to.be.an(\"array\"));",
+              "list.forEach((t, i) => pm.test(`track ${i}: shape`, () => pm.expect(t).to.have.all.keys(\"key\", \"display_name\", \"desc\")));",
+              "pm.environment.set(\"trackKey\", list[0] ? list[0].key : \"\");"
             ]
           }
         }
@@ -53,7 +59,59 @@
             "tracks",
             "{{trackKey}}"
           ]
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const v = pm.environment.get(\"trackKey\");",
+              "if (!v || v === \"<...>\") { console.log(\"skipped: no trackKey (empty database?)\"); pm.execution.skipRequest(); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "pm.test(\"no _id or consent flags (privacy)\", () => {",
+              "  const t = pm.response.text();",
+              "  [\"\\\"_id\\\"\", \"\\\"is_shown\\\"\", \"\\\"is_photo_allowed\\\"\", \"\\\"logo_permission\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
+              "});",
+              "const t = pm.response.json();",
+              "pm.test(\"shape: key, display_name, desc, pics, achievements\", () => pm.expect(t).to.have.all.keys(\"key\", \"display_name\", \"desc\", \"pics\", \"achievements\"));",
+              "pm.test(\"achievements name their project as text\", () => t.achievements.forEach((a) => {",
+              "  pm.expect(a).to.have.all.keys(\"year\", \"text\", \"pics\", \"project_name\");",
+              "  pm.expect(a.project_name).to.be.a(\"string\");",
+              "}));"
+            ]
+          }
         }
+      ]
+    },
+    {
+      "name": "Missing track -> 404",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/tracks/does-not-exist",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "tracks",
+            "does-not-exist"
+          ]
+        },
+        "description": ""
       },
       "event": [
         {
@@ -61,11 +119,8 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"no hidden flags or _id\", () => {",
-              "  const t = pm.response.text();",
-              "  [\"is_shown\", \"is_photo_allowed\", \"logo_permission\", \"\\\"_id\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
-              "});"
+              "pm.test(\"status 404\", () => pm.response.to.have.status(404));",
+              "pm.test(\"error body { error }\", () => pm.expect(pm.response.json()).to.have.property(\"error\"));"
             ]
           }
         }
