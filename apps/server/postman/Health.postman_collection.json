@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "ad6ed518-5f56-490a-b2a6-b2a71e140d34",
+    "_postman_id": "0f9c28e0-0ea3-436a-920e-5c53f9421943",
     "name": "TCOS - Health",
-    "description": "TCOS portfolio API. Import with TCOS-Local.postman_environment.json. Public endpoints (Projects, Tracks, Pages, Join) are planned in task S3; admin requests come with S5/S6. Never save a real token in this file.",
+    "description": "TCOS portfolio API (public, read-only). Import TCOS-Local.postman_environment.json first. List requests save a real slug/key for the detail requests; with an empty database those are skipped. Never save a real admin token in these files.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -20,7 +20,8 @@
             "api",
             "health"
           ]
-        }
+        },
+        "description": ""
       },
       "event": [
         {
@@ -29,7 +30,38 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"db ok\", () => pm.expect(pm.response.json().db).to.eql(\"ok\"));"
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "pm.test(\"db ok\", () => pm.expect(pm.response.json()).to.eql({ status: \"ok\", db: \"ok\" }));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Unknown path -> 404",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/does-not-exist",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "does-not-exist"
+          ]
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 404\", () => pm.response.to.have.status(404));",
+              "pm.test(\"error body { error }\", () => pm.expect(pm.response.json()).to.have.property(\"error\"));"
             ]
           }
         }

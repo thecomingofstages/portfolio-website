@@ -80,8 +80,13 @@ The server runs at http://localhost:8787 in the Cloudflare Workers runtime.
   `/api/openapi.yaml` (the hand-written `apps/server/swagger.yaml`). They are on only
   when `DOCS_ENABLED=true` (set in `.dev.vars`); production leaves them off.
 - `npm run check:db` checks that `MONGODB_URI` connects and the collections have validators.
+- `npm run seed:dev` adds sample data (all text `<...>`, slugs `sample-...`) to the database in
+  `.dev.vars`, for testing the API by hand; `npm run seed:dev -- --clear` removes exactly that data.
+  Dev database only.
 - Postman: import `apps/server/postman/TCOS-Local.postman_environment.json` and a
-  collection (one per domain, or `Full-Suite` for everything).
+  collection (one per domain, or `Full-Suite` for everything). Or, with the server
+  running, `npm run test:postman` runs the Full-Suite from the terminal. List requests
+  save a real slug/key for the detail requests; with an empty database those are skipped.
 
 Checks, in `apps/server`: `npm run typecheck` and `npm test`. After changing
 `wrangler.jsonc`, run `npm run cf-typegen`.

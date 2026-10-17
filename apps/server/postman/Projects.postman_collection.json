@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "78f1d5b0-aa0b-4b33-a3d1-7f7648b1f4a2",
+    "_postman_id": "ae6ef4ed-27b3-4850-9ede-07278f60e7d8",
     "name": "TCOS - Projects",
-    "description": "TCOS portfolio API. Import with TCOS-Local.postman_environment.json. Public endpoints (Projects, Tracks, Pages, Join) are planned in task S3; admin requests come with S5/S6. Never save a real token in this file.",
+    "description": "TCOS portfolio API (public, read-only). Import TCOS-Local.postman_environment.json first. List requests save a real slug/key for the detail requests; with an empty database those are skipped. Never save a real admin token in these files.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -20,7 +20,8 @@
             "api",
             "projects"
           ]
-        }
+        },
+        "description": "Shown projects, newest first. Saves the first slug as {{projectSlug}}."
       },
       "event": [
         {
@@ -29,10 +30,23 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"no hidden flags or _id\", () => {",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "pm.test(\"no _id or consent flags (privacy)\", () => {",
               "  const t = pm.response.text();",
-              "  [\"is_shown\", \"is_photo_allowed\", \"logo_permission\", \"\\\"_id\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
-              "});"
+              "  [\"\\\"_id\\\"\", \"\\\"is_shown\\\"\", \"\\\"is_photo_allowed\\\"\", \"\\\"logo_permission\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
+              "});",
+              "const list = pm.response.json();",
+              "pm.test(\"is a list\", () => pm.expect(list).to.be.an(\"array\"));",
+              "list.forEach((p, i) => pm.test(`card ${i}: shape and at most one pic`, () => {",
+              "  pm.expect(p).to.have.all.keys(\"slug\", \"name\", \"start_date\", \"pics\");",
+              "  pm.expect(p.pics.length).to.be.at.most(1);",
+              "}));",
+              "pm.test(\"newest first\", () => {",
+              "  const d = list.map((p) => Date.parse(p.start_date));",
+              "  pm.expect(d).to.eql([...d].sort((a, b) => b - a));",
+              "});",
+              "// Save a real slug for the next requests.",
+              "pm.environment.set(\"projectSlug\", list[0] ? list[0].slug : \"\");"
             ]
           }
         }
@@ -53,19 +67,35 @@
             "projects",
             "{{projectSlug}}"
           ]
-        }
+        },
+        "description": ""
       },
       "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const v = pm.environment.get(\"projectSlug\");",
+              "if (!v || v === \"<...>\") { console.log(\"skipped: no projectSlug (empty database?)\"); pm.execution.skipRequest(); }"
+            ]
+          }
+        },
         {
           "listen": "test",
           "script": {
             "type": "text/javascript",
             "exec": [
               "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"no hidden flags or _id\", () => {",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "pm.test(\"no _id or consent flags (privacy)\", () => {",
               "  const t = pm.response.text();",
-              "  [\"is_shown\", \"is_photo_allowed\", \"logo_permission\", \"\\\"_id\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
-              "});"
+              "  [\"\\\"_id\\\"\", \"\\\"is_shown\\\"\", \"\\\"is_photo_allowed\\\"\", \"\\\"logo_permission\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
+              "});",
+              "const p = pm.response.json();",
+              "pm.test(\"shape: slug, name, start_date, end_date, venue, pics, is_yearbook_shown, blocks\", () => pm.expect(p).to.have.all.keys(\"slug\", \"name\", \"start_date\", \"end_date\", \"venue\", \"pics\", \"is_yearbook_shown\", \"blocks\"));",
+              "pm.test(\"blocks have id, type, title\", () => p.blocks.forEach((b) => pm.expect(b).to.include.keys(\"id\", \"type\", \"title\")));",
+              "pm.environment.set(\"yearbookShown\", String(p.is_yearbook_shown));"
             ]
           }
         }
@@ -87,26 +117,44 @@
             "{{projectSlug}}",
             "yearbook"
           ]
-        }
+        },
+        "description": ""
       },
       "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const v = pm.environment.get(\"projectSlug\");",
+              "if (!v || v === \"<...>\") { console.log(\"skipped: no projectSlug (empty database?)\"); pm.execution.skipRequest(); }"
+            ]
+          }
+        },
         {
           "listen": "test",
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"no hidden flags or _id\", () => {",
+              "pm.test(\"no _id or consent flags (privacy)\", () => {",
               "  const t = pm.response.text();",
-              "  [\"is_shown\", \"is_photo_allowed\", \"logo_permission\", \"\\\"_id\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
-              "});"
+              "  [\"\\\"_id\\\"\", \"\\\"is_shown\\\"\", \"\\\"is_photo_allowed\\\"\", \"\\\"logo_permission\\\"\"].forEach((k) => pm.expect(t).to.not.include(k));",
+              "});",
+              "const shown = pm.environment.get(\"yearbookShown\") === \"true\";",
+              "pm.test(shown ? \"status 200 (yearbook shown)\" : \"status 404 (yearbook not shown)\", () => pm.response.to.have.status(shown ? 200 : 404));",
+              "if (shown) {",
+              "  const y = pm.response.json();",
+              "  pm.test(\"shape\", () => pm.expect(y).to.have.all.keys(\"slug\", \"name\", \"pics\", \"departments\"));",
+              "  pm.test(\"members have name, nickname, position, photo\", () => y.departments.forEach((d) =>",
+              "    d.members.forEach((m) => pm.expect(m).to.have.all.keys(\"name\", \"nickname\", \"position\", \"photo\"))));",
+              "}"
             ]
           }
         }
       ]
     },
     {
-      "name": "Missing project → 404",
+      "name": "Missing project -> 404",
       "request": {
         "method": "GET",
         "header": [],
@@ -120,7 +168,8 @@
             "projects",
             "does-not-exist"
           ]
-        }
+        },
+        "description": ""
       },
       "event": [
         {
@@ -129,7 +178,70 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"status 404\", () => pm.response.to.have.status(404));",
-              "pm.test(\"error body\", () => pm.expect(pm.response.json()).to.have.property(\"error\"));"
+              "pm.test(\"error body { error }\", () => pm.expect(pm.response.json()).to.have.property(\"error\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Impossible slug -> 404",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/projects/Not..A..Slug",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "projects",
+            "Not..A..Slug"
+          ]
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 404\", () => pm.response.to.have.status(404));",
+              "pm.test(\"error body { error }\", () => pm.expect(pm.response.json()).to.have.property(\"error\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Missing yearbook -> 404",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/projects/does-not-exist/yearbook",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "projects",
+            "does-not-exist",
+            "yearbook"
+          ]
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 404\", () => pm.response.to.have.status(404));",
+              "pm.test(\"error body { error }\", () => pm.expect(pm.response.json()).to.have.property(\"error\"));"
             ]
           }
         }
