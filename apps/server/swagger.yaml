@@ -130,7 +130,7 @@ paths:
     get:
       tags: [Public]
       summary: Tracks (สายงาน) list, by order
-            responses:
+      responses:
         "200":
           description: OK
           content:
