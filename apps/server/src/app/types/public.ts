@@ -75,7 +75,7 @@ export type PublicAchievement = {
 
 /**
  * A block in its public shape: `id`, `type`, `title` and its type's fields, each
- * always present (null / []). Data blocks carry their data key as [] until S4.
+ * always present (null / []). Data blocks carry their data key, filled in by blocks.helper.ts (S4).
  */
 export type PublicBlock = {
   id: string;
