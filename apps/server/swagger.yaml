@@ -1,8 +1,7 @@
 # TCOS Portfolio API, written by hand. Served by Swagger UI at /api/docs (local dev).
 # Follows docs/API.md "Response shapes" and apps/client/types/api.ts:
 # change docs/API.md first (with approval), then this file.
-# Endpoints marked "Planned" are documented ahead of their task, so the client
-# can build against the shapes now.
+# Data blocks are returned with their data list empty ([]) until task S4 fills them in.
 
 openapi: 3.1.0
 info:
@@ -53,7 +52,7 @@ paths:
     get:
       tags: [Public]
       summary: "Home page: title and shown blocks, data blocks filled in"
-      description: "**Planned (S3, S4).** Not implemented yet; the shape is final."
+      description: "Data blocks come with their data list as `[]` until S4 fills them in."
       responses:
         "200":
           description: OK
@@ -73,8 +72,6 @@ paths:
       tags: [Public]
       summary: Project bookshelf, newest first by start_date
       description: |
-        **Planned (S3).** Not implemented yet; the shape is final.
-
         The year filter and the reverse toggle run in the client.
       responses:
         "200":
@@ -87,7 +84,7 @@ paths:
     get:
       tags: [Public]
       summary: "Project page: fixed header and blocks"
-      description: "**Planned (S3, S4).** Not implemented yet; the shape is final."
+      description: "Data blocks come with their data list as `[]` until S4 fills them in."
       parameters: [{ $ref: "#/components/parameters/slug" }]
       responses:
         "200":
@@ -112,8 +109,6 @@ paths:
       tags: [Public]
       summary: "Yearbook: shown team grouped by department"
       description: |
-        **Planned (S3).** Not implemented yet; the shape is final.
-
         Departments sorted by `dept_name`; members keep their order.
         `404` also when the project's yearbook is not shown.
       parameters: [{ $ref: "#/components/parameters/slug" }]
@@ -135,7 +130,6 @@ paths:
     get:
       tags: [Public]
       summary: Tracks (สายงาน) list, by order
-      description: "**Planned (S3).** Not implemented yet; the shape is final."
       responses:
         "200":
           description: OK
@@ -155,8 +149,6 @@ paths:
       tags: [Public]
       summary: Track popup
       description: |
-        **Planned (S3).** Not implemented yet; the shape is final.
-
         Achievements of hidden projects are left out.
       parameters:
         - { name: key, in: path, required: true, schema: { type: string }, description: tracks.key }
@@ -188,8 +180,6 @@ paths:
       tags: [Public]
       summary: Open recruitment rounds, closing soonest first
       description: |
-        **Planned (S3).** Not implemented yet; the shape is final.
-
         Open = opens_at ≤ now ≤ (extended_to or closes_at). `[]` when none is open.
       responses:
         "200":
