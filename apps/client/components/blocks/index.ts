@@ -1,7 +1,11 @@
 import type { ComponentType } from "react";
 import type { Block, BlockType } from "@/types/api";
 import Article from "./Article";
+import ButtonBlock from "./ButtonBlock";
+import Gallery from "./Gallery";
 import ImageBlock from "./ImageBlock";
+import Quote from "./Quote";
+import Video from "./Video";
 
 /** The props every block component takes: its own filled-in block. */
 export type BlockProps<T extends BlockType> = { block: Extract<Block, { type: T }> };
@@ -20,5 +24,9 @@ export type BlockComponents = { [T in BlockType]?: ComponentType<BlockProps<T>> 
  */
 export const blockComponents: BlockComponents = {
   article: Article,
+  button: ButtonBlock,
+  gallery: Gallery,
   image: ImageBlock,
+  quote: Quote,
+  video: Video,
 };
