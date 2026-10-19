@@ -3,6 +3,7 @@ import type { Block, BlockType } from "@/types/api";
 import Article from "./Article";
 import ButtonBlock from "./ButtonBlock";
 import Gallery from "./Gallery";
+import Hero from "./Hero";
 import ImageBlock from "./ImageBlock";
 import Quote from "./Quote";
 import Video from "./Video";
@@ -26,6 +27,7 @@ export const blockComponents: BlockComponents = {
   article: Article,
   button: ButtonBlock,
   gallery: Gallery,
+  hero: Hero,
   image: ImageBlock,
   quote: Quote,
   video: Video,
