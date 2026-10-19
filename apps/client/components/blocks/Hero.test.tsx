@@ -106,7 +106,11 @@ describe("Hero", () => {
   it("shows an empty frame for a placeholder video URL", () => {
     const { container } = render(<Hero block={{ ...base, media_kind: "video", media_url: "<cover video URL>" }} />);
     expect(container.querySelector("video")).toBeNull();
-    expect(container.querySelector("[data-placeholder]")).not.toBeNull();
+    const frame = container.querySelector<HTMLElement>("[data-placeholder]");
+    expect(frame).not.toBeNull();
+    // The frame follows the content width, not the 1200×800 it is given (phone width).
+    expect(frame?.style.width).toBe("100%");
+    expect(frame?.style.height).toBe("auto");
   });
 
   it("runs a slideshow from media_url through the slides, 5 seconds each by default", () => {

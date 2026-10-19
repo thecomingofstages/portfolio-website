@@ -110,7 +110,14 @@ export default function Hero({ block }: BlockProps<"hero">) {
             className="col-start-1 row-start-1 h-auto w-full self-start"
           />
         ) : (
-          <Media src={media_url} alt="" width={1200} height={800} className={`${MEDIA_CLASS} w-full`} />
+          <Media
+            src={media_url}
+            alt=""
+            width={1200}
+            height={800}
+            style={{ width: "100%", height: "auto" }}
+            className={MEDIA_CLASS}
+          />
         )
       ) : (
         frames.map((src, index) => (
