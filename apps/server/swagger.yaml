@@ -1,7 +1,6 @@
 # TCOS Portfolio API, written by hand. Served by Swagger UI at /api/docs (local dev).
 # Follows docs/API.md "Response shapes" and apps/client/types/api.ts:
 # change docs/API.md first (with approval), then this file.
-# Data blocks are returned with their data list empty ([]) until task S4 fills them in.
 
 openapi: 3.1.0
 info:
@@ -52,7 +51,7 @@ paths:
     get:
       tags: [Public]
       summary: "Home page: title and shown blocks, data blocks filled in"
-      description: "Data blocks come with their data list as `[]` until S4 fills them in."
+      description: "Every data block arrives filled in (see Block)."
       responses:
         "200":
           description: OK
@@ -84,7 +83,7 @@ paths:
     get:
       tags: [Public]
       summary: "Project page: fixed header and blocks"
-      description: "Data blocks come with their data list as `[]` until S4 fills them in."
+      description: "Every data block arrives filled in (see Block)."
       parameters: [{ $ref: "#/components/parameters/slug" }]
       responses:
         "200":
@@ -350,6 +349,9 @@ components:
         - `team` → `departments: Department[]` and `org_chart_image` (null unless `show_org_chart`)
         - `sponsors` → `sponsors: Sponsor[]`
         - `highlights` → `highlights: Highlight[]`
+
+        `project_slug: null` means this project on a project page, and all shown projects on Home.
+        A named project that is hidden or missing gives empty lists.
 
         The client skips types it does not know.
       properties:

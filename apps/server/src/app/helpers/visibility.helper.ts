@@ -196,7 +196,7 @@ const BLOCK_FIELDS: Record<string, (b: Raw) => Raw> = {
     })),
   }),
 
-  // Data blocks: their pointers, plus the data key as [] (or null) until S4 fills it in.
+  // Data blocks: their pointers, plus the data key as [] (or null); blocks.helper.ts fills it in.
   highlights: (b) => ({ project_slug: str(b.project_slug), limit: num(b.limit), highlights: [] }),
   team: (b) => ({
     project_slug: str(b.project_slug),

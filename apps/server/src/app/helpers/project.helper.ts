@@ -5,7 +5,8 @@
  */
 import type { Models, ProjectDoc } from "../models";
 import type { Department } from "../types/public";
-import { publicBlocks, publicTeam } from "./visibility.helper";
+import { fillBlocks } from "./blocks.helper";
+import { publicTeam } from "./visibility.helper";
 
 /** `pics[0]` as a list of at most one (docs/API.md "Response shapes"). */
 export const firstPic = (pics: readonly string[] | null | undefined): string[] => (pics?.[0] ? [pics[0]] : []);
@@ -25,12 +26,10 @@ export async function listProjects(m: Models) {
   return docs.map(toProjectCard);
 }
 
-/** GET /api/projects/:slug: the fixed header and the shown blocks (filled in by S4). */
-export async function getProjectPage(m: Models, slug: string) {
-  const p = await m.projects.findOne(
-    { slug, is_shown: true },
-    { projection: { slug: 1, name: 1, start_date: 1, end_date: 1, venue: 1, pics: 1, is_yearbook_shown: 1, blocks: 1 } },
-  );
+/** GET /api/projects/:slug: the fixed header and the shown blocks, data blocks filled in (S4). */
+export async function getProjectPage(m: Models, slug: string, now: Date = new Date()) {
+  // The whole document: its team, sponsors and highlights feed the data blocks.
+  const p = await m.projects.findOne({ slug, is_shown: true });
   if (!p) return null;
   return {
     slug: p.slug,
@@ -40,7 +39,7 @@ export async function getProjectPage(m: Models, slug: string) {
     venue: p.venue ?? null,
     pics: firstPic(p.pics),
     is_yearbook_shown: p.is_yearbook_shown === true,
-    blocks: publicBlocks(p.blocks),
+    blocks: await fillBlocks(m, p.blocks, { kind: "project", project: p }, now),
   };
 }
 
