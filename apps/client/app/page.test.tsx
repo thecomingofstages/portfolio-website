@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { homePage } from "@/fixtures/home";
 
 vi.mock("server-only", () => ({}));
+vi.mock("next/server", () => ({ connection: async () => {} }));
 
 const notFound = vi.fn(() => {
   throw new Error("NEXT_NOT_FOUND");
