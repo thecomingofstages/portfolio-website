@@ -1,13 +1,19 @@
-// Placeholder until task 1.14 (Home) replaces it: a type check for F1.
-// h1–h3 should render in Prompt, body text in Sarabun, on --background.
-export default function Home() {
+import { notFound } from "next/navigation";
+import BlockRenderer from "@/components/BlockRenderer";
+import { getHomePage } from "@/lib/api";
+
+/**
+ * Home (task 1.14): the `home` page's blocks, in order, through BlockRenderer.
+ * Data blocks arrive filled in. Blocks whose component has not landed yet
+ * (sprints 2 and 3, and any still missing from sprint 1) render nothing.
+ */
+export default async function Home() {
+  const page = await getHomePage();
+  if (!page) notFound();
+
   return (
-    <div className="flex flex-col gap-6">
-      <h1>The Coming of Stages</h1>
-      <h2>เด็กไทยติดเวที</h2>
-      <h3>The Coming of Stages · เด็กไทยติดเวที</h3>
-      <p>The Coming of Stages · เด็กไทยติดเวที</p>
-      <p className="text-muted">The Coming of Stages · เด็กไทยติดเวที</p>
+    <div className="flex flex-col gap-12">
+      <BlockRenderer blocks={page.blocks} />
     </div>
   );
 }
