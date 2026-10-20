@@ -27,6 +27,7 @@ You don't need a database or the server to run the client: it can serve fixtures
 │   └── TASKS.md              Task briefs (F1–F7, sprints 1–3, S1–S10)
 ├── tcos_schema.mongodb.js    MongoDB collections, validators and indexes
 ├── tcos_ui_flow.drawio       Page layouts (open in diagrams.net)
+├── tcos_components.drawio    Mockup of the sprint 1 components, in the design tokens
 ├── apps/
 │   ├── client/               The public site: Next.js on Cloudflare Workers (OpenNext)
 │   │   ├── app/              Routes (App Router)
