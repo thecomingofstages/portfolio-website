@@ -10,6 +10,7 @@ The portfolio website of The Coming of Stages (TCOS, เด็กไทยติ
 | --- | --- | --- |
 | client (`apps/client`) | Next.js (App Router) on Cloudflare Workers through OpenNext: the public site | [docs/FRONTEND.md](docs/FRONTEND.md) |
 | server (`apps/server`) | Express.js on Cloudflare Workers, with the official `mongodb` driver: public read API and admin API | [docs/API.md](docs/API.md) |
+| editor (`apps/editor`) | Next.js (App Router): the admin interface, through the server's admin API | [docs/EDITOR.md](docs/EDITOR.md) |
 | database | MongoDB with `$jsonSchema` validators | [docs/DATABASE.md](docs/DATABASE.md), [tcos_schema.mongodb.js](tcos_schema.mongodb.js) |
 
 ## Sources of truth
@@ -21,6 +22,7 @@ Read the docs for your task before writing code. When they disagree, stop and as
 | Pages, paths, components, sprints, design (colours, fonts, shapes) | [docs/FRONTEND.md](docs/FRONTEND.md) |
 | Endpoints, response shapes, auth, uploads, page refresh | [docs/API.md](docs/API.md) |
 | Fields, what they mean, consent rules, example documents | [docs/DATABASE.md](docs/DATABASE.md) |
+| What the editor edits, its settings | [docs/EDITOR.md](docs/EDITOR.md) |
 | Exact field types and required fields | [tcos_schema.mongodb.js](tcos_schema.mongodb.js) |
 | Page layouts | `tcos_ui_flow.drawio` (open in diagrams.net) |
 | Your task: what to read, which files, when it is done | [docs/TASKS.md](docs/TASKS.md) |
@@ -77,6 +79,12 @@ Many members are minors.
 - Never commit `.env` or `.dev.vars` files, tokens, `JWT_SECRET` or database URIs. Use `.env.example` (client) and `.dev.vars.example` (server) with empty values. Server secrets go in with `npx wrangler secret put`.
 - Never put a secret in a `NEXT_PUBLIC_` variable.
 
+### Editor (Next.js)
+- **Admin API only:** read and write through `lib/admin-api.ts`, on the editor's server. Never connect to MongoDB from the editor.
+- **The token stays on the server:** `ADMIN_TOKEN` is read only on the editor's server and never sent to the browser, never in a `NEXT_PUBLIC_` variable.
+- **Check before sending:** validate with the `zod` schemas in `lib/schemas.ts`; they follow `tcos_schema.mongodb.js` exactly.
+- **Styling:** as on the client, colours, fonts and font sizes come only from `apps/editor/app/globals.css`.
+
 ## Working on a task
 
 1. **Read the brief.** Each task in [docs/TASKS.md](docs/TASKS.md) names its ID, the docs sections to read, the files you may change, and when it is done.
@@ -85,5 +93,6 @@ Many members are minors.
 4. **Open questions.** When the docs leave something open, leave a `TODO(<question>)` and use `<...>`. Do not decide it in code.
 5. **Before finishing.** Run lint, type checks and tests, and check the page at phone width.
    - Client, in `apps/client`: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`. Run it locally with `npm run dev` (Node) or `npm run preview` (the Cloudflare Workers runtime).
+   - Editor, in `apps/editor`: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`. Run it locally with `npm run dev`.
    - Server, in `apps/server`: `npm run typecheck`, `npm test`. Run it locally with `npm run dev` (`wrangler dev`); API docs at `/api/docs` when `DOCS_ENABLED=true`. Layout: see README "Server".
 6. **Pull requests.** One task per pull request, with its ID in the title. A person reviews every pull request before it merges, especially anything touching names, photos or consent.
