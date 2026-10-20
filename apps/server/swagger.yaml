@@ -28,7 +28,10 @@ tags:
   - name: Public
     description: Read-only, no token. Used by the Next.js client.
   - name: Admin
-    description: 'Needs `Authorization: Bearer <token>`. Never called from the client. See docs/API.md "Admin API" (tasks S5–S8).'
+    description: |
+      Needs `Authorization: Bearer <token>` (task S5). Never called from the client. See docs/API.md "Admin API".
+      Every /api/admin/* path answers `401 { "error": "Unauthorized" }` without a valid token, even one that does not exist.
+      Make a token with `npm run token -- --for <you>` in apps/server. Routes come with S6.
 
 paths:
   /api/health:
@@ -193,7 +196,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Hand-made JWT signed with JWT_SECRET (task S5). Never paste a real token into shared files or chat.
+      description: Hand-made JWT (HS256) signed with JWT_SECRET; `npm run token -- --for <you>`. Never paste a real token into shared files or chat.
 
   parameters:
     slug:
@@ -204,6 +207,14 @@ components:
       example: tcos-2-the-hidden-saloon
 
   responses:
+    Unauthorized:
+      description: Missing, invalid or expired admin token
+      headers:
+        WWW-Authenticate:
+          schema: { type: string, example: 'Bearer realm="admin"' }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
     NotFound:
       description: Hidden or missing
       content:

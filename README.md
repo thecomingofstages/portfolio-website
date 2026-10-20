@@ -81,6 +81,9 @@ The server runs at http://localhost:8787 in the Cloudflare Workers runtime.
   `/api/openapi.yaml` (the hand-written `apps/server/swagger.yaml`). They are on only
   when `DOCS_ENABLED=true` (set in `.dev.vars`); production leaves them off.
 - `npm run check:db` checks that `MONGODB_URI` connects and the collections have validators.
+- `npm run token -- --for <you>` makes an admin token (signed with `JWT_SECRET` from `.dev.vars`;
+  add `--expires 7d` for an expiry). Send it as `Authorization: Bearer <token>` to `/api/admin/*`.
+  Never paste a token into shared files or chat. To revoke every token, change `JWT_SECRET`.
 - `npm run seed:dev` adds sample data (all text `<...>`, slugs `sample-...`) to the database in
   `.dev.vars`, for testing the API by hand; `npm run seed:dev -- --clear` removes exactly that data.
   Dev database only.
