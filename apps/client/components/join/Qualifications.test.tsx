@@ -7,17 +7,18 @@ import Qualifications from "./Qualifications";
 const fixtureQualifications: QualificationsType = tcos2Round5.qualifications!;
 
 describe("Qualifications", () => {
-  it("shows the age range in Thai when both age_min and age_max are set", () => {
+  it("shows the age range as a bullet item when both age_min and age_max are set", () => {
     const { container } = render(<Qualifications qualifications={fixtureQualifications} />);
 
-    expect(screen.getByRole("heading", { level: 3, name: "คุณสมบัติผู้สมัคร" })).not.toBeNull();
-    const ageParagraph = container.querySelector("p");
-    expect(ageParagraph?.textContent).toBe(
-      `${fixtureQualifications.age_min}–${fixtureQualifications.age_max} ปี`,
-    );
+    expect(screen.getByRole("heading", { level: 3, name: "Qualifications" })).not.toBeNull();
+    const listItems = [...container.querySelectorAll("ul > li")].map((li) => li.textContent);
+    expect(listItems).toEqual([
+      `${fixtureQualifications.age_min}–${fixtureQualifications.age_max}`,
+      ...fixtureQualifications.items,
+    ]);
   });
 
-  it("shows only minimum age when only age_min is set, and only maximum age when only age_max is set", () => {
+  it("shows only age_min when only age_min is set, and only age_max when only age_max is set", () => {
     const { container, rerender } = render(
       <Qualifications
         qualifications={{
@@ -28,10 +29,9 @@ describe("Qualifications", () => {
       />,
     );
 
-    expect(container.querySelector("p")?.textContent).toBe(
-      `อายุขั้นต่ำ ${fixtureQualifications.age_min} ปี`,
-    );
-    expect(screen.queryByText("อายุไม่เกิน")).toBeNull();
+    expect([...container.querySelectorAll("ul > li")].map((li) => li.textContent)).toEqual([
+      `${fixtureQualifications.age_min}`,
+    ]);
 
     rerender(
       <Qualifications
@@ -43,26 +43,24 @@ describe("Qualifications", () => {
       />,
     );
 
-    expect(container.querySelector("p")?.textContent).toBe(
-      `อายุไม่เกิน ${fixtureQualifications.age_max} ปี`,
-    );
-    expect(screen.queryByText("อายุขั้นต่ำ")).toBeNull();
+    expect([...container.querySelectorAll("ul > li")].map((li) => li.textContent)).toEqual([
+      `${fixtureQualifications.age_max}`,
+    ]);
   });
 
-  it("shows age_note on its own line when set (with or without ages) and leaves it out when null or empty", () => {
+  it("shows age_note when set (with or without ages) and leaves it out when null or empty", () => {
     const { container, rerender } = render(
       <Qualifications
         qualifications={{
           ...fixtureQualifications,
           age_note: "<...>",
+          items: [],
         }}
       />,
     );
 
-    const paragraphs = [...container.querySelectorAll("p")].map((p) => p.textContent);
-    expect(paragraphs).toEqual([
-      `${fixtureQualifications.age_min}–${fixtureQualifications.age_max} ปี`,
-      "<...>",
+    expect([...container.querySelectorAll("ul > li")].map((li) => li.textContent)).toEqual([
+      `${fixtureQualifications.age_min}–${fixtureQualifications.age_max} <...>`,
     ]);
 
     rerender(
@@ -75,13 +73,21 @@ describe("Qualifications", () => {
         }}
       />,
     );
-    const noteOnlyParagraphs = [...container.querySelectorAll("p")].map((p) => p.textContent);
-    expect(noteOnlyParagraphs).toEqual(["<...>"]);
+    expect([...container.querySelectorAll("ul > li")].map((li) => li.textContent)).toEqual([
+      "<...>",
+    ]);
 
-    rerender(<Qualifications qualifications={{ ...fixtureQualifications, age_note: "   " }} />);
-    const paragraphsWithoutNote = [...container.querySelectorAll("p")].map((p) => p.textContent);
-    expect(paragraphsWithoutNote).toEqual([
-      `${fixtureQualifications.age_min}–${fixtureQualifications.age_max} ปี`,
+    rerender(
+      <Qualifications
+        qualifications={{
+          ...fixtureQualifications,
+          age_note: "   ",
+          items: [],
+        }}
+      />,
+    );
+    expect([...container.querySelectorAll("ul > li")].map((li) => li.textContent)).toEqual([
+      `${fixtureQualifications.age_min}–${fixtureQualifications.age_max}`,
     ]);
   });
 
