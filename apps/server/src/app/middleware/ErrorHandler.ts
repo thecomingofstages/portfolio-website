@@ -20,11 +20,14 @@ export const ErrorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   if (err instanceof ZodError) {
     const issue = err.issues[0];
     const where = issue?.path.join(".");
-    return send(400, where ? `${where}: ${issue?.message}` : "Invalid request");
+    // Unknown fields have no path; their message names them ("Unrecognized key(s) in object: 'phone'").
+    return send(400, where ? `${where}: ${issue?.message}` : (issue?.message ?? "Invalid request"));
   }
 
   // Document failed validation (docs/API.md "Database access").
   if (err instanceof MongoServerError && err.code === 121) return send(400, "Document failed validation");
+  // Unique index (slug, key): two writes raced for the same value.
+  if (err instanceof MongoServerError && err.code === 11000) return send(409, "Already exists");
 
   // From express.json().
   if (err?.type === "entity.parse.failed") return send(400, "Invalid JSON");

@@ -31,7 +31,7 @@ tags:
     description: |
       Needs `Authorization: Bearer <token>` (task S5). Never called from the client. See docs/API.md "Admin API".
       Every /api/admin/* path answers `401 { "error": "Unauthorized" }` without a valid token, even one that does not exist.
-      Make a token with `npm run token -- --for <you>` in apps/server. Routes come with S6.
+      Make a token with `npm run token -- --for <you>` in apps/server. Bodies use the fields in docs/DATABASE.md; dates are ISO 8601 strings.
 
 paths:
   /api/health:
@@ -190,6 +190,853 @@ paths:
             application/json:
               schema: { type: array, items: { $ref: "#/components/schemas/Round" } }
 
+
+  # --- Admin (S6, S7): every route needs a token; hidden data is returned too ---
+  /api/admin/projects:
+    get:
+      tags: [Admin]
+      summary: List projects (hidden too)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: "Every stored document" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Admin]
+      summary: Create a project
+      security: [{ bearerAuth: [] }]
+      description: "Changing slug renames it everywhere it is referenced; 409 if the new slug is taken."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "The whole document, fields as in docs/DATABASE.md (projects)" }
+      responses:
+        "201": { description: "The saved document, with _id" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/projects/{slug}:
+    get:
+      tags: [Admin]
+      summary: Get one project
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/slugKey" }]
+      responses:
+        "200": { description: "The stored document" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    put:
+      tags: [Admin]
+      summary: Replace a project
+      security: [{ bearerAuth: [] }]
+      description: "Changing slug renames it everywhere it is referenced; 409 if the new slug is taken."
+      parameters: [{ $ref: "#/components/parameters/slugKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "The whole document" }
+      responses:
+        "200": { description: "The saved document" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    patch:
+      tags: [Admin]
+      summary: Change some fields of a project
+      security: [{ bearerAuth: [] }]
+      description: "Merged into the stored document, then checked like a PUT. Changing slug renames it everywhere it is referenced; 409 if the new slug is taken."
+      parameters: [{ $ref: "#/components/parameters/slugKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "Only the fields to change" }
+      responses:
+        "200": { description: "The saved document" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [Admin]
+      summary: Delete a project
+      security: [{ bearerAuth: [] }]
+      description: "409 while something still references it."
+      parameters: [{ $ref: "#/components/parameters/slugKey" }]
+      responses:
+        "204": { description: "Deleted" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/projects/{slug}/team:
+    get:
+      tags: [Admin]
+      summary: List team members (hidden too)
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/slugKey" }]
+      responses:
+        "200": { description: "The list" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Admin]
+      summary: Add a team member
+      security: [{ bearerAuth: [] }]
+      description: "The server adds _id; do not send one. dept_key must match a track. A photo needs is_photo_allowed true; setting it false removes the photo and deletes the file."
+      parameters: [{ $ref: "#/components/parameters/slugKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "One team member" }
+      responses:
+        "201": { description: "The saved item, with _id" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/projects/{slug}/team/{itemId}:
+    get:
+      tags: [Admin]
+      summary: Get one team member
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/slugKey" }, { $ref: "#/components/parameters/itemId" }]
+      responses:
+        "200": { description: "The item" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    put:
+      tags: [Admin]
+      summary: Replace a team member
+      security: [{ bearerAuth: [] }]
+      description: "dept_key must match a track. A photo needs is_photo_allowed true; setting it false removes the photo and deletes the file."
+      parameters: [{ $ref: "#/components/parameters/slugKey" }, { $ref: "#/components/parameters/itemId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "The whole team member, without _id" }
+      responses:
+        "200": { description: "The saved item" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    patch:
+      tags: [Admin]
+      summary: Change some fields of a team member
+      security: [{ bearerAuth: [] }]
+      description: "dept_key must match a track. A photo needs is_photo_allowed true; setting it false removes the photo and deletes the file."
+      parameters: [{ $ref: "#/components/parameters/slugKey" }, { $ref: "#/components/parameters/itemId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "Only the fields to change" }
+      responses:
+        "200": { description: "The saved item" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [Admin]
+      summary: Remove a team member
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/slugKey" }, { $ref: "#/components/parameters/itemId" }]
+      responses:
+        "204": { description: "Removed" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/projects/{slug}/sponsors:
+    get:
+      tags: [Admin]
+      summary: List sponsors (hidden too)
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/slugKey" }]
+      responses:
+        "200": { description: "The list" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Admin]
+      summary: Add a sponsor
+      security: [{ bearerAuth: [] }]
+      description: "The server adds _id; do not send one."
+      parameters: [{ $ref: "#/components/parameters/slugKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "One sponsor" }
+      responses:
+        "201": { description: "The saved item, with _id" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/projects/{slug}/sponsors/{itemId}:
+    get:
+      tags: [Admin]
+      summary: Get one sponsor
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/slugKey" }, { $ref: "#/components/parameters/itemId" }]
+      responses:
+        "200": { description: "The item" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    put:
+      tags: [Admin]
+      summary: Replace a sponsor
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/slugKey" }, { $ref: "#/components/parameters/itemId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "The whole sponsor, without _id" }
+      responses:
+        "200": { description: "The saved item" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    patch:
+      tags: [Admin]
+      summary: Change some fields of a sponsor
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/slugKey" }, { $ref: "#/components/parameters/itemId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "Only the fields to change" }
+      responses:
+        "200": { description: "The saved item" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [Admin]
+      summary: Remove a sponsor
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/slugKey" }, { $ref: "#/components/parameters/itemId" }]
+      responses:
+        "204": { description: "Removed" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/projects/{slug}/highlights:
+    get:
+      tags: [Admin]
+      summary: List highlights (hidden too)
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/slugKey" }]
+      responses:
+        "200": { description: "The list" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Admin]
+      summary: Add a highlight
+      security: [{ bearerAuth: [] }]
+      description: "The server adds _id; do not send one."
+      parameters: [{ $ref: "#/components/parameters/slugKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "One highlight" }
+      responses:
+        "201": { description: "The saved item, with _id" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/projects/{slug}/highlights/{itemId}:
+    get:
+      tags: [Admin]
+      summary: Get one highlight
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/slugKey" }, { $ref: "#/components/parameters/itemId" }]
+      responses:
+        "200": { description: "The item" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    put:
+      tags: [Admin]
+      summary: Replace a highlight
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/slugKey" }, { $ref: "#/components/parameters/itemId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "The whole highlight, without _id" }
+      responses:
+        "200": { description: "The saved item" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    patch:
+      tags: [Admin]
+      summary: Change some fields of a highlight
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/slugKey" }, { $ref: "#/components/parameters/itemId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "Only the fields to change" }
+      responses:
+        "200": { description: "The saved item" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [Admin]
+      summary: Remove a highlight
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/slugKey" }, { $ref: "#/components/parameters/itemId" }]
+      responses:
+        "204": { description: "Removed" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/projects/{slug}/blocks:
+    get:
+      tags: [Admin]
+      summary: Get the whole blocks array
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/slugKey" }]
+      responses:
+        "200": { description: "The blocks, hidden ones too" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    put:
+      tags: [Admin]
+      summary: Save the whole blocks array
+      security: [{ bearerAuth: [] }]
+      description: "Reorder, add, remove, hide in one save. Block ids must be unique; project_slug and dept_keys must exist."
+      parameters: [{ $ref: "#/components/parameters/slugKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: array, description: "Every block, in order" }
+      responses:
+        "200": { description: "The saved blocks" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/tracks:
+    get:
+      tags: [Admin]
+      summary: List tracks (hidden too)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: "Every stored document" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Admin]
+      summary: Create a track
+      security: [{ bearerAuth: [] }]
+      description: "Changing key renames it everywhere it is referenced; 409 if the new key is taken."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "The whole document, fields as in docs/DATABASE.md (tracks)" }
+      responses:
+        "201": { description: "The saved document, with _id" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/tracks/{key}:
+    get:
+      tags: [Admin]
+      summary: Get one track
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/trackKey" }]
+      responses:
+        "200": { description: "The stored document" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    put:
+      tags: [Admin]
+      summary: Replace a track
+      security: [{ bearerAuth: [] }]
+      description: "Changing key renames it everywhere it is referenced; 409 if the new key is taken."
+      parameters: [{ $ref: "#/components/parameters/trackKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "The whole document" }
+      responses:
+        "200": { description: "The saved document" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    patch:
+      tags: [Admin]
+      summary: Change some fields of a track
+      security: [{ bearerAuth: [] }]
+      description: "Merged into the stored document, then checked like a PUT. Changing key renames it everywhere it is referenced; 409 if the new key is taken."
+      parameters: [{ $ref: "#/components/parameters/trackKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "Only the fields to change" }
+      responses:
+        "200": { description: "The saved document" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [Admin]
+      summary: Delete a track
+      security: [{ bearerAuth: [] }]
+      description: "409 while something still references it."
+      parameters: [{ $ref: "#/components/parameters/trackKey" }]
+      responses:
+        "204": { description: "Deleted" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/tracks/{key}/achievements:
+    get:
+      tags: [Admin]
+      summary: List achievements (hidden too)
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/trackKey" }]
+      responses:
+        "200": { description: "The list" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Admin]
+      summary: Add a achievement
+      security: [{ bearerAuth: [] }]
+      description: "The server adds _id; do not send one. project_slug must match a project."
+      parameters: [{ $ref: "#/components/parameters/trackKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "One achievement" }
+      responses:
+        "201": { description: "The saved item, with _id" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/tracks/{key}/achievements/{itemId}:
+    get:
+      tags: [Admin]
+      summary: Get one achievement
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/trackKey" }, { $ref: "#/components/parameters/itemId" }]
+      responses:
+        "200": { description: "The item" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    put:
+      tags: [Admin]
+      summary: Replace a achievement
+      security: [{ bearerAuth: [] }]
+      description: "project_slug must match a project."
+      parameters: [{ $ref: "#/components/parameters/trackKey" }, { $ref: "#/components/parameters/itemId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "The whole achievement, without _id" }
+      responses:
+        "200": { description: "The saved item" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    patch:
+      tags: [Admin]
+      summary: Change some fields of a achievement
+      security: [{ bearerAuth: [] }]
+      description: "project_slug must match a project."
+      parameters: [{ $ref: "#/components/parameters/trackKey" }, { $ref: "#/components/parameters/itemId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "Only the fields to change" }
+      responses:
+        "200": { description: "The saved item" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [Admin]
+      summary: Remove a achievement
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/trackKey" }, { $ref: "#/components/parameters/itemId" }]
+      responses:
+        "204": { description: "Removed" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/apply:
+    get:
+      tags: [Admin]
+      summary: List apply rounds (hidden too)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: "Every stored document" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Admin]
+      summary: Create a apply round
+      security: [{ bearerAuth: [] }]
+      description: "project_slug must match a project; positions[].dept_key must match a track."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "The whole document, fields as in docs/DATABASE.md (apply)" }
+      responses:
+        "201": { description: "The saved document, with _id" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/apply/{id}:
+    get:
+      tags: [Admin]
+      summary: Get one apply round
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/roundId" }]
+      responses:
+        "200": { description: "The stored document" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    put:
+      tags: [Admin]
+      summary: Replace a apply round
+      security: [{ bearerAuth: [] }]
+      description: "project_slug must match a project; positions[].dept_key must match a track."
+      parameters: [{ $ref: "#/components/parameters/roundId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "The whole document" }
+      responses:
+        "200": { description: "The saved document" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    patch:
+      tags: [Admin]
+      summary: Change some fields of a apply round
+      security: [{ bearerAuth: [] }]
+      description: "Merged into the stored document, then checked like a PUT. project_slug must match a project; positions[].dept_key must match a track."
+      parameters: [{ $ref: "#/components/parameters/roundId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "Only the fields to change" }
+      responses:
+        "200": { description: "The saved document" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [Admin]
+      summary: Delete a apply round
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/roundId" }]
+      responses:
+        "204": { description: "Deleted" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/apply/{id}/positions:
+    get:
+      tags: [Admin]
+      summary: List positions (hidden too)
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/roundId" }]
+      responses:
+        "200": { description: "The list" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Admin]
+      summary: Add a position
+      security: [{ bearerAuth: [] }]
+      description: "The server adds _id; do not send one. dept_key must match a track."
+      parameters: [{ $ref: "#/components/parameters/roundId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "One position" }
+      responses:
+        "201": { description: "The saved item, with _id" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/apply/{id}/positions/{itemId}:
+    get:
+      tags: [Admin]
+      summary: Get one position
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/roundId" }, { $ref: "#/components/parameters/itemId" }]
+      responses:
+        "200": { description: "The item" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    put:
+      tags: [Admin]
+      summary: Replace a position
+      security: [{ bearerAuth: [] }]
+      description: "dept_key must match a track."
+      parameters: [{ $ref: "#/components/parameters/roundId" }, { $ref: "#/components/parameters/itemId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "The whole position, without _id" }
+      responses:
+        "200": { description: "The saved item" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    patch:
+      tags: [Admin]
+      summary: Change some fields of a position
+      security: [{ bearerAuth: [] }]
+      description: "dept_key must match a track."
+      parameters: [{ $ref: "#/components/parameters/roundId" }, { $ref: "#/components/parameters/itemId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "Only the fields to change" }
+      responses:
+        "200": { description: "The saved item" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [Admin]
+      summary: Remove a position
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/roundId" }, { $ref: "#/components/parameters/itemId" }]
+      responses:
+        "204": { description: "Removed" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/apply/{id}/timeline:
+    get:
+      tags: [Admin]
+      summary: List timeline events (hidden too)
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/roundId" }]
+      responses:
+        "200": { description: "The list" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Admin]
+      summary: Add a timeline event
+      security: [{ bearerAuth: [] }]
+      description: "The server adds _id; do not send one."
+      parameters: [{ $ref: "#/components/parameters/roundId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "One timeline event" }
+      responses:
+        "201": { description: "The saved item, with _id" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/apply/{id}/timeline/{itemId}:
+    get:
+      tags: [Admin]
+      summary: Get one timeline event
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/roundId" }, { $ref: "#/components/parameters/itemId" }]
+      responses:
+        "200": { description: "The item" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    put:
+      tags: [Admin]
+      summary: Replace a timeline event
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/roundId" }, { $ref: "#/components/parameters/itemId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "The whole timeline event, without _id" }
+      responses:
+        "200": { description: "The saved item" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    patch:
+      tags: [Admin]
+      summary: Change some fields of a timeline event
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/roundId" }, { $ref: "#/components/parameters/itemId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "Only the fields to change" }
+      responses:
+        "200": { description: "The saved item" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [Admin]
+      summary: Remove a timeline event
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/roundId" }, { $ref: "#/components/parameters/itemId" }]
+      responses:
+        "204": { description: "Removed" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/pages:
+    get:
+      tags: [Admin]
+      summary: List pages (hidden too)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: "Every stored document" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Admin]
+      summary: Create a page
+      security: [{ bearerAuth: [] }]
+      description: "The server sets updated_at."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "The whole document, fields as in docs/DATABASE.md (pages)" }
+      responses:
+        "201": { description: "The saved document, with _id" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/pages/{key}:
+    get:
+      tags: [Admin]
+      summary: Get one page
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/pageKey" }]
+      responses:
+        "200": { description: "The stored document" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    put:
+      tags: [Admin]
+      summary: Replace a page
+      security: [{ bearerAuth: [] }]
+      description: "The server sets updated_at."
+      parameters: [{ $ref: "#/components/parameters/pageKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "The whole document" }
+      responses:
+        "200": { description: "The saved document" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    patch:
+      tags: [Admin]
+      summary: Change some fields of a page
+      security: [{ bearerAuth: [] }]
+      description: "Merged into the stored document, then checked like a PUT. The server sets updated_at."
+      parameters: [{ $ref: "#/components/parameters/pageKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "Only the fields to change" }
+      responses:
+        "200": { description: "The saved document" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [Admin]
+      summary: Delete a page
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/pageKey" }]
+      responses:
+        "204": { description: "Deleted" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/pages/{key}/blocks:
+    get:
+      tags: [Admin]
+      summary: Get the whole blocks array
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/pageKey" }]
+      responses:
+        "200": { description: "The blocks, hidden ones too" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    put:
+      tags: [Admin]
+      summary: Save the whole blocks array
+      security: [{ bearerAuth: [] }]
+      description: "Reorder, add, remove, hide in one save. Block ids must be unique; project_slug and dept_keys must exist."
+      parameters: [{ $ref: "#/components/parameters/pageKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: array, description: "Every block, in order" }
+      responses:
+        "200": { description: "The saved blocks" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -199,6 +1046,11 @@ components:
       description: Hand-made JWT (HS256) signed with JWT_SECRET; `npm run token -- --for <you>`. Never paste a real token into shared files or chat.
 
   parameters:
+    slugKey: { name: slug, in: path, required: true, schema: { type: string }, description: projects.slug }
+    trackKey: { name: key, in: path, required: true, schema: { type: string }, description: tracks.key }
+    pageKey: { name: key, in: path, required: true, schema: { type: string }, description: "pages.key, e.g. home" }
+    roundId: { name: id, in: path, required: true, schema: { type: string }, description: "The round's _id (24 hex characters)" }
+    itemId: { name: itemId, in: path, required: true, schema: { type: string }, description: "The list item's _id (24 hex characters)" }
     slug:
       name: slug
       in: path
@@ -207,6 +1059,16 @@ components:
       example: tcos-2-the-hidden-saloon
 
   responses:
+    BadRequest:
+      description: The body or a reference is invalid; the message names the field
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Conflict:
+      description: Already exists, or still referenced (delete)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
     Unauthorized:
       description: Missing, invalid or expired admin token
       headers:

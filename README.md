@@ -84,6 +84,9 @@ The server runs at http://localhost:8787 in the Cloudflare Workers runtime.
 - `npm run token -- --for <you>` makes an admin token (signed with `JWT_SECRET` from `.dev.vars`;
   add `--expires 7d` for an expiry). Send it as `Authorization: Bearer <token>` to `/api/admin/*`.
   Never paste a token into shared files or chat. To revoke every token, change `JWT_SECRET`.
+- The admin API (`/api/admin/*`, see `/api/docs`) creates, changes and deletes content, hidden data
+  included. It checks references, refuses to delete what is still referenced (409), renames slugs
+  and keys everywhere, and deletes a photo from R2 when consent is withdrawn.
 - `npm run seed:dev` adds sample data (all text `<...>`, slugs `sample-...`) to the database in
   `.dev.vars`, for testing the API by hand; `npm run seed:dev -- --clear` removes exactly that data.
   Dev database only.
