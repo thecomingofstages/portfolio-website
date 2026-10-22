@@ -4,10 +4,8 @@ export type QualificationsProps = {
   qualifications: QualificationsType | null | undefined;
 };
 
-/**
- * Formats `age_min` and `age_max` without inventing wording not in the docs.
- * Returns `null` when neither bound is set.
- */
+// TODO(qualifications age wording): the docs do not specify the exact wording for single age bounds;
+// these follow the old JD wording ("อายุอยู่ในช่วง x–y ปี") and the project lead's examples.
 function formatAgeRange(
   ageMin: number | null | undefined,
   ageMax: number | null | undefined,
@@ -16,13 +14,13 @@ function formatAgeRange(
   const hasMax = typeof ageMax === "number";
 
   if (hasMin && hasMax) {
-    return `${ageMin}–${ageMax}`;
+    return `อายุอยู่ในช่วง ${ageMin}–${ageMax} ปี`;
   }
   if (hasMin) {
-    return `${ageMin}`;
+    return `อายุ ${ageMin} ปีขึ้นไป`;
   }
   if (hasMax) {
-    return `${ageMax}`;
+    return `อายุไม่เกิน ${ageMax} ปี`;
   }
   return null;
 }
@@ -52,7 +50,7 @@ export default function Qualifications({ qualifications }: QualificationsProps) 
 
   return (
     <section className="flex flex-col gap-3 rounded-card border border-border bg-card-bg p-6">
-      {/* TODO(qualifications wording): the docs give no Thai heading or age label; "Qualifications" follows tcos_ui_flow.drawio. */}
+      {/* TODO(qualifications wording): the docs give no Thai heading; "Qualifications" follows tcos_ui_flow.drawio. */}
       <h3 className="font-heading text-h3 font-semibold text-foreground">Qualifications</h3>
       <ul className="list-disc space-y-2 pl-6 font-body text-body text-foreground marker:text-accent">
         {ageText || noteText ? (

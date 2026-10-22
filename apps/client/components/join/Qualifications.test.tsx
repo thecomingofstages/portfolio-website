@@ -13,7 +13,7 @@ describe("Qualifications", () => {
     expect(screen.getByRole("heading", { level: 3, name: "Qualifications" })).not.toBeNull();
     const listItems = [...container.querySelectorAll("ul > li")].map((li) => li.textContent);
     expect(listItems).toEqual([
-      `${fixtureQualifications.age_min}–${fixtureQualifications.age_max}`,
+      `อายุอยู่ในช่วง ${fixtureQualifications.age_min}–${fixtureQualifications.age_max} ปี`,
       ...fixtureQualifications.items,
     ]);
   });
@@ -30,7 +30,7 @@ describe("Qualifications", () => {
     );
 
     expect([...container.querySelectorAll("ul > li")].map((li) => li.textContent)).toEqual([
-      `${fixtureQualifications.age_min}`,
+      `อายุ ${fixtureQualifications.age_min} ปีขึ้นไป`,
     ]);
 
     rerender(
@@ -44,7 +44,7 @@ describe("Qualifications", () => {
     );
 
     expect([...container.querySelectorAll("ul > li")].map((li) => li.textContent)).toEqual([
-      `${fixtureQualifications.age_max}`,
+      `อายุไม่เกิน ${fixtureQualifications.age_max} ปี`,
     ]);
   });
 
@@ -60,7 +60,7 @@ describe("Qualifications", () => {
     );
 
     expect([...container.querySelectorAll("ul > li")].map((li) => li.textContent)).toEqual([
-      `${fixtureQualifications.age_min}–${fixtureQualifications.age_max} <...>`,
+      `อายุอยู่ในช่วง ${fixtureQualifications.age_min}–${fixtureQualifications.age_max} ปี <...>`,
     ]);
 
     rerender(
@@ -87,7 +87,7 @@ describe("Qualifications", () => {
       />,
     );
     expect([...container.querySelectorAll("ul > li")].map((li) => li.textContent)).toEqual([
-      `${fixtureQualifications.age_min}–${fixtureQualifications.age_max}`,
+      `อายุอยู่ในช่วง ${fixtureQualifications.age_min}–${fixtureQualifications.age_max} ปี`,
     ]);
   });
 
