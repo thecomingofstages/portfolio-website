@@ -18,17 +18,8 @@ function hasAuditionContent(audition: Audition | null | undefined): audition is 
   const hasUpload = nonEmpty(audition.clip_upload) !== null;
   const hasPieces = Array.isArray(audition.pieces) && audition.pieces.length > 0;
   const hasOnsite = audition.onsite === true;
-  const hasClipRequired = audition.clip_required === true;
 
-  return (
-    hasBrief ||
-    hasMaxMinutes ||
-    hasFileName ||
-    hasUpload ||
-    hasPieces ||
-    hasOnsite ||
-    hasClipRequired
-  );
+  return hasBrief || hasMaxMinutes || hasFileName || hasUpload || hasPieces || hasOnsite;
 }
 
 /**
@@ -37,7 +28,7 @@ function hasAuditionContent(audition: Audition | null | undefined): audition is 
  *
  * For each position in API order, shows:
  * - `dept_name`, `unit_name`, `title`, `description` and `requirements`;
- * - `portfolio_required` and `onsite_required` flags as gold pill badges when true;
+ * - `portfolio_required` and `onsite_required` flags as gold badges when true;
  * - `audition` details when present (clip brief, max minutes, file name, upload method,
  *   `pieces` in API order, and onsite audition round).
  *
@@ -50,7 +41,7 @@ export default function PositionList({ positions }: PositionListProps) {
 
   return (
     <section className="flex flex-col gap-4">
-      {/* TODO(positions wording): the docs give no Thai labels for flag/audition headings; English labels follow tcos_ui_flow.drawio. */}
+      {/* TODO(positions wording): the docs do not specify the exact labels for position flags or audition fields; using "<...>" until confirmed. */}
       <ul className="flex flex-col gap-4">
         {positions.map((position, index) => {
           const deptName = nonEmpty(position.dept_name);
@@ -89,73 +80,88 @@ export default function PositionList({ positions }: PositionListProps) {
                 </h3>
               </div>
 
+              {/* Flags: portfolio_required and onsite_required */}
               {portfolioRequired || onsiteRequired ? (
                 <ul className="flex flex-wrap gap-2.5 font-body text-body">
+                  {/* portfolio_required */}
                   {portfolioRequired ? (
-                    <li className="rounded-full border border-accent bg-accent px-3.5 py-0.5 font-bold text-background">
-                      Portfolio required
+                    <li
+                      data-field="portfolio_required"
+                      className="rounded-button border border-accent bg-accent px-3.5 py-0.5 font-bold text-background"
+                    >
+                      {"<...>"}
                     </li>
                   ) : null}
+                  {/* onsite_required (must be able to work onsite in Bangkok) */}
                   {onsiteRequired ? (
-                    <li className="rounded-full border border-accent bg-accent px-3.5 py-0.5 font-bold text-background">
-                      Onsite in Bangkok required
+                    <li
+                      data-field="onsite_required"
+                      className="rounded-button border border-accent bg-accent px-3.5 py-0.5 font-bold text-background"
+                    >
+                      {"<...>"}
                     </li>
                   ) : null}
                 </ul>
               ) : null}
 
+              {/* description */}
               {description ? (
                 <p className="font-body text-body text-foreground">{description}</p>
               ) : null}
 
+              {/* requirements[] */}
               {requirements.length > 0 ? (
-                <div className="flex flex-col gap-1.5 font-body text-body">
-                  <p className="text-muted">Requirements</p>
-                  <ul className="list-disc space-y-1.5 pl-5 text-foreground marker:text-accent">
-                    {requirements.map((req, reqIndex) => (
-                      <li key={`${reqIndex}-${req}`}>{req}</li>
-                    ))}
-                  </ul>
-                </div>
+                <ul className="list-disc space-y-1.5 pl-5 font-body text-body text-foreground marker:text-accent">
+                  {requirements.map((req, reqIndex) => (
+                    <li key={`${reqIndex}-${req}`}>{req}</li>
+                  ))}
+                </ul>
               ) : null}
 
+              {/* audition section (rendered only when audition has displayable content) */}
               {showAudition ? (
                 <div className="flex flex-col gap-3 rounded-card bg-background/40 p-5">
-                  <h4 className="font-heading text-body-lg font-semibold text-accent">Audition</h4>
+                  {/* Audition section heading */}
+                  <h4 className="font-heading text-body-lg font-semibold text-accent">{"<...>"}</h4>
 
-                  <dl className="flex flex-col gap-2.5 font-body text-body">
+                  <dl className="grid grid-cols-1 gap-4 font-body text-body sm:grid-cols-3">
+                    {/* audition.clip_brief */}
                     {clipBrief ? (
-                      <div className="grid grid-cols-1 gap-1 sm:grid-cols-4 sm:gap-4">
-                        <dt className="text-muted">Clip brief</dt>
-                        <dd className="text-foreground sm:col-span-3">{clipBrief}</dd>
+                      <div className="flex flex-col gap-0.5 sm:col-span-3">
+                        <dt className="text-muted">{"<...>"}</dt>
+                        <dd className="text-foreground">{clipBrief}</dd>
                       </div>
                     ) : null}
 
+                    {/* audition.clip_max_minutes */}
                     {clipMaxMinutes !== null ? (
-                      <div className="grid grid-cols-1 gap-1 sm:grid-cols-4 sm:gap-4">
-                        <dt className="text-muted">Maximum length</dt>
-                        <dd className="text-foreground sm:col-span-3">{clipMaxMinutes} min</dd>
+                      <div className="flex flex-col gap-0.5">
+                        <dt className="text-muted">{"<...>"}</dt>
+                        <dd className="text-foreground">{clipMaxMinutes}</dd>
                       </div>
                     ) : null}
 
+                    {/* audition.clip_file_name */}
                     {clipFileName ? (
-                      <div className="grid grid-cols-1 gap-1 sm:grid-cols-4 sm:gap-4">
-                        <dt className="text-muted">File name</dt>
-                        <dd className="text-foreground sm:col-span-3">{clipFileName}</dd>
+                      <div className="flex flex-col gap-0.5">
+                        <dt className="text-muted">{"<...>"}</dt>
+                        <dd className="text-foreground">{clipFileName}</dd>
                       </div>
                     ) : null}
 
+                    {/* audition.clip_upload */}
                     {clipUpload ? (
-                      <div className="grid grid-cols-1 gap-1 sm:grid-cols-4 sm:gap-4">
-                        <dt className="text-muted">Upload</dt>
-                        <dd className="text-foreground sm:col-span-3">{clipUpload}</dd>
+                      <div className="flex flex-col gap-0.5">
+                        <dt className="text-muted">{"<...>"}</dt>
+                        <dd className="text-foreground">{clipUpload}</dd>
                       </div>
                     ) : null}
 
+                    {/* audition.pieces[] */}
                     {pieces.length > 0 ? (
-                      <div className="grid grid-cols-1 gap-1 sm:grid-cols-4 sm:gap-4">
-                        <dt className="text-muted">Pieces</dt>
-                        <dd className="text-foreground sm:col-span-3">
+                      <div className="flex flex-col gap-1">
+                        <dt className="text-muted">{"<...>"}</dt>
+                        <dd className="text-foreground">
                           <ul className="list-disc space-y-1 pl-5 marker:text-accent">
                             {pieces.map((piece, pieceIndex) => (
                               <li key={`${pieceIndex}-${piece}`}>{piece}</li>
@@ -165,11 +171,12 @@ export default function PositionList({ positions }: PositionListProps) {
                       </div>
                     ) : null}
 
+                    {/* audition.onsite (onsite audition after the clip round) */}
                     {auditionOnsite ? (
-                      <div className="grid grid-cols-1 gap-1 sm:grid-cols-4 sm:gap-4">
-                        <dt className="text-muted">Onsite round</dt>
-                        <dd className="text-foreground sm:col-span-3">
-                          Onsite audition after the clip round
+                      <div className="flex flex-col gap-0.5">
+                        <dt className="text-muted">{"<...>"}</dt>
+                        <dd data-field="audition_onsite" className="text-foreground">
+                          {"<...>"}
                         </dd>
                       </div>
                     ) : null}

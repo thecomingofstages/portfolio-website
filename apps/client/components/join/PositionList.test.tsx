@@ -22,36 +22,53 @@ describe("PositionList", () => {
       },
     };
 
-    render(<PositionList positions={[fullPosition]} />);
+    const { container } = render(<PositionList positions={[fullPosition]} />);
 
     expect(screen.getByRole("heading", { level: 3, name: fixturePosition.title })).not.toBeNull();
     expect(screen.getByText(fixturePosition.dept_name!)).not.toBeNull();
-    expect(screen.getByText("Portfolio required")).not.toBeNull();
-    expect(screen.getByText("Onsite in Bangkok required")).not.toBeNull();
+    expect(container.querySelector('[data-field="portfolio_required"]')).not.toBeNull();
+    expect(container.querySelector('[data-field="onsite_required"]')).not.toBeNull();
 
     // Audition details
-    expect(screen.getByRole("heading", { level: 4, name: "Audition" })).not.toBeNull();
+    expect(screen.getByRole("heading", { level: 4 })).not.toBeNull();
     expect(screen.getByText(fixturePosition.audition!.clip_brief!)).not.toBeNull();
-    expect(screen.getByText(`${fixturePosition.audition!.clip_max_minutes} min`)).not.toBeNull();
+    expect(screen.getByText(String(fixturePosition.audition!.clip_max_minutes))).not.toBeNull();
     expect(screen.getByText(fixturePosition.audition!.clip_file_name!)).not.toBeNull();
     expect(screen.getByText(fixturePosition.audition!.clip_upload!)).not.toBeNull();
-    expect(screen.getByText("Onsite audition after the clip round")).not.toBeNull();
-    expect(screen.getAllByText("<...>").length).toBeGreaterThanOrEqual(4);
+    expect(container.querySelector('[data-field="audition_onsite"]')).not.toBeNull();
   });
 
-  it("renders no audition section when a position has no audition", () => {
+  it("renders no audition section when a position has no audition or only clip_required", () => {
     const noAuditionPosition: Position = {
       ...fixturePosition,
       audition: null,
     };
 
-    render(<PositionList positions={[noAuditionPosition]} />);
+    const { rerender } = render(<PositionList positions={[noAuditionPosition]} />);
 
     expect(screen.getByRole("heading", { level: 3, name: fixturePosition.title })).not.toBeNull();
-    expect(screen.queryByRole("heading", { name: "Audition" })).toBeNull();
-    expect(screen.queryByText("Maximum length")).toBeNull();
-    expect(screen.queryByText("File name")).toBeNull();
-    expect(screen.queryByText("Upload")).toBeNull();
+    expect(screen.queryByRole("heading", { level: 4 })).toBeNull();
+
+    rerender(
+      <PositionList
+        positions={[
+          {
+            ...fixturePosition,
+            audition: {
+              clip_required: true,
+              clip_brief: null,
+              clip_max_minutes: null,
+              clip_file_name: null,
+              clip_upload: null,
+              pieces: [],
+              onsite: false,
+            },
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.queryByRole("heading", { level: 4 })).toBeNull();
   });
 
   it("leaves out null or empty optional fields cleanly without rendering 'null'", () => {
@@ -72,13 +89,13 @@ describe("PositionList", () => {
     expect(screen.getByRole("heading", { level: 3, name: fixturePosition.title })).not.toBeNull();
     expect(container.textContent).not.toContain("null");
     expect(container.textContent).not.toContain("undefined");
-    expect(screen.queryByText("Portfolio required")).toBeNull();
-    expect(screen.queryByText("Onsite in Bangkok required")).toBeNull();
-    expect(screen.queryByRole("heading", { name: "Audition" })).toBeNull();
+    expect(container.querySelector('[data-field="portfolio_required"]')).toBeNull();
+    expect(container.querySelector('[data-field="onsite_required"]')).toBeNull();
+    expect(screen.queryByRole("heading", { level: 4 })).toBeNull();
   });
 
   it("shows portfolio and onsite flags when true and omits them when false or null", () => {
-    const { rerender } = render(
+    const { container, rerender } = render(
       <PositionList
         positions={[
           {
@@ -94,9 +111,9 @@ describe("PositionList", () => {
       />,
     );
 
-    expect(screen.getByText("Portfolio required")).not.toBeNull();
-    expect(screen.getByText("Onsite in Bangkok required")).not.toBeNull();
-    expect(screen.getByText("Onsite audition after the clip round")).not.toBeNull();
+    expect(container.querySelector('[data-field="portfolio_required"]')).not.toBeNull();
+    expect(container.querySelector('[data-field="onsite_required"]')).not.toBeNull();
+    expect(container.querySelector('[data-field="audition_onsite"]')).not.toBeNull();
 
     rerender(
       <PositionList
@@ -114,9 +131,9 @@ describe("PositionList", () => {
       />,
     );
 
-    expect(screen.queryByText("Portfolio required")).toBeNull();
-    expect(screen.queryByText("Onsite in Bangkok required")).toBeNull();
-    expect(screen.queryByText("Onsite audition after the clip round")).toBeNull();
+    expect(container.querySelector('[data-field="portfolio_required"]')).toBeNull();
+    expect(container.querySelector('[data-field="onsite_required"]')).toBeNull();
+    expect(container.querySelector('[data-field="audition_onsite"]')).toBeNull();
   });
 
   it("preserves the exact order of positions and audition pieces sent by the API", () => {
