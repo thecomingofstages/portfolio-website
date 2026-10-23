@@ -17,9 +17,9 @@ function token({ secret = SECRET, alg = "HS256", exp }: { secret?: string; alg?:
   return jwt.sign(key(secret));
 }
 
-/** An admin path. No admin routes exist until S6, so a passing request is a 404. */
+/** An admin path that does not exist: a request that passes Auth is a 404, with no database needed. */
 const admin = (auth?: string) => {
-  const req = request(buildTestApp()).get("/api/admin/projects");
+  const req = request(buildTestApp()).get("/api/admin/no-such-route");
   return auth === undefined ? req : req.set("Authorization", auth);
 };
 
@@ -55,7 +55,7 @@ describe("rejected with 401", () => {
 describe("accepted", () => {
   it("a valid token without exp (TODO(token expiry))", async () => {
     const res = await admin(`Bearer ${await token()}`);
-    expect(res.status).toBe(404); // past Auth; S6 adds the routes
+    expect(res.status).toBe(404); // past Auth
   });
 
   it("a valid token that has not expired", async () => {
