@@ -141,9 +141,35 @@ export function mediaKey(url: string | undefined | null, mediaBaseUrl: string): 
   return key && !key.includes("..") ? key : null;
 }
 
-/** Deletes these photo URLs from R2 (skipping ones that are not in the media bucket). */
-export async function deletePhotos(ctx: WriteContext, urls: readonly (string | undefined)[]) {
-  const keys = urls.map((u) => mediaKey(u, ctx.mediaBaseUrl)).filter((k): k is string => k !== null);
+// Every field that can hold a media URL (docs/DATABASE.md "Conventions"), per collection.
+const BLOCK_MEDIA = ["media_url", "slides", "image", "url", "background_image", "items.url"].map((f) => `blocks.${f}`);
+const MEDIA_FIELDS = {
+  projects: ["team.photo", "pics", "org_chart_image", "sponsors.logo", "highlights.pics", ...BLOCK_MEDIA],
+  tracks: ["pics", "achievements.pics"],
+  apply: ["poster"],
+  pages: BLOCK_MEDIA,
+} as const;
+
+/** True while any document still points to this URL, in any media field (review on PR #28). */
+export async function isUrlReferenced(m: Models, url: string): Promise<boolean> {
+  for (const [name, fields] of Object.entries(MEDIA_FIELDS)) {
+    const filter = { $or: fields.map((f) => ({ [f]: url })) };
+    if (await m[name as keyof typeof MEDIA_FIELDS].countDocuments(filter as never, { limit: 1 })) return true;
+  }
+  return false;
+}
+
+/**
+ * Deletes from R2 the files of these URLs that no document points to any more.
+ * Runs after the write, so it sees the saved state: a photo kept by the same person,
+ * moved to another person, or shared with another project stays.
+ * URLs outside the media bucket are never touched.
+ */
+export async function deleteUnusedPhotos(m: Models, ctx: WriteContext, urls: readonly (string | undefined)[]) {
+  const candidates = [...new Set(urls)].filter((u): u is string => !!u && mediaKey(u, ctx.mediaBaseUrl) !== null);
+  const unused: string[] = [];
+  for (const url of candidates) if (!(await isUrlReferenced(m, url))) unused.push(url);
+  const keys = unused.map((u) => mediaKey(u, ctx.mediaBaseUrl) as string);
   if (keys.length === 0) return;
   try {
     await ctx.bucket.delete(keys);
@@ -153,8 +179,8 @@ export async function deletePhotos(ctx: WriteContext, urls: readonly (string | u
   }
 }
 
-/** Photos in `before` that are gone or replaced in `after` (matched by team member _id). */
+/** Photo URLs in `before` that are not in `after` at all (compared by URL, not by member _id). */
 export function removedPhotos(before: ProjectDoc["team"], after: ProjectDoc["team"]): string[] {
-  const now = new Map((after ?? []).map((m) => [String(m._id), m.photo]));
-  return (before ?? []).flatMap((m) => (m.photo && now.get(String(m._id)) !== m.photo ? [m.photo] : []));
+  const kept = new Set((after ?? []).map((m) => m.photo));
+  return (before ?? []).flatMap((m) => (m.photo && !kept.has(m.photo) ? [m.photo] : []));
 }

@@ -65,6 +65,20 @@ function editable(doc: Doc): Doc {
   return rest;
 }
 
+/**
+ * A request body without the fields the server manages, so what GET returned can be
+ * edited and sent back (review on PR #28): `updated_at` is ignored; `_id` is accepted
+ * when it is the id being edited, refused when it is another one, and refused on create.
+ */
+function serverFieldsRemoved(body: Doc, id: ObjectId | undefined, what: string): Doc {
+  const { _id, updated_at, ...rest } = body;
+  if (_id !== undefined) {
+    if (!id) throw ApiError.badRequest(`_id: do not send one for a new ${what}; the server assigns it`);
+    if (String(_id) !== id.toHexString()) throw ApiError.badRequest(`_id: does not match the ${what} being changed (${id.toHexString()})`);
+  }
+  return rest;
+}
+
 /** Parsed body with item ids added and updated_at set. */
 function prepare(spec: DocSpec, raw: unknown): Doc {
   const doc = spec.schema.parse(raw) as Doc;
@@ -94,7 +108,7 @@ async function assertKeyFree(m: Models, spec: DocSpec, value: unknown) {
 }
 
 export async function createDoc(m: Models, ctx: WriteContext, spec: DocSpec, body: unknown) {
-  const doc = prepare(spec, asObject(body));
+  const doc = prepare(spec, serverFieldsRemoved(asObject(body), undefined, spec.name));
   await assertKeyFree(m, spec, doc[spec.key]);
   await spec.beforeSave?.(m, doc, null);
   const { insertedId } = await spec.collection(m).insertOne(doc);
@@ -106,8 +120,8 @@ export async function createDoc(m: Models, ctx: WriteContext, spec: DocSpec, bod
 /** PUT (replace) or PATCH (merge, then replace). Renames go through afterSave. */
 export async function replaceDoc(m: Models, ctx: WriteContext, spec: DocSpec, id: string, body: unknown, merge: boolean) {
   const before = await getDoc(m, spec, id);
-  const raw = merge ? { ...editable(before), ...asObject(body) } : asObject(body);
-  const doc = prepare(spec, raw);
+  const sent = serverFieldsRemoved(asObject(body), before._id, spec.name);
+  const doc = prepare(spec, merge ? { ...editable(before), ...sent } : sent);
   if (spec.key !== "_id" && doc[spec.key] !== before[spec.key]) await assertKeyFree(m, spec, doc[spec.key]);
   await spec.beforeSave?.(m, doc, before);
   await spec.collection(m).replaceOne({ _id: before._id }, doc);
@@ -146,7 +160,7 @@ const touchSet = (spec: ItemSpec) => (spec.parent.touch ? { updated_at: new Date
 
 export async function createItem(m: Models, ctx: WriteContext, spec: ItemSpec, id: string, body: unknown) {
   const parent = await getDoc(m, spec.parent, id);
-  const item = withId(spec.schema.parse(asObject(body)) as Doc) as Item;
+  const item = withId(spec.schema.parse(serverFieldsRemoved(asObject(body), undefined, spec.name)) as Doc) as Item;
   await spec.check?.(m, item, parent);
   await spec.parent.collection(m).updateOne(
     { _id: parent._id },
@@ -159,7 +173,8 @@ export async function createItem(m: Models, ctx: WriteContext, spec: ItemSpec, i
 export async function replaceItem(m: Models, ctx: WriteContext, spec: ItemSpec, id: string, itemId: string, body: unknown, merge: boolean) {
   const { parent, item: before } = await findItem(m, spec, id, itemId);
   const stored = editable(before);
-  const raw = merge ? (spec.mergePatch ?? ((s, p) => ({ ...s, ...p })))(stored, asObject(body)) : asObject(body);
+  const sent = serverFieldsRemoved(asObject(body), before._id, spec.name);
+  const raw = merge ? (spec.mergePatch ?? ((s, p) => ({ ...s, ...p })))(stored, sent) : sent;
   const item = { _id: before._id, ...(spec.schema.parse(raw) as Doc) } as Item;
   await spec.check?.(m, item, parent);
   await spec.parent.collection(m).updateOne(

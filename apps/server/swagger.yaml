@@ -32,6 +32,8 @@ tags:
       Needs `Authorization: Bearer <token>` (task S5). Never called from the client. See docs/API.md "Admin API".
       Every /api/admin/* path answers `401 { "error": "Unauthorized" }` without a valid token, even one that does not exist.
       Make a token with `npm run token -- --for <you>` in apps/server. Bodies use the fields in docs/DATABASE.md; dates are ISO 8601 strings.
+      What GET returns can be edited and sent back with PUT or PATCH as-is: `updated_at` is ignored (the server sets it), and `_id` is accepted when it is the one being changed (another `_id` is a 400). Do not send `_id` when creating; the server assigns it.
+      A photo file is deleted from R2 only once no document points to its URL any more.
 
 paths:
   /api/health:

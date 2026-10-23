@@ -184,3 +184,47 @@ describe("withdrawing photo consent removes the photo and deletes the file from 
     expect(api.deleted).toEqual([]);
   });
 });
+
+describe("a photo still in use is never deleted (review on PR #28)", () => {
+  const photo = `${MEDIA}/projects/p/abc.webp`;
+
+  it("PUT of the whole project with the same member and photo but no _id keeps the file", async () => {
+    await api.post("/projects/p/team", memberBody({ photo, is_photo_allowed: true }));
+    const res = await api.put("/projects/p", projectBody("p", { team: [memberBody({ photo, is_photo_allowed: true })] }));
+    expect(res.status).toBe(200);
+    expect(res.body.team[0].photo).toBe(photo);
+    expect(api.deleted).toEqual([]);
+  });
+
+  it("two members swapping photos keeps both files", async () => {
+    const other = `${MEDIA}/projects/p/def.webp`;
+    const a = (await api.post("/projects/p/team", memberBody({ photo, is_photo_allowed: true }))).body;
+    const b = (await api.post("/projects/p/team", memberBody({ photo: other, is_photo_allowed: true }))).body;
+    await api.patch("/projects/p", {
+      team: [
+        { ...memberBody({ photo: other, is_photo_allowed: true }), _id: a._id },
+        { ...memberBody({ photo, is_photo_allowed: true }), _id: b._id },
+      ],
+    });
+    expect(api.deleted).toEqual([]);
+  });
+
+  it.each([
+    ["consent withdrawn", (id: string) => api.patch(`/projects/p/team/${id}`, { is_photo_allowed: false })],
+    ["member removed", (id: string) => api.delete(`/projects/p/team/${id}`)],
+    ["project deleted", () => api.delete("/projects/p")],
+  ])("%s: a URL another project still uses is kept", async (_label, act) => {
+    const id = (await api.post("/projects/p/team", memberBody({ photo, is_photo_allowed: true }))).body._id;
+    await api.post("/projects", projectBody("other"));
+    await api.post("/projects/other/team", memberBody({ photo, is_photo_allowed: true }));
+    expect([200, 204]).toContain((await act(id)).status);
+    expect(api.deleted).toEqual([]);
+  });
+
+  it("a URL still used elsewhere on the site (a page block) is kept", async () => {
+    const id = (await api.post("/projects/p/team", memberBody({ photo, is_photo_allowed: true }))).body._id;
+    await api.post("/pages", pageBody("home", { blocks: [{ id: "img", type: "image", url: photo, is_shown: true }] }));
+    await api.delete(`/projects/p/team/${id}`);
+    expect(api.deleted).toEqual([]);
+  });
+});

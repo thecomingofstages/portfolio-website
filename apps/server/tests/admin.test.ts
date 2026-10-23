@@ -171,7 +171,9 @@ describe("tracks, apply rounds, pages", () => {
   it("pages: by key, updated_at set on create", async () => {
     expect((await api.post("/pages", pageBody())).status).toBe(201);
     expect((await api.get("/pages/home")).body.updated_at).toBeTypeOf("string");
-    expect((await api.post("/pages", { ...pageBody(), updated_at: "2030-01-01" })).status).toBe(400); // server-managed
+    // updated_at is server-managed: a sent value is ignored.
+    await api.post("/pages", { ...pageBody("about"), updated_at: "2000-01-01" });
+    expect((await api.get("/pages/about")).body.updated_at).not.toMatch(/^2000/);
   });
 });
 
@@ -181,5 +183,55 @@ describe("the public API sees admin writes, with its own filtering", () => {
     expect((await api.get("/projects")).body).toHaveLength(1);
     const { default: request } = await import("supertest");
     expect((await request(db.app()).get("/api/projects")).body).toEqual([]);
+  });
+});
+
+describe("GET → edit → PUT works as-is (review on PR #28)", () => {
+  beforeEach(async () => {
+    await api.post("/projects", projectBody("p"));
+  });
+
+  it("a whole project, _id included", async () => {
+    await api.post("/projects/p/team", memberBody());
+    const got = (await api.get("/projects/p")).body;
+    const res = await api.put("/projects/p", { ...got, name: "<edited>" });
+    expect(res.status).toBe(200);
+    expect(res.body.name).toBe("<edited>");
+    expect(res.body._id).toBe(got._id);
+  });
+
+  it("a team item, _id included", async () => {
+    const item = (await api.post("/projects/p/team", memberBody())).body;
+    const res = await api.put(`/projects/p/team/${item._id}`, { ...item, position: "<edited>" });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ _id: item._id, position: "<edited>" });
+  });
+
+  it("a page, _id and updated_at included", async () => {
+    await api.post("/pages", pageBody());
+    const got = (await api.get("/pages/home")).body;
+    expect((await api.put("/pages/home", { ...got, title: "<edited>" })).status).toBe(200);
+  });
+
+  it("PATCH with the matching _id works too", async () => {
+    const got = (await api.get("/projects/p")).body;
+    expect((await api.patch("/projects/p", { _id: got._id, venue: "<...>" })).status).toBe(200);
+  });
+
+  it("another document's or item's _id is refused, naming the right one", async () => {
+    const other = (await api.post("/projects", projectBody("other"))).body._id;
+    const res = await api.put("/projects/p", { ...projectBody("p"), _id: other });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/^_id: does not match/);
+
+    const a = (await api.post("/projects/p/team", memberBody())).body;
+    const b = (await api.post("/projects/p/team", memberBody())).body;
+    expect((await api.put(`/projects/p/team/${a._id}`, { ...memberBody(), _id: b._id })).status).toBe(400);
+  });
+
+  it("an _id on create is still refused, with a clear message", async () => {
+    const res = await api.post("/projects", { ...projectBody("new"), _id: "0123456789abcdef01234567" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/server assigns it/);
   });
 });

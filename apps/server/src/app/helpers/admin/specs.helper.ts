@@ -14,7 +14,7 @@ import {
   assertTrackDeletable,
   assertTrackKeys,
   checkBlocks,
-  deletePhotos,
+  deleteUnusedPhotos,
   removedPhotos,
   renameProjectSlug,
   renameTrackKey,
@@ -42,11 +42,11 @@ export const projectSpec: DocSpec = {
   },
   async afterSave(m, ctx, doc, before) {
     if (before && before.slug !== doc.slug) await renameProjectSlug(m, before.slug as string, doc.slug as string);
-    if (before) await deletePhotos(ctx, removedPhotos(team(before), team(doc)));
+    if (before) await deleteUnusedPhotos(m, ctx, removedPhotos(team(before), team(doc)));
   },
   beforeDelete: (m, doc) => assertProjectDeletable(m, doc.slug as string),
-  // A deleted project's team photos go too: nothing points to them any more.
-  afterDelete: (_m, ctx, doc) => deletePhotos(ctx, team(doc).map((t) => t.photo)),
+  // A deleted project's team photos go too, unless another document still uses them.
+  afterDelete: (m, ctx, doc) => deleteUnusedPhotos(m, ctx, team(doc).map((t) => t.photo)),
   checkBlocks: (m, blocks, parent) => checkBlocks(m, blocks as never, [parent.slug as string]),
 };
 
@@ -62,8 +62,8 @@ export const teamSpec: ItemSpec = {
     if (merged.is_photo_allowed !== true && patch.photo === undefined) delete merged.photo;
     return merged;
   },
-  afterChange: (_m, ctx, before, after) =>
-    deletePhotos(ctx, before?.photo && before.photo !== after?.photo ? [before.photo as string] : []),
+  afterChange: (m, ctx, before, after) =>
+    deleteUnusedPhotos(m, ctx, before?.photo && before.photo !== after?.photo ? [before.photo as string] : []),
 };
 
 export const sponsorItemSpec: ItemSpec = { name: "sponsor", parent: projectSpec, field: "sponsors", schema: sponsorSchema };
