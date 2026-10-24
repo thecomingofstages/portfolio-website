@@ -33,7 +33,7 @@ export default function Timeline({ timeline }: TimelineProps) {
   }
 
   return (
-    <section className="mx-auto flex w-full max-w-md flex-col gap-6 rounded-card border border-border bg-card-bg p-6 sm:py-8">
+    <section className="flex w-full flex-col gap-6 rounded-card border border-border bg-card-bg p-6 sm:py-8">
       {/* Section heading */}
       <h3 className="font-heading text-h3 font-semibold text-foreground">{LABELS.heading}</h3>
 
@@ -47,9 +47,9 @@ export default function Timeline({ timeline }: TimelineProps) {
           const hasValidIsoDate = formattedDate !== "";
           const eventName = nonEmpty(event.event_name);
           const description = nonEmpty(event.event_description);
-          const customLocation = nonEmpty(event.location);
-          const isOnline = customLocation === null;
-          const locationText = customLocation ?? LABELS.online;
+          const isOnline = event.location === null;
+          const rawLocation = event.location ?? LABELS.online;
+          const locationText = nonEmpty(rawLocation);
 
           return (
             <li
@@ -105,29 +105,31 @@ export default function Timeline({ timeline }: TimelineProps) {
                 ) : null}
 
                 {/* location (or LABELS.online when location is null) */}
-                <p
-                  data-field="location"
-                  className={`flex items-center gap-2 pt-0.5 font-body text-body break-words ${
-                    isOnline ? "text-muted" : "text-foreground"
-                  }`}
-                >
-                  {!isOnline ? (
-                    <svg
-                      aria-hidden="true"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-4 w-4 shrink-0 text-accent"
-                    >
-                      <path d="M12 21s-6-5.25-6-10a6 6 0 1 1 12 0c0 4.75-6 10-6 10Z" />
-                      <circle cx="12" cy="11" r="2.25" />
-                    </svg>
-                  ) : null}
-                  <span>{locationText}</span>
-                </p>
+                {locationText ? (
+                  <p
+                    data-field="location"
+                    className={`flex items-center gap-2 pt-0.5 font-body text-body break-words ${
+                      isOnline ? "text-muted" : "text-foreground"
+                    }`}
+                  >
+                    {!isOnline ? (
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.75"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-4 w-4 shrink-0 text-accent"
+                      >
+                        <path d="M12 21s-6-5.25-6-10a6 6 0 1 1 12 0c0 4.75-6 10-6 10Z" />
+                        <circle cx="12" cy="11" r="2.25" />
+                      </svg>
+                    ) : null}
+                    <span>{locationText}</span>
+                  </p>
+                ) : null}
               </div>
             </li>
           );

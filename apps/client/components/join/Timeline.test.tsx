@@ -8,53 +8,66 @@ import Timeline, { LABELS } from "./Timeline";
 const fixtureTimeline: TimelineEvent[] = tcos2Round5.timeline;
 
 describe("Timeline", () => {
-  it("renders an event with date (with time), description and location", () => {
-    const eventWithTime: TimelineEvent = {
+  it("renders an event with dates, description and location", () => {
+    const eventWithRange: TimelineEvent = {
       ...fixtureTimeline[0],
       start_date: "2025-04-28T14:30:00.000Z",
       end_date: "2025-05-01T18:00:00.000Z",
       location: fixtureTimeline[2].location,
     };
 
-    const { container } = render(<Timeline timeline={[eventWithTime]} />);
+    const { container } = render(<Timeline timeline={[eventWithRange]} />);
 
     expect(screen.getByRole("heading", { level: 3, name: LABELS.heading })).not.toBeNull();
     expect(
-      screen.getByText(formatDate(eventWithTime.start_date, eventWithTime.end_date)),
+      screen.getByText(formatDate(eventWithRange.start_date, eventWithRange.end_date)),
     ).not.toBeNull();
-    expect(screen.getByText(eventWithTime.event_name)).not.toBeNull();
-    expect(screen.getByText(eventWithTime.event_description!)).not.toBeNull();
+    expect(screen.getByText(eventWithRange.event_name)).not.toBeNull();
+    expect(screen.getByText(eventWithRange.event_description!)).not.toBeNull();
     expect(container.querySelector('[data-field="location"]')?.textContent).toBe(
-      eventWithTime.location,
+      eventWithRange.location,
     );
   });
 
-  it("renders an event without a time using formatDate", () => {
-    const eventWithoutTime: TimelineEvent = {
+  it("renders a single-day event using formatDate", () => {
+    const singleDayEvent: TimelineEvent = {
       ...fixtureTimeline[0],
       start_date: "2025-04-28",
       end_date: null,
       location: fixtureTimeline[2].location,
     };
 
-    render(<Timeline timeline={[eventWithoutTime]} />);
+    render(<Timeline timeline={[singleDayEvent]} />);
 
-    const expectedDate = formatDate(eventWithoutTime.start_date, eventWithoutTime.end_date);
+    const expectedDate = formatDate(singleDayEvent.start_date, singleDayEvent.end_date);
     expect(screen.getByText(expectedDate)).not.toBeNull();
-    expect(screen.getByText(eventWithoutTime.event_name)).not.toBeNull();
+    expect(screen.getByText(singleDayEvent.event_name)).not.toBeNull();
   });
 
-  it("shows LABELS.online when location is null", () => {
+  it("shows LABELS.online when location is null, and omits location when it is an empty string", () => {
     const onlineEvent: TimelineEvent = {
       ...fixtureTimeline[0],
       location: null,
     };
 
-    const { container } = render(<Timeline timeline={[onlineEvent]} />);
+    const { container, rerender } = render(<Timeline timeline={[onlineEvent]} />);
 
     const locationEl = container.querySelector('[data-field="location"]');
     expect(locationEl).not.toBeNull();
     expect(locationEl?.textContent).toBe(LABELS.online);
+
+    rerender(
+      <Timeline
+        timeline={[
+          {
+            ...fixtureTimeline[0],
+            location: "   ",
+          },
+        ]}
+      />,
+    );
+
+    expect(container.querySelector('[data-field="location"]')).toBeNull();
   });
 
   it("leaves out event_description cleanly when it is null or empty", () => {
