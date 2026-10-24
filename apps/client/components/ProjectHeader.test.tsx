@@ -22,12 +22,12 @@ describe("ProjectHeader", () => {
 
   it("renders date range when end_date exists", () => {
     render(<ProjectHeader project={baseProject} />);
-    expect(screen.getByText("2025-06-28 – 2025-06-29")).not.toBeNull();
+    expect(screen.getByText("28 มิถุนายน 2568 – 29 มิถุนายน 2568")).not.toBeNull();
   });
 
   it("renders single date when end_date is null or empty", () => {
     render(<ProjectHeader project={{ ...baseProject, end_date: null }} />);
-    expect(screen.getByText("2025-06-28")).not.toBeNull();
+    expect(screen.getByText("28 มิถุนายน 2568")).not.toBeNull();
   });
 
   it("renders venue only when set", () => {

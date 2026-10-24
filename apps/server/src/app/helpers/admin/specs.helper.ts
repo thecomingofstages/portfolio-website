@@ -39,9 +39,13 @@ export const projectSpec: DocSpec = {
     await assertTrackKeys(m, strings(doc.team, "dept_key"), "team");
     // A project's own blocks may point at it, by its new slug or (while renaming) its old one.
     await checkBlocks(m, doc.blocks as never, [doc.slug as string, before?.slug as string | undefined]);
+    // References move before the save, so a request that fails halfway can simply be sent again.
+    if (before && before.slug !== doc.slug) {
+      for (const b of (doc.blocks ?? []) as Doc[]) if (b.project_slug === before.slug) b.project_slug = doc.slug;
+      await renameProjectSlug(m, before.slug as string, doc.slug as string);
+    }
   },
   async afterSave(m, ctx, doc, before) {
-    if (before && before.slug !== doc.slug) await renameProjectSlug(m, before.slug as string, doc.slug as string);
     if (before) await deleteUnusedPhotos(m, ctx, removedPhotos(team(before), team(doc)));
   },
   beforeDelete: (m, doc) => assertProjectDeletable(m, doc.slug as string),
@@ -78,8 +82,9 @@ export const trackSpec: DocSpec = {
   schema: trackSchema,
   sort: { order: 1, key: 1 },
   itemLists: ["achievements"],
-  beforeSave: (m, doc) => assertProjectSlugs(m, strings(doc.achievements, "project_slug"), "achievements"),
-  async afterSave(m, _ctx, doc, before) {
+  async beforeSave(m, doc, before) {
+    await assertProjectSlugs(m, strings(doc.achievements, "project_slug"), "achievements");
+    // Before the save, as for projects: a retry finishes a rename that failed halfway.
     if (before && before.key !== doc.key) await renameTrackKey(m, before.key as string, doc.key as string);
   },
   beforeDelete: (m, doc) => assertTrackDeletable(m, doc.key as string),

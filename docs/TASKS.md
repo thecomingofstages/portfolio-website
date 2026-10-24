@@ -18,10 +18,9 @@ One brief per task. Hand a developer (or their AI tool) the brief together with 
 
 Leave these as `TODO(<question>)` until the project lead answers:
 
-1. **Date format:** for example "28 มิ.ย. 2568" (Thai calendar) or "28 Jun 2025". Affects F6, 1.13, 1.9, 2.3, 2.4.
-2. **Page titles and link previews:** a title per page, and `pics[0]` as the image when a link is shared. Not planned yet; no task below.
-3. **Uploads:** allowed file types and maximum size (docs/API.md, open questions). Affects S8.
-4. **Wording still `<...>`:** the `/join` empty-state message, and the sponsor-benefits text.
+1. **Page titles and link previews:** a title per page, and `pics[0]` as the image when a link is shared. Not planned yet; no task below.
+2. **Uploads:** allowed file types and maximum size (docs/API.md, open questions). Affects S8.
+3. **Wording still `<...>`:** the `/join` empty-state message, and the sponsor-benefits text.
 
 ---
 
@@ -89,7 +88,7 @@ Leave these as `TODO(<question>)` until the project lead answers:
 - **Do:**
   - **`Media`:** wraps `next/image`, with `alt` required.
   - **Markdown:** renders without raw HTML.
-  - **Dates:** one formatting function, for single dates and for ranges (`start_date`–`end_date`). The format is `TODO(date format)`.
+  - **Dates:** one formatting function, for single dates and for ranges (`start_date`–`end_date`). Thai calendar with the full month name, in Bangkok time: `28 เมษายน 2568`, a range as `28 เมษายน 2568 – 1 พฤษภาคม 2568`. A time (`14:30`) follows its own date, and only when the date has one (not midnight UTC); on one day: `28 เมษายน 2568 14:30 – 18:00`.
 - **Done when:** each helper has a test; the Markdown test checks that raw HTML is not rendered.
 
 ### F7. Revalidate route

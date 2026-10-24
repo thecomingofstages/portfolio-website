@@ -84,7 +84,7 @@ export default function Sponsors({ block }: BlockProps<"sponsors">) {
               {group.items.map((sponsor, itemIdx) => (
                 <li
                   key={`${group.tier ?? "all"}-${sponsor.name}-${itemIdx}`}
-                  className="group relative flex flex-col items-center justify-between overflow-hidden rounded-[var(--radius-card)] bg-card-bg/70 p-3.5 sm:p-4 md:p-5 transition-all duration-300 active:scale-[0.98] hover:bg-card-bg hover:shadow-[0_8px_24px_rgb(0,0,0,0.4)] md:hover:-translate-y-1"
+                  className="group relative flex flex-col items-center justify-between overflow-hidden rounded-[var(--radius-card)] bg-card-bg/70 p-3.5 sm:p-4 md:p-5 transition-all duration-300 active:scale-[0.98] hover:bg-card-bg md:hover:-translate-y-1"
                 >
                   {/* Fixed-size logo area (aspect ratio box) so layout is consistent */}
                   <div className="flex aspect-[3/2] w-full items-center justify-center overflow-hidden rounded-[var(--radius-card)] bg-background/50 p-2 transition-colors duration-300 group-hover:bg-background/80">

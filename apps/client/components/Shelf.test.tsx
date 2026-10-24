@@ -41,7 +41,8 @@ describe("Shelf", () => {
     render(<Shelf projects={mockProjects} showFilter={true} />);
 
     const allBtn = screen.getByRole("button", { name: "ALL" });
-    const year2024Btn = screen.getByRole("button", { name: "2024" });
+    // Buddhist-era year, as the dates show it: 2024 is 2567.
+    const year2024Btn = screen.getByRole("button", { name: "2567" });
     expect(allBtn).not.toBeNull();
     expect(year2024Btn).not.toBeNull();
 

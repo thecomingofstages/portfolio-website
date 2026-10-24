@@ -21,13 +21,16 @@ export const int = z.number().int().min(0);
 /** int or null (the schema's `int_or_null`). */
 export const intOrNull = z.number().int().nullable();
 
-/** ISO 8601 date or date-time, e.g. "2025-06-28" or "2025-06-28T19:00:00+07:00", stored as a BSON Date. */
+/**
+ * ISO 8601 date or date-time, e.g. "2025-06-28" or "2025-06-28T19:00:00+07:00", stored as a BSON Date.
+ * A time needs its zone: Workers run in UTC, so "19:00" alone would be saved 7 hours off.
+ */
 export const date = z.union([
   z.date(),
   z
     .string()
-    .refine((s) => /^\d{4}-\d{2}-\d{2}([T ][\d:.]+(Z|[+-]\d{2}:?\d{2})?)?$/.test(s) && !Number.isNaN(Date.parse(s)), {
-      message: "must be an ISO 8601 date, e.g. 2025-06-28 or 2025-06-28T19:00:00+07:00",
+    .refine((s) => /^\d{4}-\d{2}-\d{2}([T ][\d:.]+(Z|[+-]\d{2}:?\d{2}))?$/.test(s) && !Number.isNaN(Date.parse(s)), {
+      message: "must be an ISO 8601 date, e.g. 2025-06-28, or a date-time with its zone, e.g. 2025-06-28T19:00:00+07:00",
     })
     .transform((s) => new Date(s)),
 ]);

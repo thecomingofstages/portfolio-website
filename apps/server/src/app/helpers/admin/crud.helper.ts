@@ -30,9 +30,9 @@ export type DocSpec = {
   itemLists?: string[];
   /** Set `updated_at` on every write (pages). */
   touch?: boolean;
-  /** S7 checks before a create/replace; `before` is null on create. */
+  /** S7 checks and rename cascades before a create/replace; `before` is null on create. */
   beforeSave?: (m: Models, doc: Doc, before: Doc | null) => Promise<void>;
-  /** After a successful create/replace: rename cascades, photo cleanup. */
+  /** After a successful create/replace: photo cleanup. */
   afterSave?: (m: Models, ctx: WriteContext, doc: Doc, before: Doc | null) => Promise<void>;
   beforeDelete?: (m: Models, doc: Doc) => Promise<void>;
   afterDelete?: (m: Models, ctx: WriteContext, doc: Doc) => Promise<void>;
@@ -117,7 +117,7 @@ export async function createDoc(m: Models, ctx: WriteContext, spec: DocSpec, bod
   return saved;
 }
 
-/** PUT (replace) or PATCH (merge, then replace). Renames go through afterSave. */
+/** PUT (replace) or PATCH (merge, then replace). Renames go through beforeSave. */
 export async function replaceDoc(m: Models, ctx: WriteContext, spec: DocSpec, id: string, body: unknown, merge: boolean) {
   const before = await getDoc(m, spec, id);
   const sent = serverFieldsRemoved(asObject(body), before._id, spec.name);
