@@ -87,6 +87,9 @@ The server runs at http://localhost:8787 in the Cloudflare Workers runtime.
 - The admin API (`/api/admin/*`, see `/api/docs`) creates, changes and deletes content, hidden data
   included. It checks references, refuses to delete what is still referenced (409), renames slugs
   and keys everywhere, and deletes a photo from R2 when consent is withdrawn.
+- Uploads: `POST /api/admin/uploads?collection=projects&owner=<slug>` with the file in a
+  multipart field named `file` returns `{ key, url }`; put the `url` in the document with the
+  admin routes. `DELETE /api/admin/uploads/<key>` removes a file nobody uses. Images only for now.
 - `npm run seed:dev` adds sample data (all text `<...>`, slugs `sample-...`) to the database in
   `.dev.vars`, for testing the API by hand; `npm run seed:dev -- --clear` removes exactly that data.
   Dev database only.
