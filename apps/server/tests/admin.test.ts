@@ -46,6 +46,7 @@ describe("documents: projects (by slug)", () => {
     ["an unknown field", { phone: "<...>" }, "phone"],
     ["a wrong enum", { type: "concert" }, "type"],
     ["a bad date", { start_date: "28/06/2025" }, "start_date"],
+    ["a time without its zone", { start_date: "2025-06-28T19:00" }, "start_date"],
     ["a bad slug", { slug: "Has Spaces" }, "slug"],
   ])("rejects %s with 400 naming the field", async (_label, extra, field) => {
     const res = await api.post("/projects", projectBody("p", extra));
