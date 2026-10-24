@@ -1,10 +1,13 @@
 /** S7: checks on every write (docs/API.md "Checks on every write"), one block per check. */
-import { beforeEach, describe, expect, it } from "vitest";
+import { Collection } from "mongodb";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MEDIA, adminClient, memberBody, pageBody, projectBody, roundBody, trackBody } from "./helpers/admin";
 import { useTestDb } from "./helpers/db";
 
 const db = useTestDb({ schema: true });
 let api: Awaited<ReturnType<typeof adminClient>>;
+
+afterEach(() => vi.restoreAllMocks());
 
 beforeEach(async () => {
   api = await adminClient(db);
@@ -125,6 +128,17 @@ describe("renaming a slug or key updates its references", () => {
     expect((await api.get("/projects/p/team")).body[0].dept_key).toBe("renamed");
     expect((await api.get(`/apply/${round}`)).body.positions[0].dept_key).toBe("renamed");
     expect((await api.get("/projects/p/blocks")).body[0].dept_keys).toEqual(["renamed"]);
+  });
+
+  it("a rename that fails while moving the references finishes when sent again", async () => {
+    await api.post("/tracks/t/achievements", { project_slug: "p", text: "<...>", is_shown: true });
+    vi.spyOn(Collection.prototype, "updateMany").mockRejectedValueOnce(new Error("connection lost"));
+
+    expect((await api.patch("/projects/p", { slug: "renamed" })).status).toBe(500);
+    expect((await api.patch("/projects/p", { slug: "renamed" })).status).toBe(200);
+
+    expect((await api.get("/projects/p")).status).toBe(404);
+    expect((await api.get("/tracks/t/achievements")).body[0].project_slug).toBe("renamed");
   });
 
   it("renaming to a slug that is taken → 409, and nothing changes", async () => {
