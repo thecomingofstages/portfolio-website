@@ -38,6 +38,8 @@ const ADMIN: [string, string[]][] = [
   ].flatMap((base): [string, string[]][] => [[base, LIST], [`${base}/{itemId}`, DOC]]),
   ["/api/admin/projects/{slug}/blocks", ["get", "put"]],
   ["/api/admin/pages/{key}/blocks", ["get", "put"]],
+  ["/api/admin/uploads", ["post"]],
+  ["/api/admin/uploads/{key}", ["delete"]],
 ];
 
 type Param = { name?: string; $ref?: string };

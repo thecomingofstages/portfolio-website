@@ -1039,6 +1039,55 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
+
+  # --- Admin uploads (S8) ---
+  /api/admin/uploads:
+    post:
+      tags: [Admin]
+      summary: Upload one file to the site media bucket
+      security: [{ bearerAuth: [] }]
+      description: |
+        Streams the file into R2 under `<collection>/<owner>/<random id>.<ext>` (the file name is not used, so URLs do not reveal names).
+        Then put the returned `url` into pics, photo, logo, poster, slides, media_url and so on with the admin routes.
+        Allowed types are recognised from the file's bytes: JPEG, PNG, GIF, WebP, AVIF (TODO(uploads): images only until decided; SVG and HTML are refused). No size limit yet (TODO(uploads)).
+      parameters:
+        - { name: collection, in: query, required: true, schema: { type: string, enum: [projects, tracks, apply, pages] } }
+        - { name: owner, in: query, required: true, schema: { type: string }, description: "The slug (projects), key (tracks, pages) or _id (apply) the file belongs to; it must exist" }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary, description: Exactly one file, in a field named file }
+      responses:
+        "201":
+          description: Stored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  key: { type: string, example: "projects/tcos-2-the-hidden-saloon/3f9c0a6e1b2d4c5f8a7b6c5d4e3f2a1b.webp" }
+                  url: { type: string, format: uri }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/admin/uploads/{key}:
+    delete:
+      tags: [Admin]
+      summary: Delete one uploaded file
+      security: [{ bearerAuth: [] }]
+      description: "`key` as returned by the upload, slashes included (e.g. projects/<slug>/<id>.webp). 409 while a document still uses the file."
+      parameters:
+        - { name: key, in: path, required: true, schema: { type: string }, description: "The object key, e.g. projects/<slug>/<id>.webp" }
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
 components:
   securitySchemes:
     bearerAuth:
