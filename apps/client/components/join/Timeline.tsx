@@ -54,7 +54,7 @@ export default function Timeline({ timeline }: TimelineProps) {
           return (
             <li
               key={`${event.start_date}-${event.event_name}-${index}`}
-              className="grid grid-cols-1 gap-2 sm:grid-cols-[12.5rem_auto_1fr] sm:gap-4"
+              className="grid grid-cols-1 gap-2 sm:grid-cols-[11rem_auto_1fr] sm:gap-4"
             >
               {/* Left column: Dates (right-aligned on sm+ screens, stacked above on phones) */}
               <div className="pt-0.5 sm:text-right">
@@ -62,12 +62,12 @@ export default function Timeline({ timeline }: TimelineProps) {
                   hasValidIsoDate ? (
                     <time
                       dateTime={event.start_date}
-                      className="font-body text-body font-bold whitespace-nowrap text-accent"
+                      className="block font-body text-body font-bold text-balance text-accent break-words"
                     >
                       {rawDateText}
                     </time>
                   ) : (
-                    <span className="font-body text-body font-bold whitespace-nowrap text-accent">
+                    <span className="block font-body text-body font-bold text-balance text-accent break-words">
                       {rawDateText}
                     </span>
                   )
