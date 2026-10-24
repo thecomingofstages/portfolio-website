@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDate } from "./dates";
+import { formatDate, formatYear } from "./dates";
 
 describe("formatDate", () => {
   it("formats a single date in the Thai calendar", () => {
@@ -48,5 +48,18 @@ describe("formatDate", () => {
     expect(formatDate(null)).toBe("");
     expect(formatDate("<...>")).toBe("");
     expect(formatDate("2025-06-28", "<...>")).toBe("28 มิถุนายน 2568");
+  });
+});
+
+describe("formatYear", () => {
+  it("gives the Thai-calendar year in Bangkok, without the era", () => {
+    expect(formatYear("2025-06-28")).toBe("2568");
+    // 17:00 UTC on 31 December is already New Year in Bangkok
+    expect(formatYear("2025-12-31T17:00:00Z")).toBe("2569");
+  });
+
+  it("returns an empty string for missing or placeholder dates", () => {
+    expect(formatYear(null)).toBe("");
+    expect(formatYear("<...>")).toBe("");
   });
 });

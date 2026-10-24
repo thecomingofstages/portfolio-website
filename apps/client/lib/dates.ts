@@ -21,6 +21,8 @@ const timeFormat = new Intl.DateTimeFormat("th-TH", {
   hourCycle: "h23",
 });
 
+const yearFormat = new Intl.DateTimeFormat("th-TH", { timeZone: TIME_ZONE, year: "numeric" });
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 type DateInput = string | Date;
@@ -33,6 +35,13 @@ function toDate(value: DateInput): Date | null {
 // A date saved without a time is midnight UTC (docs/DATABASE.md "Conventions"), so it shows no time.
 function timeOf(date: Date): string | null {
   return date.getTime() % DAY_MS === 0 ? null : timeFormat.format(date);
+}
+
+/** The Thai-calendar year of a date in Bangkok, e.g. "2568", as `formatDate` shows it. "" when invalid. */
+export function formatYear(value: DateInput | null | undefined): string {
+  const date = value == null ? null : toDate(value);
+  // formatToParts: plain `format` adds the era ("พ.ศ. 2568").
+  return date ? (yearFormat.formatToParts(date).find((p) => p.type === "year")?.value ?? "") : "";
 }
 
 function withTime(day: string, time: string | null): string {
