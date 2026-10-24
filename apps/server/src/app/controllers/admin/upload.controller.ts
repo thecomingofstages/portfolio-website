@@ -10,7 +10,7 @@
 import busboy from "busboy";
 import type { Request, RequestHandler } from "express";
 import { isUrlReferenced } from "../../helpers/admin/checks.helper";
-import { COLLECTIONS, isMediaKey, streamToR2, type UploadCollection } from "../../helpers/admin/upload.helper";
+import { COLLECTIONS, MB, isMediaKey, streamToR2, type UploadCollection } from "../../helpers/admin/upload.helper";
 import { toObjectId } from "../../database/db";
 import type { Models } from "../../models";
 import { ApiError } from "../../utils/ApiError";
@@ -30,7 +30,7 @@ async function assertOwnerExists(m: Models, collection: UploadCollection, owner:
  * Reads the request with busboy and streams its single `file` field to R2.
  * Exactly one part is allowed: a field named `file`. Busboy's own limits only stop floods.
  */
-function receiveFile(req: Request, bucket: R2Bucket, folder: string) {
+function receiveFile(req: Request, bucket: R2Bucket, folder: string, maxBytes: number) {
   return new Promise<{ key: string; size: number; mime: string }>((resolve, reject) => {
     let bb: busboy.Busboy;
     try {
@@ -51,13 +51,18 @@ function receiveFile(req: Request, bucket: R2Bucket, folder: string) {
         refuse("Send exactly one file");
         return file.resume();
       }
-      saving = streamToR2(bucket, folder, file);
-      saving.catch(() => {}); // handled on close
+      saving = streamToR2(bucket, folder, file, maxBytes);
+      saving.catch(() => {}); // handled in finish
     });
     bb.on("field", (name) => refuse(`Unexpected field "${name}": collection and owner go in the URL`));
     bb.on("partsLimit", () => refuse("Too many parts: send one file"));
-    bb.on("error", () => refuse("Malformed multipart body"));
-    bb.on("close", async () => {
+
+    // `close` (normal end) and `error` (malformed or cut-off body) both end here, once.
+    // The answer waits for the file to settle, so a started R2 upload is aborted first.
+    let finished = false;
+    const finish = async () => {
+      if (finished) return;
+      finished = true;
       if (!saving) return reject(problem ?? ApiError.badRequest("No file: send it in a field named file"));
       try {
         const saved = await saving;
@@ -68,9 +73,15 @@ function receiveFile(req: Request, bucket: R2Bucket, folder: string) {
         }
         resolve(saved);
       } catch (err) {
-        reject(err);
+        // A request already known to be broken gets that 400, not the stream's raw error (review on PR #33).
+        reject(problem ?? err);
       }
+    };
+    bb.on("error", () => {
+      refuse("Malformed multipart body: the upload was cut off or is not valid form data");
+      void finish();
     });
+    bb.on("close", () => void finish());
     req.pipe(bb);
   });
 }
@@ -84,7 +95,7 @@ export const UploadController = {
     await query(req, (m) => assertOwnerExists(m, collection, owner));
 
     const config = getConfig(req);
-    const saved = await receiveFile(req, config.MEDIA_BUCKET, `${collection}/${owner}`);
+    const saved = await receiveFile(req, config.MEDIA_BUCKET, `${collection}/${owner}`, config.FILE_SIZE_LIMIT * MB);
     res.status(201).json({ key: saved.key, url: mediaUrl(config.MEDIA_BASE_URL, saved.key) });
   }) satisfies RequestHandler,
 

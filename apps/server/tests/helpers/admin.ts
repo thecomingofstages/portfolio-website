@@ -5,11 +5,12 @@
 import { SignJWT } from "jose";
 import request from "supertest";
 import type { useTestDb } from "./db";
+import type { Config } from "../../src/app/config/init";
 import { testConfig } from "./app";
 
 export const MEDIA = "https://media.test";
 
-export async function adminClient(db: ReturnType<typeof useTestDb>) {
+export async function adminClient(db: ReturnType<typeof useTestDb>, overrides: Partial<Config> = {}) {
   const token = await new SignJWT({})
     .setProtectedHeader({ alg: "HS256" })
     .setSubject("tester")
@@ -56,7 +57,7 @@ export async function adminClient(db: ReturnType<typeof useTestDb>) {
   } as unknown as R2Bucket;
 
   const send = (method: "get" | "post" | "put" | "patch" | "delete", path: string, body?: unknown) => {
-    const req = request(db.app({ MEDIA_BUCKET: bucket, MEDIA_BASE_URL: MEDIA }))[method](`/api/admin${path}`).set("Authorization", `Bearer ${token}`);
+    const req = request(db.app({ MEDIA_BUCKET: bucket, MEDIA_BASE_URL: MEDIA, ...overrides }))[method](`/api/admin${path}`).set("Authorization", `Bearer ${token}`);
     return body === undefined ? req : req.send(body as object);
   };
 
@@ -68,11 +69,18 @@ export async function adminClient(db: ReturnType<typeof useTestDb>) {
     multipart,
     /** POST /api/admin/uploads with one file. */
     upload: (query: string, bytes: Uint8Array | null, filename = "file.bin", field = "file") => {
-      const req = request(db.app({ MEDIA_BUCKET: bucket, MEDIA_BASE_URL: MEDIA }))
+      const req = request(db.app({ MEDIA_BUCKET: bucket, MEDIA_BASE_URL: MEDIA, ...overrides }))
         .post(`/api/admin/uploads?${query}`)
         .set("Authorization", `Bearer ${token}`);
       return bytes === null ? req : req.attach(field, Buffer.from(bytes), filename);
     },
+    /** POST a raw body to /api/admin/uploads, e.g. a multipart body that is cut off. */
+    uploadRaw: (query: string, body: Buffer, contentType: string) =>
+      request(db.app({ MEDIA_BUCKET: bucket, MEDIA_BASE_URL: MEDIA, ...overrides }))
+        .post(`/api/admin/uploads?${query}`)
+        .set("Authorization", `Bearer ${token}`)
+        .set("Content-Type", contentType)
+        .send(body),
     get: (path: string) => send("get", path),
     post: (path: string, body: unknown) => send("post", path, body),
     put: (path: string, body: unknown) => send("put", path, body),

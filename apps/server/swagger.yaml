@@ -1049,7 +1049,7 @@ paths:
       description: |
         Streams the file into R2 under `<collection>/<owner>/<random id>.<ext>` (the file name is not used, so URLs do not reveal names).
         Then put the returned `url` into pics, photo, logo, poster, slides, media_url and so on with the admin routes.
-        Allowed types are recognised from the file's bytes: JPEG, PNG, GIF, WebP, AVIF (TODO(uploads): images only until decided; SVG and HTML are refused). No size limit yet (TODO(uploads)).
+        Allowed types are recognised from the file's bytes: JPEG, PNG, GIF, WebP, AVIF (TODO(uploads): images only until decided; SVG and HTML are refused). Largest file: FILE_SIZE_LIMIT MB (50 by default); above it, 413. An upload cut off midway is a 400 and leaves nothing in R2.
       parameters:
         - { name: collection, in: query, required: true, schema: { type: string, enum: [projects, tracks, apply, pages] } }
         - { name: owner, in: query, required: true, schema: { type: string }, description: "The slug (projects), key (tracks, pages) or _id (apply) the file belongs to; it must exist" }
@@ -1074,6 +1074,7 @@ paths:
                   url: { type: string, format: uri }
         "400": { $ref: "#/components/responses/BadRequest" }
         "401": { $ref: "#/components/responses/Unauthorized" }
+        "413": { description: Larger than FILE_SIZE_LIMIT }
   /api/admin/uploads/{key}:
     delete:
       tags: [Admin]

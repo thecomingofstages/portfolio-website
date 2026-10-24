@@ -31,11 +31,8 @@ const TYPES: { ext: string; mime: string; test: (b: Uint8Array) => boolean }[] =
 /** Bytes needed to recognise every type above. */
 const SNIFF = 12;
 
-/**
- * TODO(uploads): maximum size, until the lead decides. Until then the only limits are
- * the platform's (the Workers request body limit).
- */
-export const MAX_BYTES: number | undefined = undefined;
+/** Bytes in one megabyte, for FILE_SIZE_LIMIT (set in MB, e.g. 50). */
+export const MB = 1024 * 1024;
 
 const ascii = (b: Uint8Array, from: number, to: number) => String.fromCharCode(...b.subarray(from, to));
 
@@ -64,10 +61,16 @@ function concat(chunks: Uint8Array[], total: number) {
 
 /**
  * Streams one file into R2 under `<folder>/<random id>.<ext>`.
- * Throws 400 for an empty file or a type that is not allowed, 413 above MAX_BYTES.
- * Nothing is left in R2 when it fails.
+ * Throws 400 for an empty file, a type that is not allowed, or an upload cut off
+ * midway; 413 above `maxBytes` (FILE_SIZE_LIMIT). Nothing is left in R2 when it fails:
+ * a started multipart upload is always aborted (review on PR #33).
  */
-export async function streamToR2(bucket: R2Bucket, folder: string, file: Readable): Promise<{ key: string; size: number; mime: string }> {
+export async function streamToR2(
+  bucket: R2Bucket,
+  folder: string,
+  file: Readable,
+  maxBytes: number,
+): Promise<{ key: string; size: number; mime: string }> {
   let type: ReturnType<typeof detectType> = null;
   let key = "";
   let upload: R2MultipartUpload | null = null;
@@ -87,31 +90,36 @@ export async function streamToR2(bucket: R2Bucket, folder: string, file: Readabl
     parts.push(await upload.uploadPart(parts.length + 1, body));
   };
 
-  // Errors are remembered, not thrown mid-stream: the rest of the request is still read
-  // (and dropped), so the client gets its answer instead of a hung upload.
-  let failure: unknown = null;
-  for await (const chunk of file as AsyncIterable<Uint8Array>) {
-    if (failure) continue;
-    try {
-      size += chunk.length;
-      if (MAX_BYTES !== undefined && size > MAX_BYTES) throw new ApiError(413, "File too large");
-      pending.push(chunk);
-      pendingBytes += chunk.length;
-
-      if (!type && pendingBytes >= SNIFF) {
-        type = detectType(concat(pending, pendingBytes).subarray(0, SNIFF));
-        if (!type) throw ApiError.badRequest(`file: type not allowed (allowed: ${ALLOWED_TYPES.join(", ")})`);
-        key = `${folder}/${randomId()}.${type.ext}`;
-      }
-      while (type && pendingBytes >= PART_SIZE) await flushPart();
-    } catch (err) {
-      failure = err;
-      pending = [];
-      pendingBytes = 0;
-    }
-  }
-
   try {
+    // A refused file is remembered, not thrown mid-stream: the rest of the request is
+    // still read (and dropped), so the client gets its answer instead of a hung upload.
+    let failure: unknown = null;
+    try {
+      for await (const chunk of file as AsyncIterable<Uint8Array>) {
+        if (failure) continue;
+        try {
+          size += chunk.length;
+          if (size > maxBytes) throw new ApiError(413, `File too large (limit ${Math.round(maxBytes / MB)} MB)`);
+          pending.push(chunk);
+          pendingBytes += chunk.length;
+
+          if (!type && pendingBytes >= SNIFF) {
+            type = detectType(concat(pending, pendingBytes).subarray(0, SNIFF));
+            if (!type) throw ApiError.badRequest(`file: type not allowed (allowed: ${ALLOWED_TYPES.join(", ")})`);
+            key = `${folder}/${randomId()}.${type.ext}`;
+          }
+          while (type && pendingBytes >= PART_SIZE) await flushPart();
+        } catch (err) {
+          failure = err;
+          pending = [];
+          pendingBytes = 0;
+        }
+      }
+    } catch {
+      // The file stream itself failed: the client disconnected or the body was cut off.
+      throw ApiError.badRequest("Upload interrupted: the file did not arrive completely");
+    }
+
     if (failure) throw failure;
     if (size === 0) throw ApiError.badRequest("file: empty");
     if (!type) throw ApiError.badRequest(`file: type not allowed (allowed: ${ALLOWED_TYPES.join(", ")})`);

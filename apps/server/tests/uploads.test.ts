@@ -154,3 +154,77 @@ describe("DELETE /api/admin/uploads/:key", () => {
     expect(api.stored.has(key)).toBe(false);
   });
 });
+
+describe("cut-off uploads (review on PR #33)", () => {
+  const BOUNDARY = "----tcos-test-boundary";
+  /** A multipart body whose file part stops after `bytes`, with no closing boundary: the connection was cut. */
+  const cutOff = (bytes: Uint8Array) =>
+    Buffer.concat([
+      Buffer.from(`--${BOUNDARY}\r\nContent-Disposition: form-data; name="file"; filename="a.jpg"\r\nContent-Type: image/jpeg\r\n\r\n`),
+      Buffer.from(bytes),
+    ]);
+  const TYPE = `multipart/form-data; boundary=${BOUNDARY}`;
+
+  it("a small file cut off midway: 400, nothing stored", async () => {
+    const res = await api.uploadRaw("collection=projects&owner=p", cutOff(file(JPEG, 1000)), TYPE);
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/cut off|interrupted/i);
+    expect(api.stored.size).toBe(0);
+  });
+
+  it("a large file cut off after R2 parts were sent: 400, the multipart upload is aborted, nothing stored", async () => {
+    const res = await api.uploadRaw("collection=projects&owner=p", cutOff(file(JPEG, PART_SIZE + PART_SIZE / 2)), TYPE);
+    expect(res.status).toBe(400);
+    expect(api.multipart.started).toBe(1);
+    expect(api.multipart.aborted).toBe(1);
+    expect(api.stored.size).toBe(0);
+  });
+
+  it("a file stream that errors midway: 400 and abort (streamToR2 directly)", async () => {
+    const { Readable } = await import("node:stream");
+    const { streamToR2 } = await import("../src/app/helpers/admin/upload.helper");
+    let aborted = 0;
+    const bucket = {
+      createMultipartUpload: async () => ({
+        uploadPart: async (n: number) => ({ partNumber: n, etag: "" }),
+        complete: async () => {},
+        abort: async () => void aborted++,
+      }),
+      put: async () => {},
+    } as unknown as R2Bucket;
+    const big = file(JPEG, PART_SIZE + 10);
+    const broken = new Readable({
+      read() {
+        this.push(Buffer.from(big));
+        this.destroy(new Error("connection reset"));
+      },
+    });
+    await expect(streamToR2(bucket, "projects/p", broken, 50 * 1024 * 1024)).rejects.toMatchObject({ status: 400 });
+    expect(aborted).toBe(1);
+  });
+});
+
+describe("FILE_SIZE_LIMIT", () => {
+  it("above the limit: 413, and a started multipart upload is aborted", async () => {
+    const small = await adminClient(db, { FILE_SIZE_LIMIT: 6 });
+    const res = await small.upload("collection=projects&owner=p", file(JPEG, 7 * 1024 * 1024), "big.jpg");
+    expect(res.status).toBe(413);
+    expect(res.body.error).toMatch(/limit 6 MB/);
+    expect(small.multipart.aborted).toBe(1);
+    expect(small.stored.size).toBe(0);
+  });
+
+  it("at the limit is fine", async () => {
+    const small = await adminClient(db, { FILE_SIZE_LIMIT: 1 });
+    expect((await small.upload("collection=projects&owner=p", file(JPEG, 1024 * 1024), "a.jpg")).status).toBe(201);
+  });
+
+  it("defaults to 50 MB and must be a whole number of MB up to 100", async () => {
+    const { initConfig } = await import("../src/app/config/init");
+    const { testConfig } = await import("./helpers/app");
+    const { FILE_SIZE_LIMIT, ...env } = testConfig();
+    expect(initConfig(env).FILE_SIZE_LIMIT).toBe(50);
+    expect(initConfig({ ...env, FILE_SIZE_LIMIT: "20" }).FILE_SIZE_LIMIT).toBe(20);
+    for (const bad of ["0", "-5", "1.5", "lots", "500"]) expect(() => initConfig({ ...env, FILE_SIZE_LIMIT: bad })).toThrow(/FILE_SIZE_LIMIT/);
+  });
+});

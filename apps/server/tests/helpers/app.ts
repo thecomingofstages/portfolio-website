@@ -13,6 +13,7 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
     REVALIDATE_URL: "http://client.test/api/revalidate",
     MEDIA_BASE_URL: "http://media.test",
     DOCS_ENABLED: "false",
+    FILE_SIZE_LIMIT: 50,
     MEDIA_BUCKET: {} as R2Bucket,
     ...overrides,
   };
