@@ -45,6 +45,10 @@ Server values are Worker settings: **secrets** are set with `npx wrangler secret
 | `API_URL` | client | env | The server's base URL (the Worker's URL) |
 | `REVALIDATE_SECRET` | client | env | Checks calls to `/api/revalidate` |
 | `MEDIA_BASE_URL` | client | env | The same bucket URL, allowed for `next/image` (read at build time) |
+| `API_URL` | editor | env | The server's base URL, for the admin API (see [EDITOR.md](EDITOR.md)) |
+| `ADMIN_TOKEN` | editor | secret | A hand-made admin JWT, kept on the editor's server |
+| `SITE_URL` | editor | env | The public site's base URL, for "View on site" links |
+| `USE_FIXTURES` | editor | env | `true` edits the editor's in-memory fixtures instead of calling `API_URL` |
 | `USE_FIXTURES` | client | env | `true` serves the client's fixtures instead of calling `API_URL` (see FRONTEND.md "Developing before the server is ready") |
 
 The client (Next.js) also runs on Cloudflare Workers, through OpenNext (`@opennextjs/cloudflare`). Its values are Worker secrets and vars too, and `.env.local` / `.dev.vars` for local runs.
@@ -68,7 +72,7 @@ The server uses the official `mongodb` driver. Its queries are MongoDB's own (th
 - Tokens are JWTs made by hand with `JWT_SECRET` (for example, a one-off script) and given to whoever calls the admin API. There is no login endpoint.
 - Every `/api/admin/*` request needs `Authorization: Bearer <token>`. The server checks the signature with `jose` (and `exp`, if the token has one), and answers `401` otherwise.
 - For now, admins call the API directly (curl, Postman). Keep the token out of shared files and chat.
-- When the separate admin interface is built, it keeps the token on its own server, never in the browser.
+- The admin interface ([EDITOR.md](EDITOR.md)) keeps the token on its own server, never in the browser.
 - To revoke every token, change `JWT_SECRET` and make new tokens.
 
 ## Public API
