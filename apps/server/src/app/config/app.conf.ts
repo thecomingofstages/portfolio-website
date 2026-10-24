@@ -7,6 +7,8 @@ export const appConfSchema = z.object({
   REVALIDATE_URL: z.string(),
   /** Swagger UI and /api/openapi.yaml. "true" only for local dev. */
   DOCS_ENABLED: z.enum(["true", "false"]).default("false"),
+  /** Largest upload, in MB (agreed: 50, for 4K photos and a ~10 s 4K clip). Above it: 413. */
+  FILE_SIZE_LIMIT: z.coerce.number().int().positive().max(100, "FILE_SIZE_LIMIT is in MB; the Workers request limit is 100 MB").default(50),
 });
 
 /** Fixed settings that are not environment values. */

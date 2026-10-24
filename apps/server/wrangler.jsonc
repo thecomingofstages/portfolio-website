@@ -14,7 +14,9 @@
     "MEDIA_BASE_URL": "<...>", // TODO(R2 media bucket): public URL of the site media bucket
     "REVALIDATE_URL": "<...>", // the client's /api/revalidate
     // Swagger UI and /api/openapi.json. Off in production; .dev.vars turns it on locally.
-    "DOCS_ENABLED": "false"
+    "DOCS_ENABLED": "false",
+    // Largest upload in MB (agreed with the lead: 50 MB for 4K photos and a ~10 s 4K clip).
+    "FILE_SIZE_LIMIT": "50"
   },
 
   // The site media bucket only, never the finance bucket (docs/API.md "Uploads").
