@@ -8,10 +8,15 @@ import * as crud from "../../helpers/admin/crud.helper";
 import type { DocSpec, ItemSpec } from "../../helpers/admin/crud.helper";
 import { getConfig } from "../../utils/config";
 import { query } from "../../utils/public";
+import { revalidate } from "../../utils/Revalidate";
 
 const ctx = (req: Request): WriteContext => {
   const config = getConfig(req);
-  return { bucket: config.MEDIA_BUCKET, mediaBaseUrl: config.MEDIA_BASE_URL };
+  return {
+    bucket: config.MEDIA_BUCKET,
+    mediaBaseUrl: config.MEDIA_BASE_URL,
+    revalidate: (paths) => revalidate(config.REVALIDATE_URL, config.REVALIDATE_SECRET, paths),
+  };
 };
 const p = (req: Request, name: string) => String(req.params[name]);
 
@@ -69,6 +74,6 @@ export function blockRoutes(router: Router, path: string, spec: DocSpec) {
     res.json(await query(req, (m) => crud.getBlocks(m, spec, p(req, "id"))));
   }) satisfies RequestHandler);
   router.put(path, (async (req, res) => {
-    res.json(await query(req, (m) => crud.saveBlocks(m, spec, p(req, "id"), req.body)));
+    res.json(await query(req, (m) => crud.saveBlocks(m, ctx(req), spec, p(req, "id"), req.body)));
   }) satisfies RequestHandler);
 }

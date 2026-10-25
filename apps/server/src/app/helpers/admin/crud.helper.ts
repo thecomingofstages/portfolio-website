@@ -36,6 +36,8 @@ export type DocSpec = {
   afterSave?: (m: Models, ctx: WriteContext, doc: Doc, before: Doc | null) => Promise<void>;
   beforeDelete?: (m: Models, doc: Doc) => Promise<void>;
   afterDelete?: (m: Models, ctx: WriteContext, doc: Doc) => Promise<void>;
+  /** The site pages this resource's documents appear on (S9); given every version of the written document. */
+  paths?: (m: Models, docs: (Doc | null)[]) => Promise<string[]>;
   /** Checks for a whole blocks array (resources with blocks). */
   checkBlocks?: (m: Models, blocks: Doc[], parent: Doc) => Promise<void>;
 };
@@ -55,6 +57,11 @@ export type ItemSpec = {
 function asObject(body: unknown): Doc {
   if (!body || typeof body !== "object" || Array.isArray(body)) throw ApiError.badRequest("Request body must be a JSON object");
   return body as Doc;
+}
+
+/** Refreshes the pages of these document versions (S9). Runs only after a successful write. */
+async function refresh(m: Models, ctx: WriteContext, spec: DocSpec, docs: (Doc | null)[]) {
+  if (spec.paths) await ctx.revalidate(await spec.paths(m, docs));
 }
 
 const filterFor = (spec: DocSpec, id: string) => (spec.key === "_id" ? { _id: toObjectId(id) } : { [spec.key]: id });
@@ -114,6 +121,7 @@ export async function createDoc(m: Models, ctx: WriteContext, spec: DocSpec, bod
   const { insertedId } = await spec.collection(m).insertOne(doc);
   const saved = { ...doc, _id: insertedId };
   await spec.afterSave?.(m, ctx, saved, null);
+  await refresh(m, ctx, spec, [saved]);
   return saved;
 }
 
@@ -127,6 +135,7 @@ export async function replaceDoc(m: Models, ctx: WriteContext, spec: DocSpec, id
   await spec.collection(m).replaceOne({ _id: before._id }, doc);
   const saved = { ...doc, _id: before._id };
   await spec.afterSave?.(m, ctx, saved, before);
+  await refresh(m, ctx, spec, [before, saved]);
   return saved;
 }
 
@@ -135,6 +144,7 @@ export async function deleteDoc(m: Models, ctx: WriteContext, spec: DocSpec, id:
   await spec.beforeDelete?.(m, before);
   await spec.collection(m).deleteOne({ _id: before._id });
   await spec.afterDelete?.(m, ctx, before);
+  await refresh(m, ctx, spec, [before]);
 }
 
 // ---------------------------------------------------------------------------
@@ -167,6 +177,7 @@ export async function createItem(m: Models, ctx: WriteContext, spec: ItemSpec, i
     { $push: { [spec.field]: item }, ...(spec.parent.touch ? { $set: touchSet(spec) } : {}) } as Document,
   );
   await spec.afterChange?.(m, ctx, null, item);
+  await refresh(m, ctx, spec.parent, [parent]);
   return item;
 }
 
@@ -182,6 +193,7 @@ export async function replaceItem(m: Models, ctx: WriteContext, spec: ItemSpec, 
     { $set: { [`${spec.field}.$`]: item, ...touchSet(spec) } },
   );
   await spec.afterChange?.(m, ctx, before, item);
+  await refresh(m, ctx, spec.parent, [parent]);
   return item;
 }
 
@@ -192,6 +204,7 @@ export async function deleteItem(m: Models, ctx: WriteContext, spec: ItemSpec, i
     { $pull: { [spec.field]: { _id: before._id } }, ...(spec.parent.touch ? { $set: touchSet(spec) } : {}) } as Document,
   );
   await spec.afterChange?.(m, ctx, before, null);
+  await refresh(m, ctx, spec.parent, [parent]);
 }
 
 // ---------------------------------------------------------------------------
@@ -201,10 +214,11 @@ export async function getBlocks(m: Models, spec: DocSpec, id: string) {
   return items(await getDoc(m, spec, id), "blocks") as Doc[];
 }
 
-export async function saveBlocks(m: Models, spec: DocSpec, id: string, body: unknown) {
+export async function saveBlocks(m: Models, ctx: WriteContext, spec: DocSpec, id: string, body: unknown) {
   const parent = await getDoc(m, spec, id);
   const blocks = blocksSchema.parse(body) as Doc[];
   await spec.checkBlocks?.(m, blocks, parent);
   await spec.collection(m).updateOne({ _id: parent._id }, { $set: { blocks, ...(spec.touch ? { updated_at: new Date() } : {}) } });
+  await refresh(m, ctx, spec, [parent]);
   return blocks;
 }
