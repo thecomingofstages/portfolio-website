@@ -20,6 +20,7 @@ import {
   renameTrackKey,
 } from "./checks.helper";
 import type { Doc, DocSpec, ItemSpec } from "./crud.helper";
+import { applyPaths, pagePaths, projectPaths, trackPaths } from "./paths.helper";
 
 const col = (pick: (m: Models) => Collection<never>) => pick as unknown as (m: Models) => Collection<Doc>;
 const team = (d: Doc | null) => (d?.team ?? []) as NonNullable<ProjectDoc["team"]>;
@@ -35,6 +36,7 @@ export const projectSpec: DocSpec = {
   schema: projectSchema,
   sort: { start_date: -1 },
   itemLists: ["team", "sponsors", "highlights"],
+  paths: projectPaths,
   async beforeSave(m, doc, before) {
     await assertTrackKeys(m, strings(doc.team, "dept_key"), "team");
     // A project's own blocks may point at it, by its new slug or (while renaming) its old one.
@@ -82,6 +84,7 @@ export const trackSpec: DocSpec = {
   schema: trackSchema,
   sort: { order: 1, key: 1 },
   itemLists: ["achievements"],
+  paths: trackPaths,
   async beforeSave(m, doc, before) {
     await assertProjectSlugs(m, strings(doc.achievements, "project_slug"), "achievements");
     // Before the save, as for projects: a retry finishes a rename that failed halfway.
@@ -107,6 +110,7 @@ export const applySpec: DocSpec = {
   schema: applySchema,
   sort: { opens_at: -1 },
   itemLists: ["positions", "timeline"],
+  paths: applyPaths,
   async beforeSave(m, doc) {
     if (typeof doc.project_slug === "string") await assertProjectSlugs(m, [doc.project_slug], "project_slug");
     await assertTrackKeys(m, strings(doc.positions, "dept_key"), "positions");
@@ -132,6 +136,7 @@ export const pageSpec: DocSpec = {
   schema: pageSchema,
   sort: { key: 1 },
   touch: true,
+  paths: pagePaths,
   beforeSave: (m, doc) => checkBlocks(m, doc.blocks as never),
   checkBlocks: (m, blocks) => checkBlocks(m, blocks as never),
 };

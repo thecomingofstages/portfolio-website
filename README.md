@@ -91,6 +91,9 @@ The server runs at http://localhost:8787 in the Cloudflare Workers runtime.
   multipart field named `file` returns `{ key, url }`; put the `url` in the document with the
   admin routes. `DELETE /api/admin/uploads/<key>` removes a file nobody uses. Images only for now;
   largest file `FILE_SIZE_LIMIT` MB (in `wrangler.jsonc`, 50 by default).
+- After every successful admin write, the server calls the client's `/api/revalidate`
+  (`REVALIDATE_URL`, with `REVALIDATE_SECRET`) with the pages that changed. With
+  `REVALIDATE_URL` still `<...>`, the call is skipped; a failed call never fails the write.
 - `npm run seed:dev` adds sample data (all text `<...>`, slugs `sample-...`) to the database in
   `.dev.vars`, for testing the API by hand; `npm run seed:dev -- --clear` removes exactly that data.
   Dev database only.

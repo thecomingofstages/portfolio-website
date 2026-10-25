@@ -13,6 +13,8 @@ export default defineConfig({
   ],
   test: {
     include: ["tests/**/*.test.ts"],
+    // No real network calls in tests; revalidate calls are recorded (S9).
+    setupFiles: ["tests/setup.ts"],
     environment: "node",
   },
 });

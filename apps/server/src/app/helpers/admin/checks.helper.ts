@@ -15,8 +15,8 @@ import { Logger } from "../../utils/Logger";
 
 type Block = { id: string; type: string; project_slug?: string | null; dept_keys?: string[] };
 
-/** What a write needs from the environment: R2, to delete photos. */
-export type WriteContext = { bucket: R2Bucket; mediaBaseUrl: string };
+/** What a write needs from the environment: R2 to delete photos, and the client to refresh pages (S9). */
+export type WriteContext = { bucket: R2Bucket; mediaBaseUrl: string; revalidate: (paths: string[]) => Promise<void> };
 
 // ---------------------------------------------------------------------------
 // Blocks

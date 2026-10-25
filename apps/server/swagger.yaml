@@ -34,6 +34,7 @@ tags:
       Make a token with `npm run token -- --for <you>` in apps/server. Bodies use the fields in docs/DATABASE.md; dates are ISO 8601 strings.
       What GET returns can be edited and sent back with PUT or PATCH as-is: `updated_at` is ignored (the server sets it), and `_id` is accepted when it is the one being changed (another `_id` is a 400). Do not send `_id` when creating; the server assigns it.
       A photo file is deleted from R2 only once no document points to its URL any more.
+      After every successful write, the server asks the site to refresh the pages that changed (POST REVALIDATE_URL); if that fails, the write still succeeds and the failure is logged.
 
 paths:
   /api/health:
