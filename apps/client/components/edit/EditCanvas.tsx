@@ -33,7 +33,7 @@ class BlockBoundary extends Component<{ children: ReactNode; resetKey: string },
     return props.resetKey === state.key ? null : { failed: false, key: props.resetKey };
   }
   render() {
-    return this.state.failed ? <Note>This block cannot be shown yet. Check its fields.</Note> : this.props.children;
+    return this.state.failed ? <Note>ยังแสดงบล็อกนี้ไม่ได้ ลองเช็กช่องต่าง ๆ ของบล็อก</Note> : this.props.children;
   }
 }
 
@@ -188,7 +188,7 @@ export default function EditCanvas({
     }
   }
 
-  if (!doc) return <Note>Waiting for the editor…</Note>;
+  if (!doc) return <Note>กำลังรอ editor…</Note>;
 
   const label = (type: string) => doc.labels[type] ?? type;
   const insert = (at: number) => (
@@ -250,9 +250,9 @@ export default function EditCanvas({
               </div>
               <div className={draft.is_shown ? "" : "opacity-50"}>
                 {!Shown ? (
-                  <Note>{label(block.type)}: the site does not show this kind of block yet.</Note>
+                  <Note>{label(block.type)}: ตอนนี้เว็บยังไม่แสดงบล็อกแบบนี้</Note>
                 ) : !data ? (
-                  <Note>{label(block.type)}: save, with the block shown, to see its data here.</Note>
+                  <Note>{label(block.type)}: เปิดให้บล็อกแสดง แล้วกด Save เพื่อดูข้อมูลตรงนี้</Note>
                 ) : (
                   <BlockBoundary resetKey={JSON.stringify(block)}>
                     <Shown block={data} />

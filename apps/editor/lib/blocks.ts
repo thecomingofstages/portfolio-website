@@ -47,7 +47,7 @@ export type BlockInfo = {
 
 const buttonFields: readonly FieldSpec[] = [
   { kind: "text", key: "label", label: "Label", required: true },
-  { kind: "text", key: "url", label: "URL", required: true, hint: "A path such as /join, a full URL, or mailto:" },
+  { kind: "text", key: "url", label: "URL", required: true, hint: "ใส่ได้ทั้งพาท เช่น /join ลิงก์เต็ม หรือ mailto:" },
   { kind: "enum", key: "style", label: "Style", options: ["primary", "secondary"] },
 ];
 
@@ -65,22 +65,22 @@ const projectSlug: FieldSpec = {
   key: "project_slug",
   label: "Project slug",
   nullable: true,
-  hint: "Empty: this project on a project page, all shown projects on Home",
+  hint: "เว้นว่างไว้: ในหน้าโปรเจกต์จะใช้โปรเจกต์นั้น ในหน้าแรกจะใช้ทุกโปรเจกต์ที่แสดงอยู่",
 };
 
-const limit: FieldSpec = { kind: "int", key: "limit", label: "Limit", nullable: true, hint: "Empty: no limit" };
+const limit: FieldSpec = { kind: "int", key: "limit", label: "Limit", nullable: true, hint: "เว้นว่างไว้: แสดงทั้งหมด" };
 
 export const blockInfo: Record<BlockType, BlockInfo> = {
   hero: {
     label: "Hero",
     kind: "content",
-    description: "The top of a page: an image, video or slideshow with the title and buttons on top",
+    description: "ส่วนบนสุดของหน้า เป็นรูป วิดีโอ หรือสไลด์โชว์ มีชื่อและปุ่มวางอยู่ด้านบน",
     fields: [
       { kind: "text", key: "subtitle", label: "Subtitle" },
-      { kind: "text", key: "media_url", label: "Media URL", required: true, image: true, hint: "The image or video; for a slideshow, the first slide" },
+      { kind: "text", key: "media_url", label: "Media URL", required: true, image: true, hint: "รูปหรือวิดีโอ ถ้าเป็นสไลด์โชว์ให้ใส่สไลด์แรก" },
       { kind: "enum", key: "media_kind", label: "Media kind", options: ["image", "video", "slideshow"] },
-      { kind: "strings", key: "slides", label: "Slides", images: true, hint: "Slideshow only: the image URLs after the first, one per line" },
-      { kind: "int", key: "slide_seconds", label: "Seconds per slide", nullable: true, hint: "Empty: the site's default" },
+      { kind: "strings", key: "slides", label: "Slides", images: true, hint: "ใช้กับสไลด์โชว์เท่านั้น ใส่ลิงก์รูปที่ต่อจากสไลด์แรก บรรทัดละรูป" },
+      { kind: "int", key: "slide_seconds", label: "Seconds per slide", nullable: true, hint: "เว้นว่างไว้: ใช้ค่าตั้งต้นของเว็บ" },
       buttons(false),
     ],
     defaults: () => ({ media_url: "" }),
@@ -88,7 +88,7 @@ export const blockInfo: Record<BlockType, BlockInfo> = {
   article: {
     label: "Article",
     kind: "content",
-    description: "A text section in Markdown, with an optional image",
+    description: "ส่วนเนื้อหาที่เขียนด้วย Markdown จะใส่รูปประกอบด้วยก็ได้",
     fields: [
       { kind: "text", key: "body", label: "Body (Markdown)", required: true, multiline: true },
       { kind: "text", key: "image", label: "Image", nullable: true, image: true },
@@ -99,10 +99,10 @@ export const blockInfo: Record<BlockType, BlockInfo> = {
   image: {
     label: "Image",
     kind: "content",
-    description: "One picture; large runs full width (the team photo)",
+    description: "รูปเดี่ยว ถ้าเลือกขนาด large รูปจะกว้างเต็มหน้า เหมาะกับรูปรวมทีม",
     fields: [
       { kind: "text", key: "url", label: "Image", required: true, image: true },
-      { kind: "text", key: "alt", label: "Alt text", hint: "What the picture shows, for screen readers" },
+      { kind: "text", key: "alt", label: "Alt text", hint: "บอกว่าในรูปมีอะไร สำหรับคนที่ใช้โปรแกรมอ่านหน้าจอ" },
       { kind: "text", key: "caption", label: "Caption" },
       { kind: "text", key: "credit", label: "Credit" },
       { kind: "enum", key: "size", label: "Size", options: ["normal", "large"] },
@@ -112,7 +112,7 @@ export const blockInfo: Record<BlockType, BlockInfo> = {
   quote: {
     label: "Quote",
     kind: "content",
-    description: "A quote over a background image or colour",
+    description: "คำพูดที่วางบนรูปหรือสีพื้นหลัง",
     fields: [
       { kind: "text", key: "text", label: "Quote", required: true, multiline: true },
       { kind: "text", key: "who", label: "Who", required: true },
@@ -125,7 +125,7 @@ export const blockInfo: Record<BlockType, BlockInfo> = {
   gallery: {
     label: "Gallery",
     kind: "content",
-    description: "Many images, each with a description",
+    description: "รวมหลายรูป แต่ละรูปมีคำอธิบาย",
     fields: [
       {
         kind: "items",
@@ -145,7 +145,7 @@ export const blockInfo: Record<BlockType, BlockInfo> = {
   video: {
     label: "Video",
     kind: "content",
-    description: "One video or a series, e.g. documentary episodes",
+    description: "วิดีโอเดียว หรือหลายตอนต่อกัน เช่น สารคดีที่แบ่งเป็นตอน",
     fields: [
       {
         kind: "items",
@@ -166,14 +166,14 @@ export const blockInfo: Record<BlockType, BlockInfo> = {
   button: {
     label: "Buttons",
     kind: "content",
-    description: "Links as buttons: tickets, donate, LINE, apply, contact",
+    description: "ลิงก์ที่ทำเป็นปุ่ม เช่น ซื้อบัตร บริจาค LINE สมัคร ติดต่อ",
     fields: [buttons(true), { kind: "enum", key: "align", label: "Align", options: ["left", "center"] }],
     defaults: () => ({ buttons: [] }),
   },
   stats: {
     label: "Stats",
     kind: "content",
-    description: "Confirmed numbers, e.g. members, shows",
+    description: "ตัวเลขที่ยืนยันแล้ว เช่น จำนวนสมาชิก จำนวนรอบการแสดง",
     fields: [
       {
         kind: "items",
@@ -182,7 +182,7 @@ export const blockInfo: Record<BlockType, BlockInfo> = {
         itemLabel: "Number",
         fields: [
           { kind: "text", key: "label", label: "Label", required: true },
-          { kind: "value", key: "value", label: "Value", required: true, hint: "A number, or text" },
+          { kind: "value", key: "value", label: "Value", required: true, hint: "ตัวเลข หรือข้อความก็ได้" },
           { kind: "text", key: "note", label: "Note" },
         ],
         newItem: () => ({ label: "", value: "" }),
@@ -193,17 +193,17 @@ export const blockInfo: Record<BlockType, BlockInfo> = {
   highlights: {
     label: "Highlights",
     kind: "data",
-    description: "Events from the projects' highlight lists",
+    description: "กิจกรรมจากรายการไฮไลต์ของโปรเจกต์",
     fields: [projectSlug, limit],
     defaults: () => ({ project_slug: null, limit: null }),
   },
   team: {
     label: "Team",
     kind: "data",
-    description: "People from the team lists, grouped by department",
+    description: "รายชื่อคนจากทีมของโปรเจกต์ จัดกลุ่มตามฝ่าย",
     fields: [
       projectSlug,
-      { kind: "strings", key: "dept_keys", label: "Department keys", hint: "One track key per line. Empty: every department" },
+      { kind: "strings", key: "dept_keys", label: "Department keys", hint: "ใส่รหัสสายงานบรรทัดละหนึ่งรหัส เว้นว่างไว้: ทุกฝ่าย" },
       { kind: "bool", key: "show_org_chart", label: "Show the org chart" },
       { kind: "enum", key: "layout", label: "Layout", options: ["list", "yearbook"] },
     ],
@@ -212,35 +212,35 @@ export const blockInfo: Record<BlockType, BlockInfo> = {
   sponsors: {
     label: "Sponsors",
     kind: "data",
-    description: "Sponsors from the sponsor lists; logos only where the sponsor allowed it",
-    fields: [projectSlug, { kind: "strings", key: "tiers", label: "Tiers", hint: "One tier per line. Empty: every tier" }],
+    description: "ผู้สนับสนุนจากรายชื่อสปอนเซอร์ โลโก้จะขึ้นเฉพาะเจ้าที่อนุญาตไว้",
+    fields: [projectSlug, { kind: "strings", key: "tiers", label: "Tiers", hint: "ใส่ระดับสปอนเซอร์บรรทัดละหนึ่งระดับ เว้นว่างไว้: ทุกระดับ" }],
     defaults: () => ({ project_slug: null, tiers: [] }),
   },
   join: {
     label: "Join",
     kind: "data",
-    description: "Recruitment rounds open today",
+    description: "รอบรับสมัครที่เปิดอยู่วันนี้",
     fields: [projectSlug, { kind: "text", key: "empty_text", label: "Text when no round is open", multiline: true }],
     defaults: () => ({ project_slug: null }),
   },
   projects: {
     label: "Projects shelf",
     kind: "data",
-    description: "The bookshelf of shown projects, newest first",
+    description: "ชั้นหนังสือของโปรเจกต์ที่แสดงอยู่ เรียงจากใหม่ไปเก่า",
     fields: [limit],
     defaults: () => ({ limit: null }),
   },
   tracks: {
     label: "Tracks",
     kind: "data",
-    description: "One card per shown track, by order. No settings of its own",
+    description: "การ์ดของสายงานที่แสดงอยู่ เรียงตามลำดับ บล็อกนี้ไม่มีอะไรให้ตั้งค่า",
     fields: [],
     defaults: () => ({}),
   },
   yearbook: {
     label: "Yearbook cards",
     kind: "data",
-    description: "Shown projects with a yearbook, newest first",
+    description: "โปรเจกต์ที่แสดงอยู่และมีหนังสือรุ่น เรียงจากใหม่ไปเก่า",
     fields: [limit],
     defaults: () => ({ limit: null }),
   },

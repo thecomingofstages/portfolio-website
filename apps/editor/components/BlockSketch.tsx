@@ -163,21 +163,21 @@ export default function BlockSketch({ type }: { type: BlockType }) {
 
 /** What an editor fills in for each block: pictures to upload, and text to type. Data blocks fill themselves. */
 export const FILL_IN: Record<BlockType, { upload?: string; type?: string; data?: string }> = {
-  hero: { upload: "One picture, or several for a slideshow (a video goes in as a link)", type: "Title, subtitle, button labels" },
-  article: { upload: "One picture, optional", type: "Heading and the text" },
-  image: { upload: "One picture", type: "Caption and credit" },
-  quote: { upload: "A background picture, optional", type: "The quote, who said it, their role" },
-  gallery: { upload: "Several pictures", type: "A description for each" },
-  video: { type: "Video links (YouTube, TikTok, Instagram, Drive), titles, captions" },
-  button: { type: "Button labels and where they link" },
-  stats: { type: "Numbers and what they count" },
-  highlights: { data: "Fills itself from a project's highlights" },
-  team: { data: "Fills itself from the team lists" },
-  sponsors: { data: "Fills itself from the sponsor lists" },
-  join: { data: "Fills itself with the rounds open now" },
-  projects: { data: "Fills itself with the shown projects" },
-  tracks: { data: "Fills itself with the shown tracks" },
-  yearbook: { data: "Fills itself with projects that have a yearbook" },
+  hero: { upload: "รูปหนึ่งรูป หรือหลายรูปถ้าทำเป็นสไลด์โชว์ (วิดีโอใส่เป็นลิงก์)", type: "ชื่อ คำโปรย และข้อความบนปุ่ม" },
+  article: { upload: "รูปหนึ่งรูป จะใส่หรือไม่ใส่ก็ได้", type: "หัวข้อและเนื้อหา" },
+  image: { upload: "รูปหนึ่งรูป", type: "คำบรรยายใต้รูปและเครดิต" },
+  quote: { upload: "รูปพื้นหลัง จะใส่หรือไม่ใส่ก็ได้", type: "คำพูด ชื่อคนพูด และตำแหน่งของเขา" },
+  gallery: { upload: "หลายรูป", type: "คำอธิบายของแต่ละรูป" },
+  video: { type: "ลิงก์วิดีโอ (YouTube, TikTok, Instagram, Drive) ชื่อตอน และคำบรรยาย" },
+  button: { type: "ข้อความบนปุ่ม และลิงก์ที่ปุ่มพาไป" },
+  stats: { type: "ตัวเลข และบอกว่านับอะไร" },
+  highlights: { data: "ดึงมาจากไฮไลต์ของโปรเจกต์ให้เอง" },
+  team: { data: "ดึงมาจากรายชื่อทีมให้เอง" },
+  sponsors: { data: "ดึงมาจากรายชื่อสปอนเซอร์ให้เอง" },
+  join: { data: "ดึงรอบรับสมัครที่เปิดอยู่ตอนนี้มาให้เอง" },
+  projects: { data: "ดึงโปรเจกต์ที่แสดงอยู่มาให้เอง" },
+  tracks: { data: "ดึงสายงานที่แสดงอยู่มาให้เอง" },
+  yearbook: { data: "ดึงโปรเจกต์ที่มีหนังสือรุ่นมาให้เอง" },
 };
 
 export function PictureIcon() {

@@ -47,7 +47,7 @@ export default function PageFieldsForm({ page }: { page: PageDoc }) {
       </div>
       <div className="flex items-start gap-2.5">
         <input id="page-shown" type="checkbox" className="mt-1" checked={shown} onChange={(e) => setShown(e.target.checked)} />
-        <Label htmlFor="page-shown" hint="Off: the page answers “not found”">
+        <Label htmlFor="page-shown" hint="ถ้าปิด หน้านี้จะขึ้นว่าไม่พบหน้า">
           Shown on the site
         </Label>
       </div>

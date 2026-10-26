@@ -22,7 +22,7 @@ describe("edit mode", () => {
     render(<EditCanvas editorOrigin={EDITOR} saved={[]} />);
     send("https://evil.example");
     expect(screen.queryByText("From the editor")).toBeNull();
-    expect(screen.getByText("Waiting for the editor…")).not.toBeNull();
+    expect(screen.getByText("กำลังรอ editor…")).not.toBeNull();
   });
 
   it("ignores the editor's origin from a window other than the one framing it", () => {

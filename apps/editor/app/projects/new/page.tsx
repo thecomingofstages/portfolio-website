@@ -10,8 +10,8 @@ export default function NewProject() {
         </HeaderSlot>
         <h1>New project</h1>
         <p className="max-w-prose text-muted">
-          Only the fields a project needs to exist. Pictures, the venue and the blocks come next, on the project&apos;s
-          own page. It starts hidden, so the site does not show it until you are ready.
+          ใส่แค่ช่องที่จำเป็นสำหรับสร้างโปรเจกต์ รูป สถานที่ และบล็อกต่าง ๆ ไปใส่ต่อในหน้าของโปรเจกต์ โปรเจกต์ใหม่จะถูกซ่อนไว้ก่อน
+          เว็บจะยังไม่แสดงจนกว่าคุณจะพร้อม
         </p>
       </div>
       <ProjectForm />

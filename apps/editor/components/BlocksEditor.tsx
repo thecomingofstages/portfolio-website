@@ -216,23 +216,23 @@ export default function BlocksEditor({
                   >
                     {pageSilent ? (
                       <p className="max-w-sm text-muted">
-                        The page did not answer. Check that the site is running at {siteOrigin}, and that its
-                        EDITOR_ORIGIN setting is this editor&apos;s address. Until then, edit blocks in the list.
+                        หน้าเว็บไม่ตอบกลับ ลองเช็กว่าเว็บเปิดอยู่ที่ {siteOrigin} และตั้ง EDITOR_ORIGIN เป็นที่อยู่ของ
+                        editor นี้แล้ว ระหว่างนี้แก้บล็อกจากรายการไปก่อนได้
                       </p>
                     ) : (
-                      <p className="text-muted">Loading the page…</p>
+                      <p className="text-muted">กำลังโหลดหน้าเว็บ…</p>
                     )}
                   </div>
                 )}
               </div>
               <p className="text-muted">
-                Click text to type, or a picture to change it. Point at a block for its buttons. Changes stay here until
-                you save.
+                คลิกที่ข้อความเพื่อพิมพ์ หรือคลิกที่รูปเพื่อเปลี่ยนรูป ชี้ที่บล็อกเพื่อดูปุ่มของบล็อกนั้น ที่แก้ไว้จะยังไม่ขึ้นเว็บจนกว่าจะกด
+                Save
               </p>
             </>
           ) : (
             <p className="border-l-2 border-border pl-3 text-muted">
-              Set SITE_URL to edit on the page itself. Until then, pick a block in the list to edit its fields.
+              ตั้งค่า SITE_URL ก่อน ถึงจะแก้บนหน้าเว็บได้ ระหว่างนี้เลือกบล็อกจากรายการเพื่อแก้ทีละช่อง
             </p>
           )}
         </div>
@@ -246,7 +246,7 @@ export default function BlocksEditor({
                 Add a block
               </button>
             </div>
-            {rows.length === 0 ? <p className="text-muted">No blocks yet. Add the first one.</p> : null}
+            {rows.length === 0 ? <p className="text-muted">ยังไม่มีบล็อก เพิ่มบล็อกแรกได้เลย</p> : null}
             <ol className="flex flex-col">
               {rows.map(({ key, block }, index) => (
                 <li key={key}>
@@ -336,9 +336,13 @@ function BlockPanel({
         <div className="mr-auto flex flex-col">
           <h2>{info.label}</h2>
           <p className="text-muted">
-            {info.description}
-            {info.kind === "data" ? ". Its items are edited where they are stored, not here." : "."}
-            {ON_SITE.has(block.type) ? "" : " The site does not show this kind of block yet."}
+            {[
+              info.description,
+              info.kind === "data" ? "ข้อมูลในบล็อกนี้ต้องไปแก้ที่ต้นทาง" : null,
+              ON_SITE.has(block.type) ? null : "ตอนนี้เว็บยังไม่แสดงบล็อกแบบนี้",
+            ]
+              .filter(Boolean)
+              .join(" ")}
           </p>
         </div>
         <button type="button" className="btn-icon" aria-label="Move up" title="Move up" disabled={index === 0} onClick={() => onMove(index - 1)}>
@@ -363,7 +367,7 @@ function BlockPanel({
       </div>
 
       <FieldInput
-        spec={{ kind: "bool", key: "is_shown", label: "Shown on the site", hint: "Off: saved, but left off the page" }}
+        spec={{ kind: "bool", key: "is_shown", label: "Shown on the site", hint: "ถ้าปิด บล็อกยังถูกบันทึกไว้ แต่จะไม่แสดงบนหน้าเว็บ" }}
         value={block}
         idPrefix={idPrefix}
         onChange={(next) => onChange(setField(block, "is_shown", next.is_shown === true))}
@@ -386,7 +390,7 @@ function BlockPanel({
         />
       ))}
       <FieldInput
-        spec={{ kind: "text", key: "id", label: "Block id", required: true, hint: "Unique on the page; also its #anchor in links" }}
+        spec={{ kind: "text", key: "id", label: "Block id", required: true, hint: "ห้ามซ้ำกับบล็อกอื่นในหน้าเดียวกัน ใช้เป็น #anchor ในลิงก์ด้วย" }}
         value={block}
         idPrefix={idPrefix}
         onChange={(next) => onChange(next as Block)}

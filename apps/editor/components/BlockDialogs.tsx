@@ -63,20 +63,20 @@ export function AddBlockDialog({ onPick, onClose }: { onPick: (type: BlockType) 
                 <span className="flex min-w-0 flex-col gap-1">
                   <span className="font-heading font-semibold">
                     {blockInfo[type].label}
-                    {ON_SITE.has(type) ? null : <span className="font-body font-normal text-muted"> (not on the site yet)</span>}
+                    {ON_SITE.has(type) ? null : <span className="font-body font-normal text-muted"> (เว็บยังไม่แสดง)</span>}
                   </span>
                   <span className="text-muted">{blockInfo[type].description}</span>
                   {fill.upload ? (
                     <Fill icon={<PictureIcon />}>
-                      <span className="font-bold">Upload:</span> {fill.upload}
+                      <span className="font-bold">อัปโหลด:</span> {fill.upload}
                     </Fill>
                   ) : null}
                   {fill.type ? (
                     <Fill icon={<TextIcon />}>
-                      <span className="font-bold">Type:</span> {fill.type}
+                      <span className="font-bold">พิมพ์:</span> {fill.type}
                     </Fill>
                   ) : null}
-                  {fill.data ? <Fill icon={<DataIcon />}>{fill.data}. Nothing to type or upload.</Fill> : null}
+                  {fill.data ? <Fill icon={<DataIcon />}>{fill.data} ไม่ต้องพิมพ์หรืออัปโหลดอะไร</Fill> : null}
                 </span>
               </button>
             </li>
@@ -88,12 +88,12 @@ export function AddBlockDialog({ onPick, onClose }: { onPick: (type: BlockType) 
   return (
     <Dialog title="Add a block" onClose={onClose}>
       <p className="text-muted">
-        Pick what the new block shows. It starts hidden, so the site does not show it half-made. In the sketches, dashed
-        frames are pictures you upload; lines are text you type.
+        เลือกว่าบล็อกใหม่จะแสดงอะไร บล็อกจะถูกซ่อนไว้ก่อน เว็บจะได้ไม่แสดงบล็อกที่ยังทำไม่เสร็จ ในภาพร่าง
+        กรอบเส้นประคือรูปที่ต้องอัปโหลด ส่วนเส้นคือข้อความที่ต้องพิมพ์
       </p>
       <div className="-mx-3 flex max-h-[65vh] flex-col gap-5 overflow-y-auto">
-        {group("content", "Text and pictures you fill in")}
-        {group("data", "Filled in from the site's data")}
+        {group("content", "ข้อความและรูปที่ต้องใส่เอง")}
+        {group("data", "ดึงข้อมูลจากเว็บมาให้เอง")}
       </div>
     </Dialog>
   );

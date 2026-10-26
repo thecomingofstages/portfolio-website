@@ -14,16 +14,16 @@ type Fields = Record<string, unknown>;
 
 /** The fields a new project needs (the schema's required ones). */
 const requiredFields: FieldSpec[] = [
-  { kind: "text", key: "slug", label: "Slug", required: true, hint: "The URL key, e.g. tcos-2-the-hidden-saloon. Lowercase letters, digits and hyphens" },
-  { kind: "text", key: "name", label: "Name", required: true, hint: "As announced" },
+  { kind: "text", key: "slug", label: "Slug", required: true, hint: "ชื่อที่ใช้ในลิงก์ เช่น tcos-2-the-hidden-saloon ใช้ได้แค่ตัวพิมพ์เล็ก ตัวเลข และขีด (-)" },
+  { kind: "text", key: "name", label: "Name", required: true, hint: "ตามที่ประกาศไว้" },
   { kind: "enum", key: "type", label: "Type", options: PROJECT_TYPES, required: true },
   { kind: "enum", key: "status", label: "Status", options: PROJECT_STATUSES, required: true },
 ];
 
 const moreFields: FieldSpec[] = [
-  { kind: "text", key: "venue", label: "Venue", nullable: true, hint: "The main venue. Several venues go in highlights" },
-  { kind: "text", key: "summary", label: "Summary", multiline: true, hint: "One or two lines for project cards" },
-  { kind: "strings", key: "pics", label: "Pictures", images: true, hint: "Image URLs, one per line. The first is the header and the shelf spine" },
+  { kind: "text", key: "venue", label: "Venue", nullable: true, hint: "สถานที่หลัก ถ้ามีหลายที่ให้ใส่ไว้ในไฮไลต์" },
+  { kind: "text", key: "summary", label: "Summary", multiline: true, hint: "สรุปสั้น ๆ หนึ่งถึงสองบรรทัด ใช้บนการ์ดโปรเจกต์" },
+  { kind: "strings", key: "pics", label: "Pictures", images: true, hint: "ลิงก์รูป บรรทัดละรูป รูปแรกจะเป็นรูปหัวหน้าโปรเจกต์และสันหนังสือบนชั้น" },
   { kind: "text", key: "org_chart_image", label: "Org chart image", nullable: true, image: true },
 ];
 
@@ -107,7 +107,7 @@ export default function ProjectForm({ project }: { project?: ProjectDoc }) {
           {required ? " *" : ""}
         </legend>
         <span className="text-muted">
-          {parts ? "Time is optional, in Bangkok time" : `Now “${raw}”: not decided yet. Pick a date to save.`}
+          {parts ? "จะใส่เวลาด้วยก็ได้ (เวลากรุงเทพฯ)" : `ตอนนี้เป็น "${raw}" คือยังไม่ได้กำหนด เลือกวันที่ก่อนบันทึก`}
         </span>
         <div className="flex gap-2">
           <input
@@ -161,14 +161,13 @@ export default function ProjectForm({ project }: { project?: ProjectDoc }) {
         {project ? dateField("end_date", "End date", false) : null}
       </div>
       {project ? moreFields.map(field) : null}
-      {checkbox("is_shown", "Shown on the site", "Off: left out of every list, and its page answers “not found”")}
+      {checkbox("is_shown", "Shown on the site", "ถ้าปิด โปรเจกต์จะไม่อยู่ในรายการไหนเลย และหน้าของโปรเจกต์จะขึ้นว่าไม่พบหน้า")}
       {project
-        ? checkbox("is_yearbook_shown", "Yearbook shown", "Turns on /projects/<slug>/yearbook and its button")
+        ? checkbox("is_yearbook_shown", "Yearbook shown", "เปิดหน้า /projects/<slug>/yearbook และปุ่มที่พาไปหน้านั้น")
         : null}
       {slugChanged ? (
         <p className="border-l-2 border-accent pl-3">
-          Changing the slug changes the project&apos;s address. The server updates the references to it, but old
-          shared links stop working.
+          ถ้าเปลี่ยน slug ลิงก์ของโปรเจกต์จะเปลี่ยนไปด้วย เซิร์ฟเวอร์จะแก้จุดที่อ้างถึงโปรเจกต์นี้ให้ แต่ลิงก์เก่าที่เคยแชร์ไปจะเข้าไม่ได้แล้ว
         </p>
       ) : null}
       {project ? null : (

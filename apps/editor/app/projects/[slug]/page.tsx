@@ -26,7 +26,7 @@ export default async function EditProject({
   if (!project) notFound();
 
   const count = (list?: { is_shown: boolean }[]) =>
-    `${list?.length ?? 0}, ${list?.filter((item) => item.is_shown).length ?? 0} shown`;
+    `${list?.length ?? 0} รายการ (แสดงอยู่ ${list?.filter((item) => item.is_shown).length ?? 0})`;
   const when = formatDate(project.start_date, project.end_date);
   const target = { kind: "project", slug: project.slug } as const;
 
@@ -70,8 +70,7 @@ export default async function EditProject({
                 <div className="flex flex-col">
                   <h2 id="project-heading">Project</h2>
                   <p className="text-muted">
-                    The header of the project page: name, dates, venue and the
-                    first picture.
+                    ส่วนหัวของหน้าโปรเจกต์: ชื่อ วันที่ สถานที่ และรูปแรก
                   </p>
                 </div>
                 <ProjectForm key={project.slug} project={project} />
@@ -82,11 +81,9 @@ export default async function EditProject({
               >
                 <h3 id="lists-heading">Team, sponsors and highlights</h3>
                 <p className="text-muted">
-                  Not edited here yet. Team {count(project.team)}. Sponsors{" "}
-                  {count(project.sponsors)}. Highlights{" "}
-                  {count(project.highlights)}. They carry photo and logo
-                  consent, so for now they are changed through the admin API
-                  (docs/EDITOR.md).
+                  ยังแก้ที่นี่ไม่ได้ ทีม {count(project.team)} สปอนเซอร์{" "}
+                  {count(project.sponsors)} ไฮไลต์ {count(project.highlights)}{" "}
+                  รายการเหล่านี้เกี่ยวกับการยินยอมเรื่องรูปและโลโก้ ตอนนี้จึงต้องแก้ผ่าน admin API (ดู docs/EDITOR.md)
                 </p>
               </section>
             </div>

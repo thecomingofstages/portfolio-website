@@ -21,7 +21,7 @@ export default async function Dashboard() {
       <h1 className="sr-only">Pages and projects</h1>
       {process.env.USE_FIXTURES === "true" ? (
         <p className="border-l-2 border-accent pl-3 text-muted">
-          Sample data: changes last until the editor restarts, and nothing reaches the real site.
+          นี่คือข้อมูลตัวอย่าง ที่แก้ไว้จะอยู่จนกว่าจะรีสตาร์ต editor และจะไม่ขึ้นเว็บจริง
         </p>
       ) : null}
       <section aria-labelledby="pages-heading" className="flex flex-col gap-2">
@@ -53,7 +53,7 @@ export default async function Dashboard() {
           </Link>
         </div>
         {byNewest.length === 0 ? (
-          <p className="text-muted">No projects yet. Create the first one.</p>
+          <p className="text-muted">ยังไม่มีโปรเจกต์ สร้างโปรเจกต์แรกได้เลย</p>
         ) : (
           <ul className="flex flex-col">
             {byNewest.map((project) => (
