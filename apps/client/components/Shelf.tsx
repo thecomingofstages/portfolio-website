@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import Media from "@/components/Media";
-import { formatDate } from "@/lib/dates";
+import { formatDate, formatYear } from "@/lib/dates";
 import type { ProjectCard } from "@/types/api";
 
 export type ShelfProps = {
@@ -18,18 +18,6 @@ export type ShelfProps = {
   /** Optional title rendered above the shelf component. */
   title?: string | null;
 };
-
-/**
- * Extracts the 4-digit calendar year from an ISO 8601 date string.
- * Returns null if the date is invalid or placeholder.
- */
-function extractYear(dateStr: string | null | undefined): string | null {
-  if (!dateStr || dateStr.startsWith("<")) return null;
-  const match = dateStr.match(/^(\d{4})/);
-  if (match) return match[1];
-  const date = new Date(dateStr);
-  return Number.isNaN(date.getTime()) ? null : String(date.getFullYear());
-}
 
 /**
  * Normalizes offset into [-half, half] so items wrap endlessly in a circle.
@@ -65,7 +53,7 @@ export default function Shelf({
   const availableYears = useMemo(() => {
     const set = new Set<string>();
     for (const p of projects) {
-      const year = extractYear(p.start_date);
+      const year = formatYear(p.start_date);
       if (year) set.add(year);
     }
     return Array.from(set).sort((a, b) => b.localeCompare(a));
@@ -76,7 +64,7 @@ export default function Shelf({
     let list = [...projects];
 
     if (showFilter && selectedYear !== "all") {
-      list = list.filter((p) => extractYear(p.start_date) === selectedYear);
+      list = list.filter((p) => formatYear(p.start_date) === selectedYear);
     }
 
     if (showToggle && isReversed) {
@@ -175,7 +163,7 @@ export default function Shelf({
   );
 
   const selectedProject = displayedProjects[activeIndex] ?? null;
-  const selectedYearText = selectedProject ? extractYear(selectedProject.start_date) : null;
+  const selectedYearText = selectedProject ? formatYear(selectedProject.start_date) : null;
   const selectedDateText = selectedProject ? formatDate(selectedProject.start_date) : "";
 
   return (

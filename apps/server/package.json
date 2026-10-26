@@ -11,15 +11,19 @@
     "cf-typegen": "wrangler types ./worker-configuration.d.ts",
     "check:db": "node --env-file=.dev.vars scripts/check-db.mjs",
     "test:postman": "npx -y newman@6 run postman/Full-Suite.postman_collection.json -e postman/TCOS-Local.postman_environment.json",
-    "seed:dev": "node --env-file=.dev.vars scripts/seed-dev.mjs"
+    "seed:dev": "node --env-file=.dev.vars scripts/seed-dev.mjs",
+    "token": "node --env-file=.dev.vars scripts/make-token.mjs"
   },
   "dependencies": {
+    "busboy": "^1.6.0",
     "express": "^5.1.0",
     "helmet": "^8.1.0",
+    "jose": "^6.2.13",
     "mongodb": "^6.15.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@types/busboy": "^1.5.5",
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
     "@types/supertest": "^7.2.1",

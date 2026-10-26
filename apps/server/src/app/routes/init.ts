@@ -4,6 +4,8 @@
  */
 import { Router } from "express";
 import type { Config } from "../config/init";
+import { Auth } from "../middleware/Auth";
+import { initAdminRoutes } from "./admin/init";
 import { docsRoute } from "./docs.route";
 import { healthRoute } from "./health.route";
 import { joinRoute } from "./join.route";
@@ -23,8 +25,8 @@ export function initRoutes(config: Config): Router {
   api.use(trackRoute);
   api.use(joinRoute);
 
-  // S5/S6: api.use("/admin", Auth, adminRoutes)
-  // S8: uploadRoute (under /admin)
+  // Admin (S5): every /api/admin/* path needs a valid token, even ones that do not exist.
+  api.use("/admin", Auth, initAdminRoutes());
 
   return api;
 }

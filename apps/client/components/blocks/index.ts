@@ -5,7 +5,10 @@ import ButtonBlock from "./ButtonBlock";
 import Gallery from "./Gallery";
 import Hero from "./Hero";
 import ImageBlock from "./ImageBlock";
+import ProjectsBlock from "./ProjectsBlock";
 import Quote from "./Quote";
+import Sponsors from "./Sponsors";
+import TrackCards from "./TrackCards";
 import Video from "./Video";
 
 /** The props every block component takes: its own filled-in block. */
@@ -29,6 +32,9 @@ export const blockComponents: BlockComponents = {
   gallery: Gallery,
   hero: Hero,
   image: ImageBlock,
+  projects: ProjectsBlock,
   quote: Quote,
+  sponsors: Sponsors,
+  tracks: TrackCards,
   video: Video,
 };

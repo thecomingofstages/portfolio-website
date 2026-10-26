@@ -149,6 +149,8 @@ types/api.ts                         response types, matching API.md
 
 ### Keeping pages fresh
 
+Home (`/`) and the project list (`/projects`) render per request, so they always show the latest data, and builds need no `API_URL`. The other pages follow the table below.
+
 | What changes                                              | How the client finds out                                                                                                                                                                                         |
 | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | An admin edits data                                       | The server calls `POST /api/revalidate` with the changed paths. The route checks `REVALIDATE_SECRET` and calls `revalidatePath`                                                                                  |

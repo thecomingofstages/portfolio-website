@@ -28,6 +28,7 @@ You don't need a database or the server to run the client: it can serve fixtures
 │   └── TASKS.md              Task briefs (F1–F7, sprints 1–3, S1–S10)
 ├── tcos_schema.mongodb.js    MongoDB collections, validators and indexes
 ├── tcos_ui_flow.drawio       Page layouts (open in diagrams.net)
+├── tcos_components.drawio    Mockup of the sprint 1 components, in the design tokens
 ├── apps/
 │   ├── client/               The public site: Next.js on Cloudflare Workers (OpenNext)
 │   │   ├── app/              Routes (App Router)
@@ -81,6 +82,19 @@ The server runs at http://localhost:8787 in the Cloudflare Workers runtime.
   `/api/openapi.yaml` (the hand-written `apps/server/swagger.yaml`). They are on only
   when `DOCS_ENABLED=true` (set in `.dev.vars`); production leaves them off.
 - `npm run check:db` checks that `MONGODB_URI` connects and the collections have validators.
+- `npm run token -- --for <you>` makes an admin token (signed with `JWT_SECRET` from `.dev.vars`;
+  add `--expires 7d` for an expiry). Send it as `Authorization: Bearer <token>` to `/api/admin/*`.
+  Never paste a token into shared files or chat. To revoke every token, change `JWT_SECRET`.
+- The admin API (`/api/admin/*`, see `/api/docs`) creates, changes and deletes content, hidden data
+  included. It checks references, refuses to delete what is still referenced (409), renames slugs
+  and keys everywhere, and deletes a photo from R2 when consent is withdrawn.
+- Uploads: `POST /api/admin/uploads?collection=projects&owner=<slug>` with the file in a
+  multipart field named `file` returns `{ key, url }`; put the `url` in the document with the
+  admin routes. `DELETE /api/admin/uploads/<key>` removes a file nobody uses. Images only for now;
+  largest file `FILE_SIZE_LIMIT` MB (in `wrangler.jsonc`, 50 by default).
+- After every successful admin write, the server calls the client's `/api/revalidate`
+  (`REVALIDATE_URL`, with `REVALIDATE_SECRET`) with the pages that changed. With
+  `REVALIDATE_URL` still `<...>`, the call is skipped; a failed call never fails the write.
 - `npm run seed:dev` adds sample data (all text `<...>`, slugs `sample-...`) to the database in
   `.dev.vars`, for testing the API by hand; `npm run seed:dev -- --clear` removes exactly that data.
   Dev database only.

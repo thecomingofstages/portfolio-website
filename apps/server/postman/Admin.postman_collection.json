@@ -1,0 +1,782 @@
+{
+  "info": {
+    "_postman_id": "c1107343-eeb0-4b55-944a-45229544b955",
+    "name": "TCOS - Admin",
+    "description": "TCOS portfolio API (public, read-only). Import TCOS-Local.postman_environment.json first. List requests save a real slug/key for the detail requests; with an empty database those are skipped. Never save a real admin token in these files.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "No token -> 401",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/projects",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "projects"
+          ]
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 401\", () => pm.response.to.have.status(401));",
+              "pm.test(\"error body { error }\", () => pm.expect(pm.response.json()).to.have.property(\"error\"));",
+              "pm.test(\"says only Unauthorized\", () => pm.expect(pm.response.json()).to.eql({ error: \"Unauthorized\" }));",
+              "pm.test(\"WWW-Authenticate: Bearer\", () => pm.expect(pm.response.headers.get(\"WWW-Authenticate\")).to.include(\"Bearer\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Not a JWT -> 401",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer not-a-jwt"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/projects",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "projects"
+          ]
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 401\", () => pm.response.to.have.status(401));",
+              "pm.test(\"error body { error }\", () => pm.expect(pm.response.json()).to.have.property(\"error\"));",
+              "pm.test(\"says only Unauthorized\", () => pm.expect(pm.response.json()).to.eql({ error: \"Unauthorized\" }));",
+              "pm.test(\"WWW-Authenticate: Bearer\", () => pm.expect(pm.response.headers.get(\"WWW-Authenticate\")).to.include(\"Bearer\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wrong signature -> 401",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4In0.c2lnbmF0dXJlLW5vdC12YWxpZA"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/projects",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "projects"
+          ]
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 401\", () => pm.response.to.have.status(401));",
+              "pm.test(\"error body { error }\", () => pm.expect(pm.response.json()).to.have.property(\"error\"));",
+              "pm.test(\"says only Unauthorized\", () => pm.expect(pm.response.json()).to.eql({ error: \"Unauthorized\" }));",
+              "pm.test(\"WWW-Authenticate: Bearer\", () => pm.expect(pm.response.headers.get(\"WWW-Authenticate\")).to.include(\"Bearer\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Valid token passes auth",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/projects",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "projects"
+          ]
+        },
+        "description": "Set {{adminToken}} in the environment first: npm run token -- --for <you>. Never save a real token in this file."
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const v = pm.environment.get(\"adminToken\");",
+              "if (!v || v === \"<...>\") { console.log(\"skipped: no adminToken (empty database?)\"); pm.execution.skipRequest(); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"not 401: the token is accepted\", () => pm.expect(pm.response.code).to.not.eql(401));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create track",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/tracks",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "tracks"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"key\": \"postman-check-track\",\n  \"display_name\": \"<...>\",\n  \"is_shown\": true\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const v = pm.environment.get(\"adminToken\");",
+              "if (!v || v === \"<...>\") { console.log(\"skipped: no adminToken (empty database?)\"); pm.execution.skipRequest(); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 201\", () => pm.response.to.have.status(201));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create project (hidden)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/projects",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "projects"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"slug\": \"postman-check-project\",\n  \"name\": \"<...>\",\n  \"type\": \"workshop\",\n  \"status\": \"upcoming\",\n  \"start_date\": \"2030-01-01\",\n  \"is_shown\": false\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const v = pm.environment.get(\"adminToken\");",
+              "if (!v || v === \"<...>\") { console.log(\"skipped: no adminToken (empty database?)\"); pm.execution.skipRequest(); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 201\", () => pm.response.to.have.status(201));",
+              "pm.test(\"has _id\", () => pm.expect(pm.response.json()._id).to.match(/^[0-9a-f]{24}$/));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hidden project is listed for admins",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/projects/postman-check-project",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "projects",
+            "postman-check-project"
+          ]
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const v = pm.environment.get(\"adminToken\");",
+              "if (!v || v === \"<...>\") { console.log(\"skipped: no adminToken (empty database?)\"); pm.execution.skipRequest(); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"is_shown false is returned\", () => pm.expect(pm.response.json().is_shown).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Add team member",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/projects/postman-check-project/team",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "projects",
+            "postman-check-project",
+            "team"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"<first name surname>\",\n  \"dept_key\": \"postman-check-track\",\n  \"position\": \"<...>\",\n  \"is_shown\": true\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const v = pm.environment.get(\"adminToken\");",
+              "if (!v || v === \"<...>\") { console.log(\"skipped: no adminToken (empty database?)\"); pm.execution.skipRequest(); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 201\", () => pm.response.to.have.status(201));",
+              "pm.environment.set(\"memberId\", pm.response.json()._id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Unknown dept_key -> 400",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/projects/postman-check-project/team",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "projects",
+            "postman-check-project",
+            "team"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"<...>\",\n  \"dept_key\": \"postman-no-such-track\",\n  \"position\": \"<...>\",\n  \"is_shown\": true\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const v = pm.environment.get(\"adminToken\");",
+              "if (!v || v === \"<...>\") { console.log(\"skipped: no adminToken (empty database?)\"); pm.execution.skipRequest(); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 400\", () => pm.response.to.have.status(400));",
+              "pm.test(\"error body { error }\", () => pm.expect(pm.response.json()).to.have.property(\"error\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Photo without consent -> 400",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/projects/postman-check-project/team/{{memberId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "projects",
+            "postman-check-project",
+            "team",
+            "{{memberId}}"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"photo\": \"https://example.invalid/x.webp\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const v = pm.environment.get(\"adminToken\");",
+              "if (!v || v === \"<...>\") { console.log(\"skipped: no adminToken (empty database?)\"); pm.execution.skipRequest(); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 400\", () => pm.response.to.have.status(400));",
+              "pm.test(\"error body { error }\", () => pm.expect(pm.response.json()).to.have.property(\"error\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Track in use -> 409 on delete",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/tracks/postman-check-track",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "tracks",
+            "postman-check-track"
+          ]
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const v = pm.environment.get(\"adminToken\");",
+              "if (!v || v === \"<...>\") { console.log(\"skipped: no adminToken (empty database?)\"); pm.execution.skipRequest(); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 409\", () => pm.response.to.have.status(409));",
+              "pm.test(\"error body { error }\", () => pm.expect(pm.response.json()).to.have.property(\"error\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rename project slug",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/projects/postman-check-project",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "projects",
+            "postman-check-project"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"slug\": \"postman-check-project-renamed\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const v = pm.environment.get(\"adminToken\");",
+              "if (!v || v === \"<...>\") { console.log(\"skipped: no adminToken (empty database?)\"); pm.execution.skipRequest(); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 200\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rename track key: team follows",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/tracks/postman-check-track",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "tracks",
+            "postman-check-track"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"key\": \"postman-check-track-renamed\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const v = pm.environment.get(\"adminToken\");",
+              "if (!v || v === \"<...>\") { console.log(\"skipped: no adminToken (empty database?)\"); pm.execution.skipRequest(); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 200\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Team dept_key was renamed",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/projects/postman-check-project-renamed/team",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "projects",
+            "postman-check-project-renamed",
+            "team"
+          ]
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const v = pm.environment.get(\"adminToken\");",
+              "if (!v || v === \"<...>\") { console.log(\"skipped: no adminToken (empty database?)\"); pm.execution.skipRequest(); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"dept_key follows the rename\", () => pm.expect(pm.response.json()[0].dept_key).to.eql(\"postman-check-track-renamed\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clean up: delete project",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/projects/postman-check-project-renamed",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "projects",
+            "postman-check-project-renamed"
+          ]
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const v = pm.environment.get(\"adminToken\");",
+              "if (!v || v === \"<...>\") { console.log(\"skipped: no adminToken (empty database?)\"); pm.execution.skipRequest(); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 204\", () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clean up: delete track",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/tracks/postman-check-track-renamed",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "tracks",
+            "postman-check-track-renamed"
+          ]
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const v = pm.environment.get(\"adminToken\");",
+              "if (!v || v === \"<...>\") { console.log(\"skipped: no adminToken (empty database?)\"); pm.execution.skipRequest(); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 204\", () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

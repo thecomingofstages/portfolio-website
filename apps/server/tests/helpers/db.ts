@@ -4,21 +4,26 @@
  *
  *   const db = useTestDb();
  *   it("...", async () => { await db.models.projects.insertOne(makeProject()); ... request(db.app()) ... });
+ *
+ * `useTestDb({ schema: true })` also applies tcos_schema.mongodb.js (validators and
+ * unique indexes) before each test, as on Atlas.
  */
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { MongoClient } from "mongodb";
 import { afterAll, beforeAll, beforeEach } from "vitest";
 import { dbConf } from "../../src/app/config/db.conf";
+import type { Config } from "../../src/app/config/init";
 import { initModels, type Models } from "../../src/app/models";
 import { buildTestApp } from "./app";
+import { applySchema } from "./schema";
 
-export function useTestDb() {
+export function useTestDb(options: { schema?: boolean } = {}) {
   let server: MongoMemoryServer;
   let client: MongoClient;
   const ctx = {
     models: undefined as unknown as Models,
     /** The app, pointed at this database. */
-    app: () => buildTestApp({ MONGODB_URI: server.getUri() }),
+    app: (overrides: Partial<Config> = {}) => buildTestApp({ MONGODB_URI: server.getUri(), ...overrides }),
   };
 
   beforeAll(async () => {
@@ -29,6 +34,7 @@ export function useTestDb() {
 
   beforeEach(async () => {
     await ctx.models.db.dropDatabase();
+    if (options.schema) await applySchema(ctx.models.db);
   });
 
   afterAll(async () => {

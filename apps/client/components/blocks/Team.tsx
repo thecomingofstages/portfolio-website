@@ -239,7 +239,7 @@ export default function Team({ block }: TeamProps) {
               - Mobile: bottom sheet style with 92vh height, rounded top, smooth touch scroll
               - Desktop: centered modal max-w-4xl, rounded card, generous padding
           */}
-          <div className="relative z-10 flex max-h-[92vh] w-full max-w-4xl flex-col overflow-y-auto rounded-t-2xl bg-[#121212] p-5 shadow-2xl sm:max-h-[90vh] sm:rounded-[var(--radius-card)] sm:p-8 md:p-10">
+          <div className="relative z-10 flex max-h-[92vh] w-full max-w-4xl flex-col overflow-y-auto rounded-t-2xl bg-card-bg p-5 shadow-2xl sm:max-h-[90vh] sm:rounded-[var(--radius-card)] sm:p-8 md:p-10">
             {/* Top Drag / Sheet Indicator for Mobile */}
             <div className="mb-3 flex justify-center sm:hidden">
               <div className="h-1 w-10 rounded-full bg-border" />

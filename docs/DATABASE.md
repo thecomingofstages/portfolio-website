@@ -34,7 +34,7 @@ tracks.key ◄──────── projects.team[].dept_key
 - **`_id` on list items:** team members, sponsors, highlights, track achievements, apply positions and timeline events each carry a required `_id` (ObjectId), so the admin API can edit one item by id. The server adds it to new items, and import scripts must set it too, with `new ObjectId()`. Block sub-lists (gallery images, buttons, stat items, videos) have none: a page's blocks are saved whole.
 - Every collection and listed item rejects fields it does not list (`additionalProperties: false`), so removed or renamed fields cannot linger.
 - Field names are `snake_case`. The camelCase words in the script (`bsonType`, `additionalProperties`, `createCollection` ...) are MongoDB's own and must stay.
-- Dates are BSON `Date`, and may carry a time.
+- Dates are BSON `Date`, and may carry a time. A date without a time is stored as midnight UTC (what `new Date("2025-06-28")` gives); the site shows a time only when it is not midnight UTC.
 - `pics`, `logo`, `poster`, `photo`, `media_url`, `slides` and `org_chart_image` hold URLs.
 - Text is Thai-first plain strings. English is an open decision (see the end).
 - Validators run with `validationLevel: "moderate"`. Switch to `"strict"` once the data is clean.
