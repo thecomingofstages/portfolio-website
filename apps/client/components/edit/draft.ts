@@ -28,6 +28,16 @@ export type CanvasMessage =
   | { tcos: "edit"; type: "remove"; index: number }
   | { tcos: "edit"; type: "insert"; at: number };
 
+/** The origin of EDITOR_ORIGIN ("http://localhost:3001/" → "http://localhost:3001"), or null when unset or not a URL. */
+export function originOf(value: string | undefined): string | null {
+  if (!value) return null;
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+}
+
 /** The editor's "load" message, or null for anything else. */
 export function readLoad(data: unknown): EditorMessage | null {
   if (!data || typeof data !== "object") return null;

@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import EditCanvas from "@/components/edit/EditCanvas";
 import ProjectHeader from "@/components/ProjectHeader";
 import { getHomePage, getProject } from "@/lib/api";
+import { originOf } from "@/components/edit/draft";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
@@ -17,7 +18,7 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
  */
 export default async function EditPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await connection();
-  const editorOrigin = process.env.EDITOR_ORIGIN;
+  const editorOrigin = originOf(process.env.EDITOR_ORIGIN);
   if (!editorOrigin) notFound();
 
   const { page, project: slug } = await searchParams;

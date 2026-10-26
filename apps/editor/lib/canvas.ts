@@ -30,3 +30,8 @@ export function canvasUrl(siteUrl: string | undefined, target: BlocksTarget): st
     ? `${base}/edit?page=${encodeURIComponent(target.key)}`
     : `${base}/edit?project=${encodeURIComponent(target.slug)}`;
 }
+
+/** True only for a message from the framed page itself: its origin and its window. */
+export function isFromPage(event: Pick<MessageEvent, "origin" | "source">, siteOrigin: string, page: Window | null | undefined) {
+  return event.origin === siteOrigin && !!page && event.source === page;
+}

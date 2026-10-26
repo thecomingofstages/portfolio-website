@@ -7,7 +7,7 @@ import FieldInput from "@/components/FieldInput";
 import { SaveStatus, ShownMark } from "@/components/ui";
 import type { UploadOwner } from "@/lib/admin-api";
 import { blockInfo, getPath, isPageField, moveItem, newBlock, ON_SITE, pageValue, setField, setPath } from "@/lib/blocks";
-import { canvasMessageSchema } from "@/lib/canvas";
+import { canvasMessageSchema, isFromPage } from "@/lib/canvas";
 import { BLOCK_TYPES } from "@/lib/schemas";
 import type { ActionResult, Block, BlocksTarget, BlockType } from "@/types/admin";
 
@@ -174,7 +174,7 @@ export default function BlocksEditor({
   useEffect(() => {
     if (!siteOrigin) return;
     const receive = (event: MessageEvent) => {
-      if (event.origin === siteOrigin && event.source === frame.current?.contentWindow) handle.current(event.data);
+      if (isFromPage(event, siteOrigin, frame.current?.contentWindow)) handle.current(event.data);
     };
     window.addEventListener("message", receive);
     return () => window.removeEventListener("message", receive);
@@ -199,7 +199,6 @@ export default function BlocksEditor({
                 ref={frame}
                 src={canvasUrl}
                 title="The page, editable"
-                onLoad={sendToPage}
                 className="h-[75vh] w-full rounded-[var(--radius-card)] border border-border bg-background lg:h-[calc(100vh-10rem)]"
               />
               <p className="text-muted">
@@ -350,8 +349,8 @@ function BlockPanel({
         <button type="button" className="btn-icon" aria-label="Remove" title="Remove" onClick={onRemove}>
           ✕
         </button>
-        <button type="button" className="btn-icon" aria-label="Close, back to the settings" title="Close" onClick={onClose}>
-          ⨯
+        <button type="button" className="btn" onClick={onClose}>
+          Done
         </button>
       </div>
 

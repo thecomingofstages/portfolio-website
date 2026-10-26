@@ -138,6 +138,11 @@
     cursor: pointer;
   }
 
+  /* Text that renders as nothing (e.g. only HTML, which Markdown drops) can still be clicked. */
+  [data-editing] [data-field-kind="markdown"] {
+    min-height: 3rem;
+  }
+
   [data-editing] [data-empty] {
     font-style: italic;
     opacity: 0.55;

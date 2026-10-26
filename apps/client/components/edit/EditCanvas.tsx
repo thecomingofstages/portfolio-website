@@ -156,13 +156,15 @@ export default function EditCanvas({
       send({ tcos: "edit", type: "image", index, path });
     } else if (kind === "markdown") {
       const box = field.getBoundingClientRect();
+      // The box is placed inside the editing area (position: relative), so measure from it.
+      const area = root.current?.getBoundingClientRect() ?? { top: 0, left: 0 };
       const current = getPath(doc?.blocks[index], path);
       setMarkdown({
         index,
         path,
         value: typeof current === "string" ? current : "",
-        top: box.top + window.scrollY,
-        left: box.left + window.scrollX,
+        top: box.top - area.top,
+        left: box.left - area.left,
         width: box.width,
         height: Math.max(box.height, 160),
       });
