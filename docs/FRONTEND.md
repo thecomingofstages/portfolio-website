@@ -98,10 +98,10 @@ types/api.ts                         response types, matching API.md
 
 | Block     | Component     | Notes                                                                                                                                                                                                                                                                             |
 | --------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `hero`    | `Hero`        | `media_kind`: image, video or slideshow. A slideshow runs `media_url` and then `slides`, `slide_seconds` per slide (`null` = the client's default, 5 seconds). When the device asks for reduced motion, it shows `media_url` only. Shows `title`, `subtitle` and `buttons` on top |
+| `hero`    | `Hero`        | `media_kind`: image, video or slideshow. A slideshow runs `media_url` and then `slides`, `slide_seconds` per slide (`null` = the client's default, 5 seconds). When the device asks for reduced motion, it shows `media_url` only. Shows `title`, `subtitle` and `buttons` at the bottom left. Full-bleed, about 85% of the window height, media covering it |
 | `article` | `Article`     | `body` is Markdown, rendered without raw HTML. `image` goes on `image_side`                                                                                                                                                                                                       |
 | `image`   | `ImageBlock`  | `size`: normal, or large (full width, e.g. the team photo). `caption`, `credit`                                                                                                                                                                                                   |
-| `quote`   | `Quote`       | `text`, `who`, `role`, `background_image` or `background_color`                                                                                                                                                                                                                   |
+| `quote`   | `Quote`       | `text`, `who`, `role`, `background_image` or `background_color`. Full-bleed, `background_image` covering it                                                                                                                                                                       |
 | `gallery` | `Gallery`     | `items[]` with `desc` under each. The Artwork gallery uses the same component                                                                                                                                                                                                     |
 | `video`   | `Video`       | One embed per `videos[]` item, by `provider` (see [Embeds](#embeds))                                                                                                                                                                                                              |
 | `button`  | `ButtonBlock` | `buttons[]` with `style` and `align`; `mailto:` links work as they are                                                                                                                                                                                                            |
@@ -220,7 +220,7 @@ API.md is the contract between the two sides.
 
 - **Fonts:** Prompt for headings, Sarabun for articles and long text.
 - **Background:** one picture fills the whole window, behind every page, under a `#000` layer at 75% opacity.
-- **Page width:** content is 90% of the viewport width on phones, and 80% from 768px up. No maximum.
+- **Page width:** content is 90% of the viewport width on phones, and 80% from 768px up. No maximum. Hero and Quote are the exceptions: full-bleed banners across the whole window width, their text inside the content width (project lead, 26 Oct 2026).
 - **Text colours:** white and light grey. **Gold** (`#d8b85a`) is the accent: the active nav link, primary buttons and badges.
 - **One stylesheet:** every colour, font family and font size is a token in `apps/client/app/globals.css`, and nothing else is used (see AGENTS.md).
 
@@ -255,7 +255,7 @@ On a primary button, the text is `--background` (black) on `--accent` (gold).
 | below 768px        | 90% of viewport width  |
 | 768px and wider    | 80% of viewport width  |
 
-The Nav and every page use the same width, centred.
+The Nav and every page use the same width, centred. Exceptions: the Hero and Quote blocks are full-bleed (`full-bleed` in `globals.css`): the whole window width, their picture covering it and cropped, with their text inside the content width (project lead, 26 Oct 2026). A Hero that opens a page sits right under the Nav.
 
 ### Type
 

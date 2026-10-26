@@ -69,6 +69,13 @@ describe("Hero", () => {
     expect(screen.queryByRole("link")).toBeNull();
   });
 
+  it("is a full-bleed banner with the image covering it", () => {
+    const { container } = render(<Hero block={base} />);
+    expect(container.querySelector("section")?.className).toContain("full-bleed");
+    expect(container.querySelector("img")?.className).toContain("object-cover");
+    expect(container.querySelector("img")?.getAttribute("sizes")).toBe("100vw");
+  });
+
   it("shows an image under the dark layer, with an empty alt and no pause button", () => {
     const { container } = render(<Hero block={base} />);
     expect(container.querySelectorAll("img")).toHaveLength(1);
@@ -108,9 +115,8 @@ describe("Hero", () => {
     expect(container.querySelector("video")).toBeNull();
     const frame = container.querySelector<HTMLElement>("[data-placeholder]");
     expect(frame).not.toBeNull();
-    // The frame follows the content width, not the 1200×800 it is given (phone width).
-    expect(frame?.style.width).toBe("100%");
-    expect(frame?.style.height).toBe("auto");
+    // The frame fills the banner, not a fixed size (phone width).
+    expect(frame?.className).toContain("absolute inset-0");
   });
 
   it("runs a slideshow from media_url through the slides, 5 seconds each by default", () => {

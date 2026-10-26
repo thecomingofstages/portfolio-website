@@ -32,6 +32,13 @@ describe("Quote", () => {
     expect(container.querySelector(".bg-background\\/75")).not.toBeNull();
   });
 
+  it("is a full-bleed banner with the picture covering it", () => {
+    const { container } = render(<Quote block={base} />);
+    expect(container.querySelector("figure")?.className).toContain("full-bleed");
+    expect(container.querySelector("img")?.className).toContain("object-cover");
+    expect(container.querySelector("img")?.getAttribute("sizes")).toBe("100vw");
+  });
+
   it("shows the card colour and no dark layer when there is no background image", () => {
     const { container } = render(<Quote block={{ ...base, background_image: null }} />);
     expect(container.querySelector("img")).toBeNull();

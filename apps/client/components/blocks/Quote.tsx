@@ -4,7 +4,8 @@ import type { BlockProps } from ".";
 /**
  * A quote (docs/DATABASE.md "quote"): `text`, then `who` and `role`, over
  * `background_image` under a #000 layer at 75% so the text stays readable, or
- * on the card colour when there is no image.
+ * on the card colour when there is no image. A full-bleed banner: full window
+ * width, the picture covering it and cropped (project lead, 26 Oct 2026).
  */
 export default function Quote({ block }: BlockProps<"quote">) {
   const { title, text, who, role, background_image } = block;
@@ -14,24 +15,20 @@ export default function Quote({ block }: BlockProps<"quote">) {
   return (
     <div className="flex flex-col gap-6 py-8">
       {title ? <h2>{title}</h2> : null}
-      <figure className="grid overflow-hidden rounded-card bg-card-bg">
+      <figure className="full-bleed relative flex min-h-80 items-center overflow-hidden bg-card-bg">
         {background_image ? (
           <>
-            {/* The picture shows whole, never cropped (project lead, 13 Oct 2026): when the text is
-                taller than the picture, the card colour fills the space under it. */}
             <Media
               src={background_image}
               alt=""
-              width={1200}
-              height={800}
-              sizes="(min-width: 768px) 80vw, 90vw"
-              style={{ width: "100%", height: "auto" }}
-              className="col-start-1 row-start-1 self-start aspect-[auto_3/2]"
+              fill
+              sizes="100vw"
+              className="object-cover"
             />
-            <div aria-hidden="true" className="col-start-1 row-start-1 bg-background/75" />
+            <div aria-hidden="true" className="absolute inset-0 bg-background/75" />
           </>
         ) : null}
-        <div className="relative col-start-1 row-start-1 flex flex-col justify-center gap-4 p-6 md:p-12">
+        <div className="page-width relative flex flex-col gap-4 py-12 md:py-16">
           <blockquote className="font-heading text-h3">
             <p>{text}</p>
           </blockquote>
