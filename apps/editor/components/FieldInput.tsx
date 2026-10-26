@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Label } from "@/components/ui";
+import UploadButton from "@/components/UploadButton";
+import type { UploadOwner } from "@/lib/admin-api";
 import { type FieldSpec, moveItem, parseStatValue, setField } from "@/lib/blocks";
 
 type Obj = Record<string, unknown>;
@@ -16,6 +18,7 @@ export default function FieldInput({
   onChange,
   idPrefix,
   projectSlugsListId,
+  uploadTo,
 }: {
   spec: FieldSpec;
   value: Obj;
@@ -23,6 +26,8 @@ export default function FieldInput({
   idPrefix: string;
   /** A <datalist> of project slugs, for `project_slug` fields. */
   projectSlugsListId?: string;
+  /** Where uploaded images are filed; without it, image fields take URLs only. */
+  uploadTo?: UploadOwner;
 }) {
   const id = `${idPrefix}-${spec.key}`;
   const current = value[spec.key];
@@ -44,11 +49,14 @@ export default function FieldInput({
             <input
               id={id}
               type="text"
+              inputMode={spec.image ? "url" : undefined}
               value={text}
+              placeholder={spec.image ? "https://" : undefined}
               onChange={(e) => update(e.target.value)}
               list={spec.key === "project_slug" ? projectSlugsListId : undefined}
             />
           )}
+          {spec.image && uploadTo ? <UploadButton to={uploadTo} onUploaded={update} /> : null}
         </div>
       );
     }
@@ -102,17 +110,27 @@ export default function FieldInput({
 
     case "bool":
       return (
-        <div className="flex items-center gap-2">
-          <input id={id} type="checkbox" checked={current === true} onChange={(e) => set(e.target.checked)} />
-          <label htmlFor={id} className="font-heading font-semibold">
+        <div className="flex items-start gap-2.5">
+          <input id={id} type="checkbox" className="mt-1" checked={current === true} onChange={(e) => set(e.target.checked)} />
+          <Label htmlFor={id} hint={spec.hint}>
             {spec.label}
-          </label>
-          {spec.hint ? <span className="text-muted">{spec.hint}</span> : null}
+          </Label>
         </div>
       );
 
     case "strings":
-      return <StringsInput id={id} label={label} hint={spec.hint} value={current} onChange={set} />;
+      return (
+        <div className="flex flex-col gap-1">
+          <StringsInput id={id} label={label} hint={spec.hint} value={current} onChange={set} />
+          {spec.images && uploadTo ? (
+            <UploadButton
+              to={uploadTo}
+              label="Upload and add"
+              onUploaded={(url) => set([...(Array.isArray(current) ? current : []), url])}
+            />
+          ) : null}
+        </div>
+      );
 
     case "value": {
       const text = typeof current === "number" ? String(current) : typeof current === "string" ? current : "";
@@ -129,22 +147,24 @@ export default function FieldInput({
     case "items": {
       const items = Array.isArray(current) ? (current as Obj[]) : [];
       const setItems = (next: Obj[]) => set(next);
+      const name = spec.itemLabel.toLowerCase();
       return (
-        <fieldset className="flex flex-col gap-3 rounded-[var(--radius-card)] border border-border p-3">
-          <legend className="px-1 font-heading font-semibold">{spec.label}</legend>
+        <fieldset className="flex flex-col gap-3">
+          <legend className="font-bold">{spec.label}</legend>
           {spec.hint ? <p className="text-muted">{spec.hint}</p> : null}
           {items.length === 0 ? <p className="text-muted">None yet.</p> : null}
-          {items.map((item, index) => (
-            <div key={index} className="flex flex-col gap-3 rounded-[var(--radius-card)] bg-card-bg p-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-heading font-semibold">
-                  {spec.itemLabel} {index + 1}
-                </span>
-                <span className="ml-auto flex gap-1">
+          <ol className="flex flex-col gap-5">
+            {items.map((item, index) => (
+              <li key={index} className="flex flex-col gap-3 border-l-2 border-border pl-4">
+                <div className="flex items-center gap-1">
+                  <span className="mr-auto text-muted">
+                    {spec.itemLabel} {index + 1}
+                  </span>
                   <button
                     type="button"
-                    className="btn"
-                    aria-label={`Move ${spec.itemLabel.toLowerCase()} ${index + 1} up`}
+                    className="btn-icon"
+                    aria-label={`Move ${name} ${index + 1} up`}
+                    title="Move up"
                     disabled={index === 0}
                     onClick={() => setItems(moveItem(items, index, index - 1))}
                   >
@@ -152,8 +172,9 @@ export default function FieldInput({
                   </button>
                   <button
                     type="button"
-                    className="btn"
-                    aria-label={`Move ${spec.itemLabel.toLowerCase()} ${index + 1} down`}
+                    className="btn-icon"
+                    aria-label={`Move ${name} ${index + 1} down`}
+                    title="Move down"
                     disabled={index === items.length - 1}
                     onClick={() => setItems(moveItem(items, index, index + 1))}
                   >
@@ -161,29 +182,31 @@ export default function FieldInput({
                   </button>
                   <button
                     type="button"
-                    className="btn"
-                    aria-label={`Remove ${spec.itemLabel.toLowerCase()} ${index + 1}`}
+                    className="btn-icon"
+                    aria-label={`Remove ${name} ${index + 1}`}
+                    title="Remove"
                     onClick={() => setItems(items.filter((_, i) => i !== index))}
                   >
-                    Remove
+                    ✕
                   </button>
-                </span>
-              </div>
-              {spec.fields.map((field) => (
-                <FieldInput
-                  key={field.key}
-                  spec={field}
-                  value={item}
-                  idPrefix={`${id}-${index}`}
-                  projectSlugsListId={projectSlugsListId}
-                  onChange={(next) => setItems(items.map((it, i) => (i === index ? next : it)))}
-                />
-              ))}
-            </div>
-          ))}
+                </div>
+                {spec.fields.map((field) => (
+                  <FieldInput
+                    key={field.key}
+                    spec={field}
+                    value={item}
+                    idPrefix={`${id}-${index}`}
+                    projectSlugsListId={projectSlugsListId}
+                    uploadTo={uploadTo}
+                    onChange={(next) => setItems(items.map((it, i) => (i === index ? next : it)))}
+                  />
+                ))}
+              </li>
+            ))}
+          </ol>
           <div>
             <button type="button" className="btn" onClick={() => setItems([...items, spec.newItem()])}>
-              Add {spec.itemLabel.toLowerCase()}
+              Add {name}
             </button>
           </div>
         </fieldset>
@@ -208,6 +231,8 @@ function StringsInput({
 }) {
   const list = Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
   const [text, setText] = useState(() => list.join("\n"));
+  // A list changed from outside (an upload added a line) replaces the text.
+  if (linesOf(text).join("\n") !== list.join("\n")) setText(list.join("\n"));
   return (
     <div className="flex flex-col gap-1">
       <Label htmlFor={id} hint={hint}>
@@ -219,14 +244,15 @@ function StringsInput({
         value={text}
         onChange={(e) => {
           setText(e.target.value);
-          onChange(
-            e.target.value
-              .split("\n")
-              .map((line) => line.trim())
-              .filter(Boolean),
-          );
+          onChange(linesOf(e.target.value));
         }}
       />
     </div>
   );
 }
+
+const linesOf = (text: string) =>
+  text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);

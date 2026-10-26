@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Prompt, Sarabun } from "next/font/google";
 import Link from "next/link";
+import NavLinks from "@/components/NavLinks";
 import "./globals.css";
 
 const prompt = Prompt({
@@ -27,29 +28,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="th" className={`${prompt.variable} ${sarabun.variable}`}>
       <body className="antialiased">
-        <header className="border-b border-border">
-          <div className="editor-width flex flex-wrap items-center gap-x-6 gap-y-2 py-3">
-            <Link href="/" className="font-heading text-body-lg font-bold text-accent">
+        <header className="editor-wide sticky top-0 z-20 pt-3">
+          <div className="bar flex flex-wrap items-center gap-x-8 gap-y-1 px-4 py-2.5">
+            <Link href="/" className="font-heading font-bold">
               TCOS editor
             </Link>
-            <nav aria-label="Editor" className="flex gap-4 text-muted">
-              <Link href="/pages/home" className="hover:text-foreground">
-                Home page
-              </Link>
-              <Link href="/" className="hover:text-foreground">
-                Projects
-              </Link>
-            </nav>
+            <NavLinks />
             {fixtures ? (
-              <span className="ml-auto rounded-[var(--radius-button)] border border-accent px-2 text-accent">
-                Fixtures: saves last until restart
-              </span>
+              <span className="text-muted sm:ml-auto">Sample data: saves last until the editor restarts</span>
             ) : null}
           </div>
         </header>
-        <main className="editor-width py-6">
-          {children}
-        </main>
+        <main className="editor-wide py-10">{children}</main>
       </body>
     </html>
   );

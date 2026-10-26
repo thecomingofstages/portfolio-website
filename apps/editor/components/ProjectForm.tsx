@@ -3,8 +3,9 @@
 import { useState, useTransition } from "react";
 import { createProject, saveProjectFields } from "@/app/actions";
 import FieldInput from "@/components/FieldInput";
-import { SaveStatus } from "@/components/ui";
+import { Label, SaveStatus } from "@/components/ui";
 import type { FieldSpec } from "@/lib/blocks";
+import { type DateParts, fromDateParts, normalizeDate, toDateParts } from "@/lib/date-input";
 import { PROJECT_STATUSES, PROJECT_TYPES } from "@/lib/schemas";
 import type { ActionResult, ProjectDoc } from "@/types/admin";
 
@@ -21,15 +22,9 @@ const requiredFields: FieldSpec[] = [
 const moreFields: FieldSpec[] = [
   { kind: "text", key: "venue", label: "Venue", nullable: true, hint: "The main venue. Several venues go in highlights" },
   { kind: "text", key: "summary", label: "Summary", multiline: true, hint: "One or two lines for project cards" },
-  { kind: "strings", key: "pics", label: "Pictures", hint: "Image URLs, one per line. The first is the header and the shelf spine" },
-  { kind: "text", key: "org_chart_image", label: "Org chart image URL", nullable: true },
+  { kind: "strings", key: "pics", label: "Pictures", images: true, hint: "Image URLs, one per line. The first is the header and the shelf spine" },
+  { kind: "text", key: "org_chart_image", label: "Org chart image", nullable: true, image: true },
 ];
-
-/** `YYYY-MM-DD` from a stored ISO date; anything else (e.g. "<...>") as it is. */
-function dateInput(value: string | null | undefined): string {
-  if (!value) return "";
-  return /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : value;
-}
 
 function fieldsOf(project: ProjectDoc): Fields {
   return {
@@ -37,8 +32,8 @@ function fieldsOf(project: ProjectDoc): Fields {
     name: project.name,
     type: project.type,
     status: project.status,
-    start_date: dateInput(project.start_date),
-    end_date: project.end_date ? dateInput(project.end_date) : null,
+    start_date: normalizeDate(project.start_date),
+    end_date: project.end_date ? normalizeDate(project.end_date) : null,
     venue: project.venue ?? null,
     summary: project.summary ?? "",
     pics: project.pics ?? [],
@@ -70,51 +65,72 @@ export default function ProjectForm({ project }: { project?: ProjectDoc }) {
   const slugChanged = project && fields.slug !== project.slug;
 
   const field = (spec: FieldSpec) => (
-    <FieldInput key={spec.key} spec={spec} value={fields} idPrefix="project" onChange={setFields} />
+    <FieldInput
+      key={spec.key}
+      spec={spec}
+      value={fields}
+      idPrefix="project"
+      uploadTo={project ? { collection: "projects", owner: project.slug } : undefined}
+      onChange={setFields}
+    />
   );
 
+  /** A date with an optional time, in Bangkok. An undecided value (e.g. "<...>") shows until a date is picked. */
   function dateField(key: "start_date" | "end_date", label: string, required: boolean) {
-    const value = typeof fields[key] === "string" ? (fields[key] as string) : "";
-    const valid = value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value);
+    const raw = typeof fields[key] === "string" ? (fields[key] as string) : "";
+    const parts = raw === "" ? { date: "", time: "" } : toDateParts(raw);
+    const set = (next: DateParts) =>
+      setFields({ ...fields, [key]: next.date ? fromDateParts(next) : required ? "" : null });
     return (
-      <div className="flex flex-col gap-1">
-        <label htmlFor={`project-${key}`} className="flex flex-col gap-0.5">
-          <span className="font-heading font-semibold">
-            {label}
-            {required ? " *" : ""}
-          </span>
-          {!valid ? <span className="text-accent">Now “{value}”: not decided yet. Pick a date to save.</span> : null}
-        </label>
-        <input
-          id={`project-${key}`}
-          type="date"
-          value={valid ? value : ""}
-          onChange={(e) => setFields({ ...fields, [key]: e.target.value || (required ? "" : null) })}
-        />
-      </div>
+      <fieldset className="flex flex-col gap-1">
+        <legend className="font-bold">
+          {label}
+          {required ? " *" : ""}
+        </legend>
+        <span className="text-muted">
+          {parts ? "Time is optional, in Bangkok time" : `Now “${raw}”: not decided yet. Pick a date to save.`}
+        </span>
+        <div className="flex gap-2">
+          <input
+            id={`project-${key}`}
+            aria-label={`${label}: date`}
+            type="date"
+            value={parts?.date ?? ""}
+            onChange={(e) => set({ date: e.target.value, time: parts?.time ?? "" })}
+          />
+          <input
+            aria-label={`${label}: time`}
+            type="time"
+            className="max-w-36"
+            value={parts?.time ?? ""}
+            disabled={!parts?.date}
+            onChange={(e) => set({ date: parts?.date ?? "", time: e.target.value })}
+          />
+        </div>
+      </fieldset>
     );
   }
 
   function checkbox(key: "is_shown" | "is_yearbook_shown", label: string, hint: string) {
     return (
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-start gap-2.5">
         <input
           id={`project-${key}`}
           type="checkbox"
+          className="mt-1"
           checked={fields[key] === true}
           onChange={(e) => setFields({ ...fields, [key]: e.target.checked })}
         />
-        <label htmlFor={`project-${key}`} className="font-heading font-semibold">
+        <Label htmlFor={`project-${key}`} hint={hint}>
           {label}
-        </label>
-        <span className="text-muted">{hint}</span>
+        </Label>
       </div>
     );
   }
 
   return (
     <form
-      className="flex flex-col gap-4 rounded-[var(--radius-card)] border border-border p-4"
+      className="flex flex-col gap-5"
       onSubmit={(e) => {
         e.preventDefault();
         startTransition(async () => {
@@ -130,12 +146,12 @@ export default function ProjectForm({ project }: { project?: ProjectDoc }) {
         {project ? dateField("end_date", "End date", false) : null}
       </div>
       {project ? moreFields.map(field) : null}
-      {checkbox("is_shown", "Shown on the site", "Hidden: left out of every list, and its page answers 404")}
+      {checkbox("is_shown", "Shown on the site", "Off: left out of every list, and its page answers “not found”")}
       {project
         ? checkbox("is_yearbook_shown", "Yearbook shown", "Turns on /projects/<slug>/yearbook and its button")
         : null}
       {slugChanged ? (
-        <p className="text-accent">
+        <p className="border-l-2 border-accent pl-3">
           Changing the slug changes the project&apos;s address. The server updates the references to it, but old
           shared links stop working.
         </p>

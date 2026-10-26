@@ -3,8 +3,9 @@
 import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { saveBlocks } from "@/app/actions";
 import FieldInput from "@/components/FieldInput";
-import { SaveStatus, ShownBadge } from "@/components/ui";
-import { blockInfo, moveItem, newBlock, setField } from "@/lib/blocks";
+import { SaveStatus, ShownMark } from "@/components/ui";
+import type { UploadOwner } from "@/lib/admin-api";
+import { blockInfo, moveItem, newBlock, ON_SITE, setField } from "@/lib/blocks";
 import { BLOCK_TYPES } from "@/lib/schemas";
 import type { ActionResult, Block, BlocksTarget, BlockType } from "@/types/admin";
 
@@ -56,6 +57,8 @@ export default function BlocksEditor({
   }
   const [pending, startTransition] = useTransition();
   const slugListId = useId();
+  const uploadTo: UploadOwner =
+    target.kind === "page" ? { collection: "pages", owner: target.key } : { collection: "projects", owner: target.slug };
 
   const blocks = useMemo(() => rows.map((r) => r.block), [rows]);
   const dirty = JSON.stringify(blocks) !== saved;
@@ -108,53 +111,82 @@ export default function BlocksEditor({
         ))}
       </datalist>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-baseline gap-x-3">
         <h2 id={`${slugListId}-heading`}>Blocks</h2>
-        <span className="text-muted">{rows.length} in page order</span>
+        <span className="text-muted">in page order, top to bottom</span>
       </div>
 
-      {rows.length === 0 ? <p className="text-muted">No blocks yet. Add one below.</p> : null}
+      {rows.length === 0 ? <p className="text-muted">No blocks yet. Add the first one below.</p> : null}
 
-      <ol className="flex flex-col gap-3">
+      <ol className="flex flex-col">
         {rows.map(({ key, block }, index) => {
           const info = blockInfo[block.type];
           const idPrefix = `b${key}`;
           return (
-            <li key={key} className="rounded-[var(--radius-card)] border border-border bg-card-bg">
-              <details open={openKey === key ? true : undefined}>
-                <summary className="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
-                  <span className="text-muted">{index + 1}.</span>
-                  <span className="font-heading font-semibold">{info.label}</span>
+            <li key={key} className="border-b border-border last:border-b-0">
+              <details
+                open={openKey === key ? true : undefined}
+                className="group rounded-[var(--radius-card)] open:my-3 open:border open:border-border open:spotlight"
+              >
+                <summary className="flex cursor-pointer flex-wrap items-baseline gap-x-3 gap-y-1 px-3 py-3 hover:bg-card-bg group-open:hover:bg-transparent">
+                  <span className="w-6 text-right text-muted tabular-nums">{index + 1}</span>
+                  <span className={`font-heading font-semibold ${block.is_shown ? "" : "text-muted"}`}>{info.label}</span>
                   <span className="text-muted">#{block.id || "(no id)"}</span>
-                  {block.title ? <span className="truncate">{block.title}</span> : null}
-                  <span className="ml-auto">
-                    <ShownBadge shown={block.is_shown} />
+                  {block.title ? (
+                    <span className={`min-w-0 truncate ${block.is_shown ? "" : "text-muted"}`}>{block.title}</span>
+                  ) : null}
+                  <span className="ml-auto flex items-baseline gap-4">
+                    {ON_SITE.has(block.type) ? null : <span className="text-muted">Not on the site yet</span>}
+                    <ShownMark shown={block.is_shown} />
                   </span>
                 </summary>
 
-                <div className="flex flex-col gap-4 border-t border-border px-4 py-4">
-                  <p className="text-muted">
-                    {info.description}
-                    {info.kind === "data" ? ". Its items are edited where they are stored, not here." : "."}
-                  </p>
-
-                  <div className="flex flex-wrap gap-2">
-                    <button type="button" className="btn" disabled={index === 0} onClick={() => move(index, index - 1)}>
-                      ↑ Up
-                    </button>
-                    <button
-                      type="button"
-                      className="btn"
-                      disabled={index === rows.length - 1}
-                      onClick={() => move(index, index + 1)}
-                    >
-                      ↓ Down
-                    </button>
-                    <button type="button" className="btn" onClick={() => remove(index)}>
-                      Remove
-                    </button>
+                <div className="flex flex-col gap-5 px-3 pt-1 pb-5 md:pl-12">
+                  <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
+                    <p className="mr-auto max-w-prose text-muted">
+                      {info.description}
+                      {info.kind === "data" ? ". Its items are edited where they are stored, not here." : "."}
+                      {ON_SITE.has(block.type) ? "" : " The site does not show this kind of block yet."}
+                    </p>
+                    <span className="flex gap-1">
+                      <button
+                        type="button"
+                        className="btn-icon"
+                        aria-label={`Move block ${index + 1} up`}
+                        title="Move up"
+                        disabled={index === 0}
+                        onClick={() => move(index, index - 1)}
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-icon"
+                        aria-label={`Move block ${index + 1} down`}
+                        title="Move down"
+                        disabled={index === rows.length - 1}
+                        onClick={() => move(index, index + 1)}
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-icon"
+                        aria-label={`Remove block ${index + 1}`}
+                        title="Remove"
+                        onClick={() => remove(index)}
+                      >
+                        ✕
+                      </button>
+                    </span>
                   </div>
 
+                  <FieldInput
+                    spec={{ kind: "bool", key: "is_shown", label: "Shown on the site", hint: "Off: saved, but left off the page" }}
+                    value={block}
+                    idPrefix={idPrefix}
+                    onChange={(next) => update(key, setField(block, "is_shown", next.is_shown === true))}
+                  />
                   <div className="grid gap-4 md:grid-cols-2">
                     <FieldInput
                       spec={{ kind: "text", key: "id", label: "Block id", required: true, hint: "Unique on the page; also its #anchor" }}
@@ -169,12 +201,6 @@ export default function BlocksEditor({
                       onChange={(next) => update(key, next as Block)}
                     />
                   </div>
-                  <FieldInput
-                    spec={{ kind: "bool", key: "is_shown", label: "Shown on the site" }}
-                    value={block}
-                    idPrefix={idPrefix}
-                    onChange={(next) => update(key, setField(block, "is_shown", next.is_shown === true))}
-                  />
 
                   {info.fields.map((field) => (
                     <FieldInput
@@ -183,6 +209,7 @@ export default function BlocksEditor({
                       value={block}
                       idPrefix={idPrefix}
                       projectSlugsListId={slugListId}
+                      uploadTo={uploadTo}
                       onChange={(next) => update(key, next as Block)}
                     />
                   ))}
@@ -193,10 +220,10 @@ export default function BlocksEditor({
         })}
       </ol>
 
-      <div className="flex flex-wrap items-end gap-2 rounded-[var(--radius-card)] border border-dashed border-border p-3">
-        <div className="flex min-w-48 flex-1 flex-col gap-1">
-          <label htmlFor={`${slugListId}-add`} className="font-heading font-semibold">
-            New block
+      <div className="flex flex-wrap items-end gap-3 pt-2">
+        <div className="flex min-w-48 flex-col gap-1">
+          <label htmlFor={`${slugListId}-add`} className="font-bold">
+            Add a block
           </label>
           <select id={`${slugListId}-add`} value={addType} onChange={(e) => setAddType(e.target.value as BlockType)}>
             <optgroup label="Content">
@@ -216,21 +243,27 @@ export default function BlocksEditor({
           </select>
         </div>
         <button type="button" className="btn" onClick={add}>
-          Add block
+          Add to the end
         </button>
-        <span className="text-muted">New blocks start hidden.</span>
+        <span className="text-muted">It starts hidden, so the site does not show it half-made.</span>
       </div>
 
-      <div className="sticky bottom-0 flex flex-wrap items-center gap-3 border-t border-border bg-background py-3">
+      <div className="bar sticky bottom-4 z-10 mt-2 flex flex-wrap items-center gap-3 px-3 py-2.5">
         <button type="button" className="btn btn-primary" disabled={!dirty || pending} onClick={save}>
           {pending ? "Saving…" : "Save blocks"}
         </button>
         <button type="button" className="btn" disabled={!dirty || pending} onClick={discard}>
           Discard changes
         </button>
-        <span className="text-muted">{dirty ? "Unsaved changes" : "All changes saved"}</span>
+        <span role="status" className={dirty ? "text-foreground" : result?.ok ? "text-green" : "text-muted"}>
+          {dirty ? "Unsaved changes" : result?.ok ? result.message : "Everything is saved"}
+        </span>
+        {result && !result.ok ? (
+          <div className="w-full">
+            <SaveStatus result={result} />
+          </div>
+        ) : null}
       </div>
-      <SaveStatus result={result} />
     </section>
   );
 }

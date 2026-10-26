@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { BLOCK_TYPES } from "./schemas";
-import { blockInfo, moveItem, newBlock, nextBlockId, parseStatValue, setField } from "./blocks";
+import { blockInfo, moveItem, newBlock, nextBlockId, ON_SITE, parseStatValue, setField } from "./blocks";
+
+const fromClient = (path: string) => readFileSync(new URL(`../../client/${path}`, import.meta.url), "utf8");
 
 describe("blocks", () => {
   it("has a label and form fields for every block type", () => {
@@ -31,5 +34,18 @@ describe("blocks", () => {
     expect(parseStatValue("4.5")).toBe(4.5);
     expect(parseStatValue("<...>")).toBe("<...>");
     expect(parseStatValue("300+")).toBe("300+");
+  });
+
+  it("marks the block types the public site renders, as the client registers them", () => {
+    const registry = fromClient("components/blocks/index.ts").split("export const blockComponents")[1];
+    const clientTypes = [...registry.matchAll(/^\s+(\w+): \w+,$/gm)].map((m) => m[1]).sort();
+    expect(clientTypes.length).toBeGreaterThan(0);
+    expect([...ON_SITE].sort()).toEqual(clientTypes);
+  });
+});
+
+describe("lib/dates.ts", () => {
+  it("is the client's date format, unchanged", () => {
+    expect(readFileSync(new URL("./dates.ts", import.meta.url), "utf8")).toBe(fromClient("lib/dates.ts"));
   });
 });

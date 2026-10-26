@@ -11,15 +11,18 @@ npm run dev        # http://localhost:3001
 ```
 
 With `USE_FIXTURES=true` (the example setting) it edits an in-memory copy of
-`fixtures/`, kept until the dev server restarts.
+`fixtures/`, kept until the dev server restarts. Uploads need the real admin API.
+Set `SITE_URL` to a running client to see the preview.
 
 Checks: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`.
 
 | Folder | What |
 | --- | --- |
-| `app/` | Routes: `/`, `/pages/[key]`, `/projects/[slug]`, `/projects/new`; `actions.ts` (every write) |
-| `components/` | `BlocksEditor`, `FieldInput`, `ProjectForm`, `PageFieldsForm`, `ui` |
+| `app/` | Routes: `/`, `/pages/[key]`, `/projects/[slug]`, `/projects/new`, `api/upload`; `actions.ts` (every write) |
+| `components/` | `BlocksEditor`, `FieldInput`, `ProjectForm`, `PageFieldsForm`, `SitePreview`, `UploadButton`, `NavLinks`, `ui` |
 | `lib/admin-api.ts` | The only data access: the admin API, or the fixture store |
 | `lib/schemas.ts` | zod schemas, following `tcos_schema.mongodb.js` |
-| `lib/blocks.ts` | Block labels, form fields and defaults |
+| `lib/blocks.ts` | Block labels, form fields and defaults; which types the site shows yet |
+| `lib/dates.ts` | The client's date format, copied as is (a test keeps it identical) |
+| `lib/date-input.ts` | Stored dates ↔ the date and Bangkok-time inputs |
 | `fixtures/` | Stored-shape documents from the docs/DATABASE.md examples |

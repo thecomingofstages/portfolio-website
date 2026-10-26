@@ -65,7 +65,47 @@ export async function saveProjectBlocks(slug: string, blocks: Block[]): Promise<
   await required("PUT", `/api/admin/projects/${enc(slug)}/blocks`, blocks);
 }
 
+// --- uploads -------------------------------------------------------------------
+
+/** Where an uploaded file is filed on the server: under a page's key or a project's slug. */
+export type UploadOwner = { collection: "pages" | "projects"; owner: string };
+
+/**
+ * POST /api/admin/uploads: passes one multipart body (a single `file` field) through to
+ * the server as a stream, and answers the file's public `url`. The server checks the type
+ * and the size.
+ */
+export async function uploadFile(
+  { collection, owner }: UploadOwner,
+  body: ReadableStream<Uint8Array>,
+  contentType: string,
+): Promise<{ key: string; url: string }> {
+  if (process.env.USE_FIXTURES === "true") {
+    throw new AdminApiError(501, "Uploads need the real admin API: fixtures cannot store files. Paste an image URL instead.");
+  }
+  const { base, token } = settings();
+  const response = await fetch(`${base}/api/admin/uploads?collection=${collection}&owner=${enc(owner)}`, {
+    method: "POST",
+    headers: { accept: "application/json", authorization: `Bearer ${token}`, "content-type": contentType },
+    body,
+    // A streamed request body needs this in Node's fetch.
+    duplex: "half",
+    cache: "no-store",
+  } as RequestInit);
+  const answer = settle<{ key: string; url: string }>(response.status, await jsonOf(response));
+  if (answer === null) throw new AdminApiError(404, "Not found. Save the project or page first.");
+  return answer;
+}
+
 // ---------------------------------------------------------------------------
+
+function settings() {
+  const base = process.env.API_URL;
+  if (!base) throw new Error("API_URL is not set. Set it, or set USE_FIXTURES=true.");
+  const token = process.env.ADMIN_TOKEN;
+  if (!token) throw new Error("ADMIN_TOKEN is not set.");
+  return { base: base.replace(/\/+$/, ""), token };
+}
 
 /** The response body, or `null` on a 404. Throws on any other error. */
 async function call<T>(method: string, path: string, body?: unknown): Promise<T | null> {
@@ -78,12 +118,8 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T 
     return settle<T>(answer.status, answer.body);
   }
 
-  const base = process.env.API_URL;
-  if (!base) throw new Error("API_URL is not set. Set it, or set USE_FIXTURES=true.");
-  const token = process.env.ADMIN_TOKEN;
-  if (!token) throw new Error("ADMIN_TOKEN is not set.");
-
-  const response = await fetch(`${base.replace(/\/+$/, "")}${path}`, {
+  const { base, token } = settings();
+  const response = await fetch(`${base}${path}`, {
     method,
     headers: {
       accept: "application/json",
@@ -93,15 +129,17 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T 
     body: body === undefined ? undefined : JSON.stringify(body),
     cache: "no-store",
   });
+  return settle<T>(response.status, await jsonOf(response));
+}
+
+async function jsonOf(response: Response): Promise<unknown> {
   const text = await response.text();
   // An empty body (e.g. 204 after a write) is `undefined`, never `null`, which means 404.
-  let parsed: unknown = undefined;
   try {
-    parsed = text ? JSON.parse(text) : undefined;
+    return text ? JSON.parse(text) : undefined;
   } catch {
-    parsed = undefined;
+    return undefined;
   }
-  return settle<T>(response.status, parsed);
 }
 
 function settle<T>(status: number, body: unknown): T | null {
@@ -123,5 +161,6 @@ function messageFor(status: number, body: unknown): string {
   if (status === 401) return "The admin token was refused. Check ADMIN_TOKEN.";
   if (status === 409) return error ?? "This conflicts with something that already exists.";
   if (status === 400) return error ?? "The server rejected the data.";
+  if (status === 413) return error ?? "The file is too large.";
   return error ? `${error} (${status})` : `The admin API answered ${status}.`;
 }

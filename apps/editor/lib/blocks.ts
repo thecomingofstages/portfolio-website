@@ -15,15 +15,16 @@ import type { Block, BlockType } from "@/types/admin";
  * - `int`: a whole number, or null when empty (`nullable`).
  * - `bool`: true or false.
  * - `strings`: a list of strings, one per line.
+ * - `image` / `images`: the value is an image URL (or a list of them), so the field also offers an upload.
  * - `value`: a stat's value: a number when it reads as one, otherwise text.
  * - `items`: a list of objects, each with its own fields.
  */
 export type FieldSpec =
-  | { kind: "text"; key: string; label: string; required?: boolean; nullable?: boolean; multiline?: boolean; hint?: string }
+  | { kind: "text"; key: string; label: string; required?: boolean; nullable?: boolean; multiline?: boolean; image?: boolean; hint?: string }
   | { kind: "enum"; key: string; label: string; options: readonly string[]; required?: boolean; nullable?: boolean; hint?: string }
   | { kind: "int"; key: string; label: string; nullable?: boolean; hint?: string }
   | { kind: "bool"; key: string; label: string; hint?: string }
-  | { kind: "strings"; key: string; label: string; hint?: string }
+  | { kind: "strings"; key: string; label: string; images?: boolean; hint?: string }
   | { kind: "value"; key: string; label: string; required?: boolean; hint?: string }
   | {
       kind: "items";
@@ -76,9 +77,9 @@ export const blockInfo: Record<BlockType, BlockInfo> = {
     description: "The top of a page: an image, video or slideshow with the title and buttons on top",
     fields: [
       { kind: "text", key: "subtitle", label: "Subtitle" },
-      { kind: "text", key: "media_url", label: "Media URL", required: true, hint: "The image or video; for a slideshow, the first slide" },
+      { kind: "text", key: "media_url", label: "Media URL", required: true, image: true, hint: "The image or video; for a slideshow, the first slide" },
       { kind: "enum", key: "media_kind", label: "Media kind", options: ["image", "video", "slideshow"] },
-      { kind: "strings", key: "slides", label: "Slides", hint: "Slideshow only: the image URLs after the first, one per line" },
+      { kind: "strings", key: "slides", label: "Slides", images: true, hint: "Slideshow only: the image URLs after the first, one per line" },
       { kind: "int", key: "slide_seconds", label: "Seconds per slide", nullable: true, hint: "Empty: the site's default" },
       buttons(false),
     ],
@@ -90,7 +91,7 @@ export const blockInfo: Record<BlockType, BlockInfo> = {
     description: "A text section in Markdown, with an optional image",
     fields: [
       { kind: "text", key: "body", label: "Body (Markdown)", required: true, multiline: true },
-      { kind: "text", key: "image", label: "Image URL", nullable: true },
+      { kind: "text", key: "image", label: "Image", nullable: true, image: true },
       { kind: "enum", key: "image_side", label: "Image side", options: ["left", "right", "top"], nullable: true },
     ],
     defaults: () => ({ body: "", image: null, image_side: null }),
@@ -100,7 +101,7 @@ export const blockInfo: Record<BlockType, BlockInfo> = {
     kind: "content",
     description: "One picture; large runs full width (the team photo)",
     fields: [
-      { kind: "text", key: "url", label: "Image URL", required: true },
+      { kind: "text", key: "url", label: "Image", required: true, image: true },
       { kind: "text", key: "alt", label: "Alt text", hint: "What the picture shows, for screen readers" },
       { kind: "text", key: "caption", label: "Caption" },
       { kind: "text", key: "credit", label: "Credit" },
@@ -116,7 +117,7 @@ export const blockInfo: Record<BlockType, BlockInfo> = {
       { kind: "text", key: "text", label: "Quote", required: true, multiline: true },
       { kind: "text", key: "who", label: "Who", required: true },
       { kind: "text", key: "role", label: "Role" },
-      { kind: "text", key: "background_image", label: "Background image URL", nullable: true },
+      { kind: "text", key: "background_image", label: "Background image", nullable: true, image: true },
       { kind: "text", key: "background_color", label: "Background colour", nullable: true },
     ],
     defaults: () => ({ text: "", who: "", background_image: null, background_color: null }),
@@ -132,7 +133,7 @@ export const blockInfo: Record<BlockType, BlockInfo> = {
         label: "Images",
         itemLabel: "Image",
         fields: [
-          { kind: "text", key: "url", label: "Image URL", required: true },
+          { kind: "text", key: "url", label: "Image", required: true, image: true },
           { kind: "text", key: "alt", label: "Alt text" },
           { kind: "text", key: "desc", label: "Description", multiline: true },
         ],
@@ -244,6 +245,24 @@ export const blockInfo: Record<BlockType, BlockInfo> = {
     defaults: () => ({ limit: null }),
   },
 };
+
+/**
+ * The block types the public site renders today (apps/client/components/blocks/index.ts).
+ * The others save as usual but show nothing until their component lands.
+ * blocks.test.ts fails when this list and the client's drift apart.
+ */
+export const ON_SITE: ReadonlySet<BlockType> = new Set<BlockType>([
+  "article",
+  "button",
+  "gallery",
+  "hero",
+  "image",
+  "projects",
+  "quote",
+  "sponsors",
+  "tracks",
+  "video",
+]);
 
 /** `base`, or `base-2`, `base-3` ... : the first id not already used on the page. */
 export function nextBlockId(base: string, taken: Iterable<string>): string {

@@ -113,8 +113,9 @@ npm run dev
 ```
 
 Open http://localhost:3001. The example settings use `USE_FIXTURES=true`: the editor
-edits an in-memory copy of its fixtures, kept until the dev server restarts, because
-the admin API (tasks S5, S6) does not exist yet. See [docs/EDITOR.md](docs/EDITOR.md).
+edits an in-memory copy of its fixtures, kept until the dev server restarts. To edit real
+data, set `API_URL` and `ADMIN_TOKEN` and remove `USE_FIXTURES`. Set `SITE_URL` to the
+client (e.g. http://localhost:3000) for the preview. See [docs/EDITOR.md](docs/EDITOR.md).
 The editor has no sign-in of its own, so run it only on your own machine for now.
 
 Checks, in `apps/editor`: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`.

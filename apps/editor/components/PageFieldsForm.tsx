@@ -22,22 +22,21 @@ export default function PageFieldsForm({ page }: { page: PageDoc }) {
 
   return (
     <form
-      className="flex flex-col gap-4 rounded-[var(--radius-card)] border border-border p-4"
+      className="flex flex-col gap-5"
       onSubmit={(e) => {
         e.preventDefault();
         startTransition(async () => setResult(await savePageFields(page.key, { title, is_shown: shown })));
       }}
     >
-      <div className="flex flex-col gap-1">
+      <div className="flex max-w-xl flex-col gap-1">
         <Label htmlFor="page-title">Title *</Label>
         <input id="page-title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} />
       </div>
-      <div className="flex items-center gap-2">
-        <input id="page-shown" type="checkbox" checked={shown} onChange={(e) => setShown(e.target.checked)} />
-        <label htmlFor="page-shown" className="font-heading font-semibold">
+      <div className="flex items-start gap-2.5">
+        <input id="page-shown" type="checkbox" className="mt-1" checked={shown} onChange={(e) => setShown(e.target.checked)} />
+        <Label htmlFor="page-shown" hint="Off: the page answers “not found”">
           Shown on the site
-        </label>
-        <span className="text-muted">Hidden: the page answers 404</span>
+        </Label>
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" className="btn btn-primary" disabled={!dirty || pending}>

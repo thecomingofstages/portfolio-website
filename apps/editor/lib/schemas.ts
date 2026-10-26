@@ -127,8 +127,10 @@ export const blocksSchema = z.array(blockSchema).superRefine((blocks, ctx) => {
 
 // --- projects and pages -------------------------------------------------------
 
-/** `YYYY-MM-DD`, as the date inputs give it. The server turns it into a Date. */
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "use YYYY-MM-DD");
+/** `YYYY-MM-DD`, or with a Bangkok time (lib/date-input.ts). The server turns it into a Date. */
+const isoDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:00\+07:00)?$/, "use YYYY-MM-DD, with an optional time");
 
 /** The URL key: lowercase letters, digits and single hyphens, e.g. tcos-2-the-hidden-saloon. */
 export const slugSchema = z

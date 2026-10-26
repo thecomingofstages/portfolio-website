@@ -1,31 +1,33 @@
 import Link from "next/link";
-import { ShownBadge } from "@/components/ui";
+import { ShownMark } from "@/components/ui";
 import { listPages, listProjects } from "@/lib/admin-api";
+import { formatDate } from "@/lib/dates";
 
 // Live admin data on every visit: navigations wait for it (docs/EDITOR.md).
 export const instant = false;
 
+const rowClass =
+  "flex flex-wrap items-baseline gap-x-4 gap-y-1 rounded-[var(--radius-card)] px-3 py-3 hover:bg-card-bg";
+
 /** The editor's start: every page and project, hidden ones too. */
 export default async function Dashboard() {
   const [pages, projects] = await Promise.all([listPages(), listProjects()]);
-  const byNewest = [...projects].sort((a, b) => b.start_date.localeCompare(a.start_date));
+  // Newest first; an undecided date ("<...>") goes last.
+  const time = (date: string) => Date.parse(date) || 0;
+  const byNewest = [...projects].sort((a, b) => time(b.start_date) - time(a.start_date));
 
   return (
-    <div className="flex flex-col gap-10">
-      <section className="flex flex-col gap-3">
-        <h1>Pages</h1>
-        <ul className="flex flex-col divide-y divide-border rounded-[var(--radius-card)] border border-border">
+    <div className="flex max-w-4xl flex-col gap-12">
+      <section aria-labelledby="pages-heading" className="flex flex-col gap-2">
+        <h1 id="pages-heading">Pages</h1>
+        <ul className="flex flex-col">
           {pages.map((page) => (
             <li key={page.key}>
-              <Link
-                href={`/pages/${encodeURIComponent(page.key)}`}
-                className="flex flex-wrap items-center gap-3 px-4 py-3 hover:bg-card-bg"
-              >
-                <span className="font-heading font-semibold">{page.title}</span>
-                <span className="text-muted">{page.key}</span>
+              <Link href={`/pages/${encodeURIComponent(page.key)}`} className={rowClass}>
+                <span className="font-heading text-body-lg font-semibold">{page.title}</span>
                 <span className="text-muted">{page.blocks.length} blocks</span>
                 <span className="ml-auto">
-                  <ShownBadge shown={page.is_shown} />
+                  <ShownMark shown={page.is_shown} />
                 </span>
               </Link>
             </li>
@@ -33,28 +35,24 @@ export default async function Dashboard() {
         </ul>
       </section>
 
-      <section className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1>Projects</h1>
-          <Link href="/projects/new" className="btn btn-primary ml-auto">
+      <section aria-labelledby="projects-heading" className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 id="projects-heading">Projects</h1>
+          <Link href="/projects/new" className="btn btn-primary">
             New project
           </Link>
         </div>
         {byNewest.length === 0 ? (
-          <p className="text-muted">No projects yet.</p>
+          <p className="text-muted">No projects yet. Create the first one.</p>
         ) : (
-          <ul className="flex flex-col divide-y divide-border rounded-[var(--radius-card)] border border-border">
+          <ul className="flex flex-col">
             {byNewest.map((project) => (
               <li key={project.slug}>
-                <Link
-                  href={`/projects/${encodeURIComponent(project.slug)}`}
-                  className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-card-bg"
-                >
-                  <span className="font-heading font-semibold">{project.name}</span>
-                  <span className="text-muted">{project.slug}</span>
-                  <span className="text-muted">{project.start_date.slice(0, 10)}</span>
+                <Link href={`/projects/${encodeURIComponent(project.slug)}`} className={rowClass}>
+                  <span className="font-heading text-body-lg font-semibold">{project.name}</span>
+                  <span className="text-muted">{formatDate(project.start_date, project.end_date) || "No date yet"}</span>
                   <span className="ml-auto">
-                    <ShownBadge shown={project.is_shown} />
+                    <ShownMark shown={project.is_shown} />
                   </span>
                 </Link>
               </li>

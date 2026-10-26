@@ -25,6 +25,10 @@ describe("admin API client with fixtures", () => {
     expect(await api.getProject("constructor")).toBeNull();
   });
 
+  it("refuses uploads, which need the real API", async () => {
+    await expect(api.uploadFile({ collection: "pages", owner: "home" }, new Response("").body!, "multipart/form-data")).rejects.toMatchObject({ status: 501 });
+  });
+
   it("throws the server's message on a refused write", async () => {
     const blocks = (await api.getPage("home"))!.blocks;
     await expect(api.savePageBlocks("home", [blocks[0], blocks[0]])).rejects.toMatchObject({ status: 400 });
@@ -73,6 +77,24 @@ describe("admin API client with the real API", () => {
 
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ error: "Still referenced" }), { status: 409 }));
     await expect(api.saveProjectBlocks(TCOS2_SLUG, [])).rejects.toMatchObject({ status: 409, message: "Still referenced" });
+  });
+
+  it("passes an upload through as a stream, with the token, and answers its URL", async () => {
+    fetchMock.mockResolvedValue(Response.json({ key: "projects/tcos-2/a.png", url: "https://media.example/projects/tcos-2/a.png" }, { status: 201 }));
+    const body = new Response("--x\r\n").body!;
+    const answer = await api.uploadFile({ collection: "projects", owner: TCOS2_SLUG }, body, "multipart/form-data; boundary=x");
+    expect(answer.url).toBe("https://media.example/projects/tcos-2/a.png");
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe(`https://api.example/api/admin/uploads?collection=projects&owner=${TCOS2_SLUG}`);
+    expect(new Headers(init?.headers).get("authorization")).toBe("Bearer test-token");
+    expect(new Headers(init?.headers).get("content-type")).toBe("multipart/form-data; boundary=x");
+    expect(init?.body).toBe(body);
+
+    fetchMock.mockResolvedValueOnce(Response.json({ error: "file: images only" }, { status: 400 }));
+    await expect(api.uploadFile({ collection: "pages", owner: "home" }, body, "multipart/form-data")).rejects.toMatchObject({
+      status: 400,
+      message: "file: images only",
+    });
   });
 
   it("refuses to run without a token", async () => {

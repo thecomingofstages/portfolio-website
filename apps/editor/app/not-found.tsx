@@ -5,9 +5,11 @@ export default function NotFound() {
     <div className="flex flex-col gap-3">
       <h1>Not found</h1>
       <p className="text-muted">There is no such page or project. It may have been renamed.</p>
-      <Link href="/" className="text-accent underline">
-        Back to all pages and projects
-      </Link>
+      <div>
+        <Link href="/" className="btn">
+          All pages and projects
+        </Link>
+      </div>
     </div>
   );
 }
