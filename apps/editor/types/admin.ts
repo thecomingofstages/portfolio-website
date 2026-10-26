@@ -55,6 +55,35 @@ export type ProjectDoc = {
   is_shown: boolean;
 };
 
+/** `tracks` (docs/DATABASE.md), as the admin API sends it. */
+export type TrackDoc = {
+  _id?: string;
+  key: string;
+  display_name: string;
+  desc?: string;
+  pics?: string[];
+  achievements?: Record<string, unknown>[];
+  order?: number;
+  is_shown: boolean;
+};
+
+/** `apply`, one recruitment round (docs/DATABASE.md), as the admin API sends it. */
+export type RoundDoc = {
+  _id: string;
+  project_slug?: string | null;
+  title: string;
+  /** ISO 8601, or "<...>" in a fixture */
+  opens_at: string;
+  closes_at: string;
+  extended_to?: string | null;
+  qualifications?: Record<string, unknown>;
+  positions: Record<string, unknown>[];
+  timeline?: Record<string, unknown>[];
+  apply_url?: string | null;
+  poster?: string | null;
+  is_shown: boolean;
+};
+
 /** Where a `blocks` array lives. */
 export type BlocksTarget = { kind: "page"; key: string } | { kind: "project"; slug: string };
 

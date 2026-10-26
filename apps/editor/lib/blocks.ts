@@ -18,6 +18,8 @@ import type { Block, BlockType } from "@/types/admin";
  * - `image` / `images`: the value is an image URL (or a list of them), so the field also offers an upload.
  * - `value`: a stat's value: a number when it reads as one, otherwise text.
  * - `items`: a list of objects, each with its own fields.
+ * - `date`: a date with an optional Bangkok time (lib/date-input.ts). Empty as for `text`.
+ * - `object`: one object with its own fields; `optional` ones can be added and removed.
  */
 export type FieldSpec =
   | { kind: "text"; key: string; label: string; required?: boolean; nullable?: boolean; multiline?: boolean; image?: boolean; hint?: string }
@@ -26,6 +28,16 @@ export type FieldSpec =
   | { kind: "bool"; key: string; label: string; hint?: string }
   | { kind: "strings"; key: string; label: string; images?: boolean; hint?: string }
   | { kind: "value"; key: string; label: string; required?: boolean; hint?: string }
+  | { kind: "date"; key: string; label: string; required?: boolean; nullable?: boolean; hint?: string }
+  | {
+      kind: "object";
+      key: string;
+      label: string;
+      fields: readonly FieldSpec[];
+      /** May be left out: the form offers "Add" and "Remove". */
+      optional?: boolean;
+      hint?: string;
+    }
   | {
       kind: "items";
       key: string;

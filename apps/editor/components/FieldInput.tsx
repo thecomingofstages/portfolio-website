@@ -5,6 +5,7 @@ import { Label } from "@/components/ui";
 import UploadButton from "@/components/UploadButton";
 import type { UploadOwner } from "@/lib/admin-api";
 import { type FieldSpec, moveItem, parseStatValue, setField } from "@/lib/blocks";
+import { type DateParts, fromDateParts, toDateParts } from "@/lib/date-input";
 
 type Obj = Record<string, unknown>;
 
@@ -18,6 +19,7 @@ export default function FieldInput({
   onChange,
   idPrefix,
   projectSlugsListId,
+  trackKeysListId,
   uploadTo,
 }: {
   spec: FieldSpec;
@@ -26,6 +28,8 @@ export default function FieldInput({
   idPrefix: string;
   /** A <datalist> of project slugs, for `project_slug` fields. */
   projectSlugsListId?: string;
+  /** A <datalist> of track keys, for `dept_key` fields. */
+  trackKeysListId?: string;
   /** Where uploaded images are filed; without it, image fields take URLs only. */
   uploadTo?: UploadOwner;
 }) {
@@ -53,7 +57,7 @@ export default function FieldInput({
               value={text}
               placeholder={spec.image ? "https://" : undefined}
               onChange={(e) => update(e.target.value)}
-              list={spec.key === "project_slug" ? projectSlugsListId : undefined}
+              list={spec.key === "project_slug" ? projectSlugsListId : spec.key === "dept_key" ? trackKeysListId : undefined}
             />
           )}
           {spec.image && uploadTo ? <UploadButton to={uploadTo} onUploaded={update} /> : null}
@@ -144,6 +148,79 @@ export default function FieldInput({
       );
     }
 
+    case "date": {
+      const raw = typeof current === "string" ? current : "";
+      const parts = raw === "" ? { date: "", time: "" } : toDateParts(raw);
+      const setParts = (next: DateParts) => set(next.date ? fromDateParts(next) : spec.required ? "" : spec.nullable ? null : undefined);
+      return (
+        <fieldset className="flex flex-col gap-1">
+          <legend className="font-bold">{label}</legend>
+          <span className="text-muted">
+            {parts ? (spec.hint ?? "จะใส่เวลาด้วยก็ได้ (เวลากรุงเทพฯ)") : `ตอนนี้เป็น "${raw}" คือยังไม่ได้กำหนด เลือกวันที่ก่อนบันทึก`}
+          </span>
+          <div className="flex gap-2">
+            <input
+              id={id}
+              aria-label={`${spec.label}: date`}
+              type="date"
+              value={parts?.date ?? ""}
+              onChange={(e) => setParts({ date: e.target.value, time: parts?.time ?? "" })}
+            />
+            <input
+              aria-label={`${spec.label}: time`}
+              type="time"
+              className="max-w-36"
+              value={parts?.time ?? ""}
+              disabled={!parts?.date}
+              onChange={(e) => setParts({ date: parts?.date ?? "", time: e.target.value })}
+            />
+          </div>
+        </fieldset>
+      );
+    }
+
+    case "object": {
+      const obj = current && typeof current === "object" && !Array.isArray(current) ? (current as Obj) : null;
+      if (!obj) {
+        return (
+          <div className="flex flex-col gap-1">
+            <span className="font-bold">{spec.label}</span>
+            {spec.hint ? <span className="text-muted">{spec.hint}</span> : null}
+            <div>
+              <button type="button" className="btn" onClick={() => set({})}>
+                Add {spec.label.toLowerCase()}
+              </button>
+            </div>
+          </div>
+        );
+      }
+      return (
+        <fieldset className="flex flex-col gap-3 border-l-2 border-border pl-4">
+          <legend className="font-bold">{spec.label}</legend>
+          {spec.hint ? <p className="text-muted">{spec.hint}</p> : null}
+          {spec.fields.map((field) => (
+            <FieldInput
+              key={field.key}
+              spec={field}
+              value={obj}
+              idPrefix={id}
+              projectSlugsListId={projectSlugsListId}
+              trackKeysListId={trackKeysListId}
+              uploadTo={uploadTo}
+              onChange={set}
+            />
+          ))}
+          {spec.optional ? (
+            <div>
+              <button type="button" className="btn" onClick={() => set(undefined)}>
+                Remove {spec.label.toLowerCase()}
+              </button>
+            </div>
+          ) : null}
+        </fieldset>
+      );
+    }
+
     case "items": {
       const items = Array.isArray(current) ? (current as Obj[]) : [];
       const setItems = (next: Obj[]) => set(next);
@@ -197,6 +274,7 @@ export default function FieldInput({
                     value={item}
                     idPrefix={`${id}-${index}`}
                     projectSlugsListId={projectSlugsListId}
+                    trackKeysListId={trackKeysListId}
                     uploadTo={uploadTo}
                     onChange={(next) => setItems(items.map((it, i) => (i === index ? next : it)))}
                   />

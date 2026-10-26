@@ -5,7 +5,17 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import * as admin from "@/lib/admin-api";
 import { AdminApiError } from "@/lib/admin-api";
-import { blocksSchema, describeIssues, newProjectSchema, pageFieldsSchema, projectFieldsSchema } from "@/lib/schemas";
+import {
+  blocksSchema,
+  describeIssues,
+  newProjectSchema,
+  newRoundSchema,
+  newTrackSchema,
+  pageFieldsSchema,
+  projectFieldsSchema,
+  roundSchema,
+  trackSchema,
+} from "@/lib/schemas";
 import type { ActionResult, BlocksTarget } from "@/types/admin";
 
 /**
@@ -77,4 +87,54 @@ export async function createProject(fields: unknown): Promise<ActionResult> {
     return failure(error);
   }
   redirect(`/projects/${encodeURIComponent(parsed.data.slug)}`);
+}
+
+/** Saves a whole track. A new key moves the editor to the new address. */
+export async function saveTrack(key: string, track: unknown): Promise<ActionResult> {
+  const parsed = trackSchema.safeParse(track);
+  if (!parsed.success) return { ok: false, errors: describeIssues(parsed.error) };
+  try {
+    await admin.saveTrack(key, parsed.data);
+  } catch (error) {
+    return failure(error);
+  }
+  if (parsed.data.key !== key) redirect(`/tracks/${encodeURIComponent(parsed.data.key)}`);
+  refresh();
+  return { ok: true, message: "Track saved" };
+}
+
+export async function createTrack(fields: unknown): Promise<ActionResult> {
+  const parsed = newTrackSchema.safeParse(fields);
+  if (!parsed.success) return { ok: false, errors: describeIssues(parsed.error) };
+  try {
+    await admin.createTrack(parsed.data);
+  } catch (error) {
+    return failure(error);
+  }
+  redirect(`/tracks/${encodeURIComponent(parsed.data.key)}`);
+}
+
+/** Saves a whole recruitment round. */
+export async function saveRound(id: string, round: unknown): Promise<ActionResult> {
+  const parsed = roundSchema.safeParse(round);
+  if (!parsed.success) return { ok: false, errors: describeIssues(parsed.error) };
+  try {
+    await admin.saveRound(z.string().regex(/^[0-9a-f]{24}$/i).parse(id), parsed.data);
+  } catch (error) {
+    return failure(error);
+  }
+  refresh();
+  return { ok: true, message: "Round saved" };
+}
+
+export async function createRound(fields: unknown): Promise<ActionResult> {
+  const parsed = newRoundSchema.safeParse(fields);
+  if (!parsed.success) return { ok: false, errors: describeIssues(parsed.error) };
+  let id: string;
+  try {
+    id = (await admin.createRound(parsed.data))._id;
+  } catch (error) {
+    return failure(error);
+  }
+  redirect(`/apply/${encodeURIComponent(id)}`);
 }
