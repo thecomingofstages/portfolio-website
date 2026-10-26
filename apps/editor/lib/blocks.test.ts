@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { BLOCK_TYPES } from "./schemas";
-import { blockInfo, moveItem, newBlock, nextBlockId, ON_SITE, parseStatValue, setField } from "./blocks";
+import { blockInfo, isPageField, moveItem, newBlock, nextBlockId, ON_SITE, PAGE_FIELDS, pageValue, parseStatValue, setField, setPath } from "./blocks";
 
 const fromClient = (path: string) => readFileSync(new URL(`../../client/${path}`, import.meta.url), "utf8");
 
@@ -41,6 +41,48 @@ describe("blocks", () => {
     const clientTypes = [...registry.matchAll(/^\s+(\w+): \w+,$/gm)].map((m) => m[1]).sort();
     expect(clientTypes.length).toBeGreaterThan(0);
     expect([...ON_SITE].sort()).toEqual(clientTypes);
+  });
+});
+
+describe("editing on the page", () => {
+  const COMPONENTS = { hero: "Hero", article: "Article", image: "ImageBlock", quote: "Quote", gallery: "Gallery", button: "ButtonBlock", video: "Video" } as const;
+
+  it("knows exactly the fields the client marks with data-field", () => {
+    for (const [type, file] of Object.entries(COMPONENTS)) {
+      const source = fromClient(`components/blocks/${file}.tsx`);
+      const marked = new Set<string>();
+      for (const [, expr] of source.matchAll(/data-field=(\{[^\n]*\}|"[^"]*")/g)) {
+        for (const [, quoted, template] of expr.matchAll(/"([^"]+)"|`([^`]+)`/g)) {
+          marked.add((quoted ?? template).replace(/\$\{[^}]+\}/g, "*"));
+        }
+      }
+      const known = PAGE_FIELDS[type as keyof typeof COMPONENTS]!;
+      expect([...marked].sort(), type).toEqual([...known.text, ...known.images].sort());
+    }
+  });
+
+  it("accepts only those fields, by kind", () => {
+    expect(isPageField("gallery", "items.3.desc", "text")).toBe(true);
+    expect(isPageField("gallery", "items.3.url", "text")).toBe(false);
+    expect(isPageField("gallery", "items.3.url", "images")).toBe(true);
+    expect(isPageField("hero", "slides.0", "images")).toBe(true);
+    expect(isPageField("article", "__proto__", "text")).toBe(false);
+    expect(isPageField("team", "title", "text")).toBe(false);
+  });
+
+  it("stores emptied text as the form would", () => {
+    expect(pageValue("article", "title", "")).toBeNull();
+    expect(pageValue("quote", "who", "")).toBe("");
+    expect(pageValue("hero", "subtitle", "")).toBeUndefined();
+    expect(pageValue("gallery", "items.0.desc", "")).toBeUndefined();
+    expect(pageValue("hero", "title", "Hi")).toBe("Hi");
+  });
+
+  it("sets nested fields on a copy, and removes a field set to undefined", () => {
+    const block = { items: [{ desc: "a" }], subtitle: "s" };
+    expect(setPath(block, "items.0.desc", "b")).toEqual({ items: [{ desc: "b" }], subtitle: "s" });
+    expect(setPath(block, "subtitle", undefined)).toEqual({ items: [{ desc: "a" }] });
+    expect(block.items[0].desc).toBe("a");
   });
 });
 

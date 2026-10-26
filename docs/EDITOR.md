@@ -49,14 +49,22 @@ The editor keeps the admin token on its own server, never in the browser ([API.m
 | --- | --- | --- |
 | `API_URL` | env | The server's base URL (the Worker's URL) |
 | `ADMIN_TOKEN` | secret | A hand-made admin JWT ([API.md](API.md) "Auth") |
-| `SITE_URL` | env | The public site's base URL, for the preview and the "Open on the site" links. Optional |
+| `SITE_URL` | env | The public site's base URL, for editing on the page and the "Open on the site" links. Optional |
 | `USE_FIXTURES` | env | `true` uses the editor's fixtures, kept in memory, instead of `API_URL` |
 
 **The editor has no sign-in of its own.** Anyone who can open it can change the site with its token. Run it only on your own machine, or behind access control set up outside the app: `TODO(editor access)`, for example Cloudflare Access. Where it is hosted is `TODO(editor hosting)`.
 
-## Preview
+## Editing on the page
 
-Pages with a public path (Home, and each project) show the public site beside the forms, in a phone-width frame (`SITE_URL` + the path). It is the client itself, so it uses the site's real components and never drifts from them. It shows what is saved and shown: after each save the frame reloads, once the server has refreshed the site's page. A hidden page or project shows a note instead, since the site answers "not found". The client must keep allowing itself to be framed by the editor (it sends no `X-Frame-Options` or `frame-ancestors` today).
+Home and each project are edited on the page itself: the client's edit mode ([FRONTEND.md](FRONTEND.md) "Edit mode", `SITE_URL` + `/edit?page=home` or `?project=<slug>`) in a frame, with a panel beside it. The page uses the site's own components, so it looks as the site will.
+
+- **Text:** click a heading, caption, quote or button label and type. An article's text opens in a box, in Markdown. Empty fields show a dim hint, such as "Section heading", which is never saved.
+- **Pictures:** click a picture, or the empty space over a background picture, to upload one, give a URL, or (where the field allows) remove it.
+- **Blocks:** point at a block for its toolbar: move up, move down, all fields, remove. "Add a block here" sits between blocks. The panel lists every block in order, hidden ones too, and the same controls work there.
+- **All fields:** the selected block's full form is in the panel, for what the page cannot show: links, sizes, alignment, video URLs, data-block settings, the id and "Shown on the site". Without a block selected, the panel shows the page's or project's own fields.
+- **Saving:** nothing reaches the site until Save; Discard goes back to the last save.
+
+The editor accepts from the page only the fields the client marks for that block type (`PAGE_FIELDS` in `lib/blocks.ts`, kept equal to the markers by a test), and only from `SITE_URL`'s origin and the framed window. The client must set `EDITOR_ORIGIN` to the editor's origin. Without `SITE_URL`, the panel alone edits the blocks.
 
 ## Fixtures
 
@@ -66,6 +74,6 @@ With `USE_FIXTURES=true`, the editor reads and writes an in-memory copy of its f
 
 ## Design
 
-The editor uses the client's colour tokens, fonts and corner sizes ([FRONTEND.md](FRONTEND.md) "Design"), copied into `apps/editor/app/globals.css`. As on the client, every colour, font family and font size comes only from that file. It needs no background picture, and its width is not limited to 80%: forms use the full width up to a readable maximum, with the preview beside them on wide screens.
+The editor uses the client's colour tokens, fonts and corner sizes ([FRONTEND.md](FRONTEND.md) "Design"), copied into `apps/editor/app/globals.css`. As on the client, every colour, font family and font size comes only from that file. It needs no background picture, and its width is not limited to 80%: the page being edited takes the width, with the panel beside it on wide screens and below it on phones.
 
-It is a quiet work tool in the site's look ([thecomingofstages.com](https://thecomingofstages.com)): pure black, a floating rounded bar for the nav and for saving, gold kept for the Save button, the current nav link and the "shown" mark. A hidden block is dimmed; the open block sits in a soft spotlight, the one decorative touch. Dates show in the site's Thai format (`lib/dates.ts`, a copy of the client's, kept identical by a test).
+It is a quiet work tool in the site's look ([thecomingofstages.com](https://thecomingofstages.com)): pure black, a floating rounded bar for the nav and for saving, gold kept for the Save button, the current nav link and the "shown" mark. A hidden block is dimmed; the selected block is outlined in gold on the page, and its panel sits in a soft spotlight, the one decorative touch. Dates show in the site's Thai format (`lib/dates.ts`, a copy of the client's, kept identical by a test).

@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
+import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { saveBlocks } from "@/app/actions";
+import { AddBlockDialog, ImageDialog } from "@/components/BlockDialogs";
 import FieldInput from "@/components/FieldInput";
 import { SaveStatus, ShownMark } from "@/components/ui";
 import type { UploadOwner } from "@/lib/admin-api";
-import { blockInfo, moveItem, newBlock, ON_SITE, setField } from "@/lib/blocks";
+import { blockInfo, getPath, isPageField, moveItem, newBlock, ON_SITE, pageValue, setField, setPath } from "@/lib/blocks";
+import { canvasMessageSchema } from "@/lib/canvas";
 import { BLOCK_TYPES } from "@/lib/schemas";
 import type { ActionResult, Block, BlocksTarget, BlockType } from "@/types/admin";
 
@@ -15,21 +17,32 @@ type Row = { key: string; block: Block };
 const rowsOf = (blocks: Block[], generation: number): Row[] =>
   blocks.map((block, i) => ({ key: `${generation}-${i}`, block }));
 
-const CONTENT_TYPES = BLOCK_TYPES.filter((t) => blockInfo[t].kind === "content");
-const DATA_TYPES = BLOCK_TYPES.filter((t) => blockInfo[t].kind === "data");
+/** Block type → its name, for the page's toolbar. */
+const LABELS = Object.fromEntries(BLOCK_TYPES.map((t) => [t, blockInfo[t].label]));
+
+/** Image fields that may be left empty: the dialog offers "No image" for these. */
+const NULLABLE_IMAGES = new Set(["image", "background_image"]);
 
 /**
- * Edits a page's whole `blocks` array: add, remove, reorder, hide, rename, and
- * each block's fields. Nothing is sent until Save; a save sends the whole array.
+ * Edits a page's whole `blocks` array on the page itself: the client's edit mode, framed beside a
+ * panel (docs/EDITOR.md "Editing on the page"). Text is typed in place, images are picked in a
+ * dialog, and blocks are added, moved and removed on the page or in the panel's outline. The panel
+ * also shows every field of the selected block. Nothing is sent until Save; a save sends the whole array.
  */
 export default function BlocksEditor({
   target,
   initialBlocks,
   projectSlugs,
+  canvasUrl,
+  settings,
 }: {
   target: BlocksTarget;
   initialBlocks: Block[];
   projectSlugs: string[];
+  /** The client's edit mode for this page; null without SITE_URL, and then only the panel edits. */
+  canvasUrl: string | null;
+  /** The page's or project's own fields, shown in the panel while no block is selected. */
+  settings: ReactNode;
 }) {
   const initialJson = JSON.stringify(initialBlocks);
   const [generation, setGeneration] = useState(0);
@@ -39,8 +52,11 @@ export default function BlocksEditor({
   const [saved, setSaved] = useState(initialJson);
   const [seen, setSeen] = useState(initialJson);
   const [result, setResult] = useState<ActionResult | null>(null);
-  const [addType, setAddType] = useState<BlockType>("article");
-  const [openKey, setOpenKey] = useState<string | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [adding, setAdding] = useState<number | null>(null);
+  const [picking, setPicking] = useState<{ key: string; path: string } | null>(null);
+  const frame = useRef<HTMLIFrameElement>(null);
+  const panel = useRef<HTMLElement>(null);
 
   // New data from the server replaces the rows, unless it is this editor's own last save.
   // Pages stay mounted in the background between visits (cacheComponents), so without
@@ -53,6 +69,7 @@ export default function BlocksEditor({
       setRows(rowsOf(initialBlocks, generation + 1));
       setSaved(initialJson);
       setResult(null);
+      setSelectedKey(null);
     }
   }
   const [pending, startTransition] = useTransition();
@@ -62,6 +79,8 @@ export default function BlocksEditor({
 
   const blocks = useMemo(() => rows.map((r) => r.block), [rows]);
   const dirty = JSON.stringify(blocks) !== saved;
+  const selectedIndex = rows.findIndex((r) => r.key === selectedKey);
+  const selected = selectedIndex >= 0 ? rows[selectedIndex] : null;
 
   // Warn before leaving with unsaved changes.
   useEffect(() => {
@@ -74,16 +93,17 @@ export default function BlocksEditor({
   const update = (key: string, block: Block) => setRows((rs) => rs.map((r) => (r.key === key ? { key, block } : r)));
   const move = (index: number, to: number) => setRows((rs) => moveItem(rs, index, to));
 
-  function add() {
-    const block = newBlock(addType, blocks.map((b) => b.id));
+  function insert(at: number, type: BlockType) {
     const key = `new-${nextKey.current++}`;
-    setRows((rs) => [...rs, { key, block }]);
-    setOpenKey(key);
+    const block = newBlock(type, blocks.map((b) => b.id));
+    setRows((rs) => [...rs.slice(0, at), { key, block }, ...rs.slice(at)]);
+    setSelectedKey(key);
+    setAdding(null);
   }
 
   function remove(index: number) {
-    const block = rows[index].block;
-    if (!window.confirm(`Remove the block "${block.id}" (${blockInfo[block.type].label})?`)) return;
+    const block = rows[index]?.block;
+    if (!block || !window.confirm(`Remove the block "${block.id}" (${blockInfo[block.type].label})?`)) return;
     setRows((rs) => rs.filter((_, i) => i !== index));
   }
 
@@ -100,155 +120,152 @@ export default function BlocksEditor({
     if (!window.confirm("Discard every change since the last save?")) return;
     setGeneration(generation + 1);
     setRows(rowsOf(JSON.parse(saved) as Block[], generation + 1));
+    setSelectedKey(null);
     setResult(null);
   }
 
+  // --- the page in the frame ---------------------------------------------------------
+
+  const siteOrigin = canvasUrl ? new URL(canvasUrl).origin : null;
+
+  const sendToPage = useCallback(() => {
+    if (!siteOrigin) return;
+    frame.current?.contentWindow?.postMessage(
+      { tcos: "edit", type: "load", blocks, selected: selectedIndex >= 0 ? selectedIndex : null, labels: LABELS },
+      siteOrigin,
+    );
+  }, [blocks, selectedIndex, siteOrigin]);
+
+  useEffect(sendToPage, [sendToPage]);
+
+  // What the page asks for. It runs on another origin, so each message is checked first.
+  function onPageMessage(data: unknown) {
+    const parsed = canvasMessageSchema.safeParse(data);
+    if (!parsed.success) return;
+    const m = parsed.data;
+    if (m.type === "ready") return sendToPage();
+    if (m.type === "insert") return setAdding(Math.min(m.at, rows.length));
+    const row = rows[m.index];
+    if (!row) return;
+    switch (m.type) {
+      case "select":
+        return setSelectedKey(row.key);
+      case "fields":
+        setSelectedKey(row.key);
+        return panel.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+      case "move":
+        return move(m.index, m.to);
+      case "remove":
+        return remove(m.index);
+      case "edit":
+        if (!isPageField(row.block.type, m.path, "text")) return;
+        return update(row.key, setPath(row.block, m.path, pageValue(row.block.type, m.path, m.value)));
+      case "image":
+        if (!isPageField(row.block.type, m.path, "images")) return;
+        setSelectedKey(row.key);
+        return setPicking({ key: row.key, path: m.path });
+    }
+  }
+  const handle = useRef<(data: unknown) => void>(() => {});
+  useEffect(() => {
+    handle.current = onPageMessage;
+  });
+
+  useEffect(() => {
+    if (!siteOrigin) return;
+    const receive = (event: MessageEvent) => {
+      if (event.origin === siteOrigin && event.source === frame.current?.contentWindow) handle.current(event.data);
+    };
+    window.addEventListener("message", receive);
+    return () => window.removeEventListener("message", receive);
+  }, [siteOrigin]);
+
+  const pickingRow = picking ? rows.find((r) => r.key === picking.key) : undefined;
+  const pickingValue = pickingRow && picking ? getPath(pickingRow.block, picking.path) : undefined;
+
   return (
-    <section className="flex flex-col gap-4" aria-labelledby={`${slugListId}-heading`}>
+    <section aria-label="Blocks" className="flex flex-col gap-4">
       <datalist id={slugListId}>
         {projectSlugs.map((slug) => (
           <option key={slug} value={slug} />
         ))}
       </datalist>
 
-      <div className="flex flex-wrap items-baseline gap-x-3">
-        <h2 id={`${slugListId}-heading`}>Blocks</h2>
-        <span className="text-muted">in page order, top to bottom</span>
-      </div>
-
-      {rows.length === 0 ? <p className="text-muted">No blocks yet. Add the first one below.</p> : null}
-
-      <ol className="flex flex-col">
-        {rows.map(({ key, block }, index) => {
-          const info = blockInfo[block.type];
-          const idPrefix = `b${key}`;
-          return (
-            <li key={key} className="border-b border-border last:border-b-0">
-              <details
-                open={openKey === key ? true : undefined}
-                className="group rounded-[var(--radius-card)] open:my-3 open:border open:border-border open:spotlight"
-              >
-                <summary className="flex cursor-pointer flex-wrap items-baseline gap-x-3 gap-y-1 px-3 py-3 hover:bg-card-bg group-open:hover:bg-transparent">
-                  <span className="w-6 text-right text-muted tabular-nums">{index + 1}</span>
-                  <span className={`font-heading font-semibold ${block.is_shown ? "" : "text-muted"}`}>{info.label}</span>
-                  <span className="text-muted">#{block.id || "(no id)"}</span>
-                  {block.title ? (
-                    <span className={`min-w-0 truncate ${block.is_shown ? "" : "text-muted"}`}>{block.title}</span>
-                  ) : null}
-                  <span className="ml-auto flex items-baseline gap-4">
-                    {ON_SITE.has(block.type) ? null : <span className="text-muted">Not on the site yet</span>}
-                    <ShownMark shown={block.is_shown} />
-                  </span>
-                </summary>
-
-                <div className="flex flex-col gap-5 px-3 pt-1 pb-5 md:pl-12">
-                  <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
-                    <p className="mr-auto max-w-prose text-muted">
-                      {info.description}
-                      {info.kind === "data" ? ". Its items are edited where they are stored, not here." : "."}
-                      {ON_SITE.has(block.type) ? "" : " The site does not show this kind of block yet."}
-                    </p>
-                    <span className="flex gap-1">
-                      <button
-                        type="button"
-                        className="btn-icon"
-                        aria-label={`Move block ${index + 1} up`}
-                        title="Move up"
-                        disabled={index === 0}
-                        onClick={() => move(index, index - 1)}
-                      >
-                        ↑
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-icon"
-                        aria-label={`Move block ${index + 1} down`}
-                        title="Move down"
-                        disabled={index === rows.length - 1}
-                        onClick={() => move(index, index + 1)}
-                      >
-                        ↓
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-icon"
-                        aria-label={`Remove block ${index + 1}`}
-                        title="Remove"
-                        onClick={() => remove(index)}
-                      >
-                        ✕
-                      </button>
-                    </span>
-                  </div>
-
-                  <FieldInput
-                    spec={{ kind: "bool", key: "is_shown", label: "Shown on the site", hint: "Off: saved, but left off the page" }}
-                    value={block}
-                    idPrefix={idPrefix}
-                    onChange={(next) => update(key, setField(block, "is_shown", next.is_shown === true))}
-                  />
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <FieldInput
-                      spec={{ kind: "text", key: "id", label: "Block id", required: true, hint: "Unique on the page; also its #anchor" }}
-                      value={block}
-                      idPrefix={idPrefix}
-                      onChange={(next) => update(key, next as Block)}
-                    />
-                    <FieldInput
-                      spec={{ kind: "text", key: "title", label: "Section heading", nullable: true }}
-                      value={block}
-                      idPrefix={idPrefix}
-                      onChange={(next) => update(key, next as Block)}
-                    />
-                  </div>
-
-                  {info.fields.map((field) => (
-                    <FieldInput
-                      key={field.key}
-                      spec={field}
-                      value={block}
-                      idPrefix={idPrefix}
-                      projectSlugsListId={slugListId}
-                      uploadTo={uploadTo}
-                      onChange={(next) => update(key, next as Block)}
-                    />
-                  ))}
-                </div>
-              </details>
-            </li>
-          );
-        })}
-      </ol>
-
-      <div className="flex flex-wrap items-end gap-3 pt-2">
-        <div className="flex min-w-48 flex-col gap-1">
-          <label htmlFor={`${slugListId}-add`} className="font-bold">
-            Add a block
-          </label>
-          <select id={`${slugListId}-add`} value={addType} onChange={(e) => setAddType(e.target.value as BlockType)}>
-            <optgroup label="Content">
-              {CONTENT_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {blockInfo[t].label}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="Data">
-              {DATA_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {blockInfo[t].label}
-                </option>
-              ))}
-            </optgroup>
-          </select>
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_26rem]">
+        <div className="flex min-w-0 flex-col gap-2 lg:sticky lg:top-20">
+          {canvasUrl ? (
+            <>
+              <iframe
+                ref={frame}
+                src={canvasUrl}
+                title="The page, editable"
+                onLoad={sendToPage}
+                className="h-[75vh] w-full rounded-[var(--radius-card)] border border-border bg-background lg:h-[calc(100vh-10rem)]"
+              />
+              <p className="text-muted">
+                Click text to type, or a picture to change it. Point at a block for its buttons. Changes stay here until
+                you save.
+              </p>
+            </>
+          ) : (
+            <p className="border-l-2 border-border pl-3 text-muted">
+              Set SITE_URL to edit on the page itself. Until then, pick a block in the list to edit its fields.
+            </p>
+          )}
         </div>
-        <button type="button" className="btn" onClick={add}>
-          Add to the end
-        </button>
-        <span className="text-muted">It starts hidden, so the site does not show it half-made.</span>
+
+        <aside ref={panel} className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1">
+          <nav aria-label="Blocks on this page" className="flex flex-col gap-1">
+            <div className="flex items-baseline justify-between gap-3">
+              <h2>Blocks</h2>
+              <button type="button" className="btn" onClick={() => setAdding(rows.length)}>
+                Add a block
+              </button>
+            </div>
+            {rows.length === 0 ? <p className="text-muted">No blocks yet. Add the first one.</p> : null}
+            <ol className="flex flex-col">
+              {rows.map(({ key, block }, index) => (
+                <li key={key}>
+                  <button
+                    type="button"
+                    aria-current={key === selectedKey ? "true" : undefined}
+                    onClick={() => setSelectedKey(key === selectedKey ? null : key)}
+                    className={`flex w-full items-baseline gap-3 rounded-[var(--radius-button)] px-2 py-1.5 text-left hover:bg-card-bg ${
+                      key === selectedKey ? "bg-card-bg" : ""
+                    }`}
+                  >
+                    <span className="w-5 text-right text-muted tabular-nums">{index + 1}</span>
+                    <span className={`min-w-0 flex-1 truncate ${block.is_shown ? "" : "text-muted"}`}>
+                      {blockInfo[block.type].label}
+                      {block.title ? <span className="ml-2 text-muted">{block.title}</span> : null}
+                    </span>
+                    <ShownMark shown={block.is_shown} />
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </nav>
+
+          {selected ? (
+            <BlockPanel
+              key={selected.key}
+              row={selected}
+              index={selectedIndex}
+              count={rows.length}
+              slugListId={slugListId}
+              uploadTo={uploadTo}
+              onChange={(block) => update(selected.key, block)}
+              onMove={(to) => move(selectedIndex, to)}
+              onRemove={() => remove(selectedIndex)}
+              onClose={() => setSelectedKey(null)}
+            />
+          ) : (
+            settings
+          )}
+        </aside>
       </div>
 
-      <div className="bar sticky bottom-4 z-10 mt-2 flex flex-wrap items-center gap-3 px-3 py-2.5">
+      <div className="bar sticky bottom-4 z-10 flex flex-wrap items-center gap-3 px-3 py-2.5">
         <button type="button" className="btn btn-primary" disabled={!dirty || pending} onClick={save}>
           {pending ? "Saving…" : "Save blocks"}
         </button>
@@ -264,6 +281,109 @@ export default function BlocksEditor({
           </div>
         ) : null}
       </div>
+
+      {adding !== null ? <AddBlockDialog onPick={(type) => insert(adding, type)} onClose={() => setAdding(null)} /> : null}
+      {picking && pickingRow ? (
+        <ImageDialog
+          current={typeof pickingValue === "string" ? pickingValue : ""}
+          uploadTo={uploadTo}
+          canRemove={NULLABLE_IMAGES.has(picking.path)}
+          onPick={(url) => {
+            update(pickingRow.key, setPath(pickingRow.block, picking.path, url));
+            setPicking(null);
+          }}
+          onClose={() => setPicking(null)}
+        />
+      ) : null}
+    </section>
+  );
+}
+
+/** Every field of the selected block, with its move, remove and shown controls. */
+function BlockPanel({
+  row: { key, block },
+  index,
+  count,
+  slugListId,
+  uploadTo,
+  onChange,
+  onMove,
+  onRemove,
+  onClose,
+}: {
+  row: Row;
+  index: number;
+  count: number;
+  slugListId: string;
+  uploadTo: UploadOwner;
+  onChange: (block: Block) => void;
+  onMove: (to: number) => void;
+  onRemove: () => void;
+  onClose: () => void;
+}) {
+  const info = blockInfo[block.type];
+  const idPrefix = `b${key}`;
+  return (
+    <section aria-label={`${info.label} block, all fields`} className="spotlight flex flex-col gap-5 rounded-[var(--radius-card)] border border-border p-4">
+      <div className="flex items-start gap-2">
+        <div className="mr-auto flex flex-col">
+          <h2>{info.label}</h2>
+          <p className="text-muted">
+            {info.description}
+            {info.kind === "data" ? ". Its items are edited where they are stored, not here." : "."}
+            {ON_SITE.has(block.type) ? "" : " The site does not show this kind of block yet."}
+          </p>
+        </div>
+        <button type="button" className="btn-icon" aria-label="Move up" title="Move up" disabled={index === 0} onClick={() => onMove(index - 1)}>
+          ↑
+        </button>
+        <button
+          type="button"
+          className="btn-icon"
+          aria-label="Move down"
+          title="Move down"
+          disabled={index === count - 1}
+          onClick={() => onMove(index + 1)}
+        >
+          ↓
+        </button>
+        <button type="button" className="btn-icon" aria-label="Remove" title="Remove" onClick={onRemove}>
+          ✕
+        </button>
+        <button type="button" className="btn-icon" aria-label="Close, back to the settings" title="Close" onClick={onClose}>
+          ⨯
+        </button>
+      </div>
+
+      <FieldInput
+        spec={{ kind: "bool", key: "is_shown", label: "Shown on the site", hint: "Off: saved, but left off the page" }}
+        value={block}
+        idPrefix={idPrefix}
+        onChange={(next) => onChange(setField(block, "is_shown", next.is_shown === true))}
+      />
+      <FieldInput
+        spec={{ kind: "text", key: "title", label: "Section heading", nullable: true }}
+        value={block}
+        idPrefix={idPrefix}
+        onChange={(next) => onChange(next as Block)}
+      />
+      {info.fields.map((field) => (
+        <FieldInput
+          key={field.key}
+          spec={field}
+          value={block}
+          idPrefix={idPrefix}
+          projectSlugsListId={slugListId}
+          uploadTo={uploadTo}
+          onChange={(next) => onChange(next as Block)}
+        />
+      ))}
+      <FieldInput
+        spec={{ kind: "text", key: "id", label: "Block id", required: true, hint: "Unique on the page; also its #anchor in links" }}
+        value={block}
+        idPrefix={idPrefix}
+        onChange={(next) => onChange(next as Block)}
+      />
     </section>
   );
 }

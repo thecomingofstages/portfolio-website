@@ -307,3 +307,59 @@ export function parseStatValue(text: string): number | string {
   const trimmed = text.trim();
   return /^-?\d+(\.\d+)?$/.test(trimmed) ? Number(trimmed) : text;
 }
+
+// --- editing on the page (the client's edit mode, docs/EDITOR.md "Editing on the page") ---
+
+/**
+ * The fields the page lets you edit in place, per block type, as the client marks them
+ * (`data-field` in apps/client/components/blocks). `*` is any item of a list.
+ */
+export const PAGE_FIELDS: Partial<Record<BlockType, { text: readonly string[]; images: readonly string[] }>> = {
+  hero: { text: ["title", "subtitle", "buttons.*.label"], images: ["media_url", "slides.*"] },
+  article: { text: ["title", "body"], images: ["image"] },
+  image: { text: ["title", "caption", "credit"], images: ["url"] },
+  quote: { text: ["title", "text", "who", "role"], images: ["background_image"] },
+  gallery: { text: ["title", "items.*.desc"], images: ["items.*.url"] },
+  button: { text: ["title", "buttons.*.label"], images: [] },
+  video: { text: ["title", "videos.*.title", "videos.*.caption"], images: [] },
+};
+
+const pattern = (path: string) => path.replace(/\.\d+(?=\.|$)/g, ".*");
+
+/** True when `path` is a field of this block type the page may change: text or image. */
+export function isPageField(type: BlockType, path: string, kind: "text" | "images"): boolean {
+  return /^[a-z_]+(\.\d+(\.[a-z_]+)?)?$/.test(path) && (PAGE_FIELDS[type]?.[kind].includes(pattern(path)) ?? false);
+}
+
+export function getPath(obj: unknown, path: string): unknown {
+  return path
+    .split(".")
+    .reduce<unknown>((at, key) => (at && typeof at === "object" ? (at as Record<string, unknown>)[key] : undefined), obj);
+}
+
+/** A copy with `path` set, copying the lists and objects on the way; undefined removes the field. */
+export function setPath<T>(obj: T, path: string, value: unknown): T {
+  const [key, ...rest] = path.split(".");
+  const copy = (Array.isArray(obj) ? [...obj] : { ...(obj as object) }) as Record<string, unknown>;
+  const next = rest.length ? setPath(copy[key] ?? {}, rest.join("."), value) : value;
+  if (next === undefined && !Array.isArray(copy)) delete copy[key];
+  else copy[key] = next;
+  return copy as T;
+}
+
+/** The FieldSpec a path points at: "title", or an item's field such as "items.2.desc". */
+function specFor(type: BlockType, path: string): FieldSpec | undefined {
+  if (path === "title") return { kind: "text", key: "title", label: "Section heading", nullable: true };
+  const [key, , itemKey] = path.split(".");
+  const spec = blockInfo[type].fields.find((f) => f.key === key);
+  return itemKey && spec?.kind === "items" ? spec.fields.find((f) => f.key === itemKey) : spec;
+}
+
+/** Text typed on the page as the field stores it: empty is null, left out, or "" when required (as in FieldInput). */
+export function pageValue(type: BlockType, path: string, text: string): unknown {
+  if (text !== "") return text;
+  const spec = specFor(type, path);
+  if (spec && "required" in spec && spec.required) return "";
+  if (spec && "nullable" in spec && spec.nullable) return null;
+  return /\.\d+$/.test(path) ? "" : undefined;
+}
