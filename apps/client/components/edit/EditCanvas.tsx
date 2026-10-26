@@ -196,7 +196,7 @@ export default function EditCanvas({
       <button
         type="button"
         onClick={() => send({ tcos: "edit", type: "insert", at })}
-        className="rounded-button border border-dashed border-border px-4 py-1 text-muted hover:border-accent hover:text-accent"
+        className="rounded-button border border-dashed border-border px-4 py-1 text-muted hover:border-accent hover:text-accent focus-visible:outline-2 focus-visible:outline-accent"
       >
         + Add a block here
       </button>
@@ -224,7 +224,7 @@ export default function EditCanvas({
               <div
                 data-edit-chrome=""
                 className={`absolute -top-3 right-2 z-20 items-center gap-1 rounded-button border border-border bg-background px-1 ${
-                  isSelected ? "flex" : "hidden group-hover:flex"
+                  isSelected ? "flex" : "hidden group-focus-within:flex group-hover:flex"
                 }`}
               >
                 <span className="px-2 text-muted">
@@ -301,7 +301,7 @@ function ChromeButton({
       title={label}
       disabled={disabled}
       onClick={onClick}
-      className="rounded-button px-2 py-1 text-muted hover:text-foreground disabled:opacity-40"
+      className="rounded-button px-2 py-1 text-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-40"
     >
       {children}
     </button>

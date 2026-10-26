@@ -18,8 +18,11 @@ export default async function Dashboard() {
 
   return (
     <div className="flex max-w-4xl flex-col gap-12">
+      <h1 className="sr-only">Pages and projects</h1>
       <section aria-labelledby="pages-heading" className="flex flex-col gap-2">
-        <h1 id="pages-heading">Pages</h1>
+        <h2 id="pages-heading" className="text-h1 font-extrabold">
+          Pages
+        </h2>
         <ul className="flex flex-col">
           {pages.map((page) => (
             <li key={page.key}>
@@ -37,7 +40,9 @@ export default async function Dashboard() {
 
       <section aria-labelledby="projects-heading" className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 id="projects-heading">Projects</h1>
+          <h2 id="projects-heading" className="text-h1 font-extrabold">
+            Projects
+          </h2>
           <Link href="/projects/new" className="btn btn-primary">
             New project
           </Link>

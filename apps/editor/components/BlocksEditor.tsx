@@ -56,6 +56,9 @@ export default function BlocksEditor({
   const [adding, setAdding] = useState<number | null>(null);
   const [picking, setPicking] = useState<{ key: string; path: string } | null>(null);
   const frame = useRef<HTMLIFrameElement>(null);
+  /** Whether the framed page has said it is ready, and whether it has been quiet too long. */
+  const [pageReady, setPageReady] = useState(false);
+  const [pageSilent, setPageSilent] = useState(false);
   const panel = useRef<HTMLElement>(null);
 
   // New data from the server replaces the rows, unless it is this editor's own last save.
@@ -143,7 +146,10 @@ export default function BlocksEditor({
     const parsed = canvasMessageSchema.safeParse(data);
     if (!parsed.success) return;
     const m = parsed.data;
-    if (m.type === "ready") return sendToPage();
+    if (m.type === "ready") {
+      setPageReady(true);
+      return sendToPage();
+    }
     if (m.type === "insert") return setAdding(Math.min(m.at, rows.length));
     const row = rows[m.index];
     if (!row) return;
@@ -171,6 +177,13 @@ export default function BlocksEditor({
     handle.current = onPageMessage;
   });
 
+  // A page that never answers (the site is down, or its EDITOR_ORIGIN is not this editor) gets a hint.
+  useEffect(() => {
+    if (!siteOrigin) return;
+    const timer = setTimeout(() => setPageSilent(true), 20_000);
+    return () => clearTimeout(timer);
+  }, [siteOrigin]);
+
   useEffect(() => {
     if (!siteOrigin) return;
     const receive = (event: MessageEvent) => {
@@ -195,12 +208,29 @@ export default function BlocksEditor({
         <div className="flex min-w-0 flex-col gap-2 lg:sticky lg:top-20">
           {canvasUrl ? (
             <>
-              <iframe
-                ref={frame}
-                src={canvasUrl}
-                title="The page, editable"
-                className="h-[75vh] w-full rounded-[var(--radius-card)] border border-border bg-background lg:h-[calc(100vh-10rem)]"
-              />
+              <div className="relative">
+                <iframe
+                  ref={frame}
+                  src={canvasUrl}
+                  title="The page, editable"
+                  className="block h-[75vh] w-full rounded-[var(--radius-card)] border border-border bg-background lg:h-[calc(100vh-10rem)]"
+                />
+                {pageReady ? null : (
+                  <div
+                    role="status"
+                    className="absolute inset-0 flex items-center justify-center rounded-[var(--radius-card)] border border-border bg-background p-6 text-center"
+                  >
+                    {pageSilent ? (
+                      <p className="max-w-sm text-muted">
+                        The page did not answer. Check that the site is running at {siteOrigin}, and that its
+                        EDITOR_ORIGIN setting is this editor&apos;s address. Until then, edit blocks in the list.
+                      </p>
+                    ) : (
+                      <p className="text-muted">Loading the page…</p>
+                    )}
+                  </div>
+                )}
+              </div>
               <p className="text-muted">
                 Click text to type, or a picture to change it. Point at a block for its buttons. Changes stay here until
                 you save.
@@ -269,7 +299,7 @@ export default function BlocksEditor({
           {pending ? "Saving…" : "Save blocks"}
         </button>
         <button type="button" className="btn" disabled={!dirty || pending} onClick={discard}>
-          Discard changes
+          Discard
         </button>
         <span role="status" className={dirty ? "text-foreground" : result?.ok ? "text-green" : "text-muted"}>
           {dirty ? "Unsaved changes" : result?.ok ? result.message : "Everything is saved"}

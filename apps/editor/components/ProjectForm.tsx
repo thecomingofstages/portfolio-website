@@ -140,7 +140,7 @@ export default function ProjectForm({ project }: { project?: ProjectDoc }) {
         });
       }}
     >
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="flex flex-col gap-5">
         {requiredFields.map(field)}
         {dateField("start_date", "Start date", true)}
         {project ? dateField("end_date", "End date", false) : null}

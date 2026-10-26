@@ -28,7 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="th" className={`${prompt.variable} ${sarabun.variable}`}>
       <body className="antialiased">
-        <header className="editor-wide sticky top-0 z-20 pt-3">
+        <header className="editor-wide z-20 pt-3 sm:sticky sm:top-0">
           <div className="bar flex flex-wrap items-center gap-x-8 gap-y-1 px-4 py-2.5">
             <Link href="/" className="font-heading font-bold">
               TCOS editor
