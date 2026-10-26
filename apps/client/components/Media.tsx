@@ -19,8 +19,11 @@ export function isImageUrl(src: string | null | undefined): src is string {
  */
 export default function Media({ src, alt, className, fill, width, height, style, ...rest }: MediaProps) {
   if (!isImageUrl(src)) {
+    // data-* attributes (the editor's field markers) stay on the empty frame too.
+    const data = Object.fromEntries(Object.entries(rest).filter(([key]) => key.startsWith("data-")));
     return (
       <span
+        {...data}
         role={alt ? "img" : undefined}
         aria-label={alt || undefined}
         aria-hidden={alt ? undefined : true}

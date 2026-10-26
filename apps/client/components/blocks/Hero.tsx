@@ -107,12 +107,16 @@ export default function Hero({ block }: BlockProps<"hero">) {
             playsInline
             preload="metadata"
             aria-hidden="true"
+            data-field="media_url"
+            data-field-kind="image"
             className="col-start-1 row-start-1 h-auto w-full self-start"
           />
         ) : (
           <Media
             src={media_url}
             alt=""
+            data-field="media_url"
+            data-field-kind="image"
             width={1200}
             height={800}
             style={{ width: "100%", height: "auto" }}
@@ -125,6 +129,8 @@ export default function Hero({ block }: BlockProps<"hero">) {
             key={`${src}-${index}`}
             src={src}
             alt=""
+            data-field={index === 0 ? "media_url" : `slides.${index - 1}`}
+            data-field-kind="image"
             width={1200}
             height={800}
             sizes={MEDIA_SIZES}
@@ -139,14 +145,19 @@ export default function Hero({ block }: BlockProps<"hero">) {
       )}
       <div aria-hidden="true" className="col-start-1 row-start-1 bg-background/75" />
       <div className="relative col-start-1 row-start-1 flex flex-col items-start justify-center gap-4 p-6 md:p-12">
-        {title ? <h1>{title}</h1> : null}
-        {subtitle ? <p className="text-body-lg text-muted">{subtitle}</p> : null}
+        {title ? <h1 data-field="title">{title}</h1> : null}
+        {subtitle ? (
+          <p data-field="subtitle" className="text-body-lg text-muted">
+            {subtitle}
+          </p>
+        ) : null}
         {buttons.length > 0 ? (
           <div className="flex flex-wrap gap-4">
             {buttons.map((button, index) => (
               <a
                 key={`${button.url}-${index}`}
                 href={button.url}
+                data-field={`buttons.${index}.label`}
                 className={`${BUTTON_CLASS} ${button.style === "secondary" ? SECONDARY_CLASS : PRIMARY_CLASS}`}
               >
                 {button.label}

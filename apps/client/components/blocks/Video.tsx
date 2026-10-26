@@ -91,7 +91,7 @@ export default function Video({ block }: BlockProps<"video">) {
 
   return (
     <div className="flex flex-col gap-6 py-8">
-      {title ? <h2>{title}</h2> : null}
+      {title ? <h2 data-field="title">{title}</h2> : null}
       <ul className="flex flex-col gap-8">
         {videos.map((video, index) => {
           const src = embedUrl(video.url, video.provider);
@@ -99,9 +99,13 @@ export default function Video({ block }: BlockProps<"video">) {
           return (
             <li key={`${video.url}-${index}`}>
               <figure className="flex flex-col gap-2">
-                {video.title ? <h3>{video.title}</h3> : null}
+                {video.title ? <h3 data-field={`videos.${index}.title`}>{video.title}</h3> : null}
                 <LazyEmbed src={src} title={frameTitle} />
-                {video.caption ? <figcaption className="text-muted">{video.caption}</figcaption> : null}
+                {video.caption ? (
+                  <figcaption data-field={`videos.${index}.caption`} className="text-muted">
+                    {video.caption}
+                  </figcaption>
+                ) : null}
               </figure>
             </li>
           );

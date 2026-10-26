@@ -12,7 +12,7 @@ export default function ImageBlock({ block }: BlockProps<"image">) {
 
   return (
     <div className="flex flex-col gap-6 py-8">
-      {title ? <h2>{title}</h2> : null}
+      {title ? <h2 data-field="title">{title}</h2> : null}
       {/* TODO(normal image width): the docs only say a normal image is not full width; it takes two thirds from 768px up. */}
       <figure className={`flex flex-col gap-2 ${large ? "" : "md:w-2/3"}`}>
         {/* The API sends no width or height: the image shows whole, in its own proportions,
@@ -20,6 +20,8 @@ export default function ImageBlock({ block }: BlockProps<"image">) {
         <Media
           src={url}
           alt={alt ?? ""}
+          data-field="url"
+          data-field-kind="image"
           width={1200}
           height={800}
           sizes={large ? "(min-width: 768px) 80vw, 90vw" : "(min-width: 768px) 54vw, 90vw"}
@@ -28,8 +30,8 @@ export default function ImageBlock({ block }: BlockProps<"image">) {
         />
         {caption || credit ? (
           <figcaption className="flex flex-col text-muted">
-            {caption ? <span>{caption}</span> : null}
-            {credit ? <span>{credit}</span> : null}
+            {caption ? <span data-field="caption">{caption}</span> : null}
+            {credit ? <span data-field="credit">{credit}</span> : null}
           </figcaption>
         ) : null}
       </figure>

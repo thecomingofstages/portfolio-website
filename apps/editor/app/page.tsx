@@ -1,69 +1,70 @@
-import Image from "next/image";
+import Link from "next/link";
+import { ShownMark } from "@/components/ui";
+import { listPages, listProjects } from "@/lib/admin-api";
+import { formatDate } from "@/lib/dates";
 
-export default function Home() {
+// Live admin data on every visit: navigations wait for it (docs/EDITOR.md).
+export const instant = false;
+
+const rowClass =
+  "flex flex-wrap items-baseline gap-x-4 gap-y-1 rounded-[var(--radius-card)] px-3 py-3 hover:bg-card-bg";
+
+/** The editor's start: every page and project, hidden ones too. */
+export default async function Dashboard() {
+  const [pages, projects] = await Promise.all([listPages(), listProjects()]);
+  // Newest first; an undecided date ("<...>") goes last.
+  const time = (date: string) => Date.parse(date) || 0;
+  const byNewest = [...projects].sort((a, b) => time(b.start_date) - time(a.start_date));
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="flex flex-col gap-12">
+      <h1 className="sr-only">Pages and projects</h1>
+      <section aria-labelledby="pages-heading" className="flex flex-col gap-2">
+        <h2 id="pages-heading" className="text-h1 font-extrabold">
+          Pages
+        </h2>
+        <ul className="flex flex-col">
+          {pages.map((page) => (
+            <li key={page.key}>
+              <Link href={`/pages/${encodeURIComponent(page.key)}`} className={rowClass}>
+                <span className="font-heading text-body-lg font-semibold">{page.title}</span>
+                <span className="text-muted">{page.blocks.length} blocks</span>
+                <span className="ml-auto">
+                  <ShownMark shown={page.is_shown} />
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section aria-labelledby="projects-heading" className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="projects-heading" className="text-h1 font-extrabold">
+            Projects
+          </h2>
+          <Link href="/projects/new" className="btn btn-primary">
+            New project
+          </Link>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        {byNewest.length === 0 ? (
+          <p className="text-muted">ยังไม่มีโปรเจกต์ สร้างโปรเจกต์แรกได้เลย</p>
+        ) : (
+          <ul className="flex flex-col">
+            {byNewest.map((project) => (
+              <li key={project.slug}>
+                <Link href={`/projects/${encodeURIComponent(project.slug)}`} className={rowClass}>
+                  <span className="font-heading text-body-lg font-semibold">{project.name}</span>
+                  <span className="text-muted">{formatDate(project.start_date, project.end_date) || "No date yet"}</span>
+                  <span className="ml-auto">
+                    <ShownMark shown={project.is_shown} />
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

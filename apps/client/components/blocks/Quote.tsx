@@ -13,7 +13,7 @@ export default function Quote({ block }: BlockProps<"quote">) {
 
   return (
     <div className="flex flex-col gap-6 py-8">
-      {title ? <h2>{title}</h2> : null}
+      {title ? <h2 data-field="title">{title}</h2> : null}
       <figure className="grid overflow-hidden rounded-card bg-card-bg">
         {background_image ? (
           <>
@@ -22,6 +22,8 @@ export default function Quote({ block }: BlockProps<"quote">) {
             <Media
               src={background_image}
               alt=""
+              data-field="background_image"
+              data-field-kind="image"
               width={1200}
               height={800}
               sizes="(min-width: 768px) 80vw, 90vw"
@@ -33,11 +35,15 @@ export default function Quote({ block }: BlockProps<"quote">) {
         ) : null}
         <div className="relative col-start-1 row-start-1 flex flex-col justify-center gap-4 p-6 md:p-12">
           <blockquote className="font-heading text-h3">
-            <p>{text}</p>
+            <p data-field="text">{text}</p>
           </blockquote>
           <figcaption className="flex flex-col">
-            <span>{who}</span>
-            {role ? <span className="text-muted">{role}</span> : null}
+            <span data-field="who">{who}</span>
+            {role ? (
+              <span data-field="role" className="text-muted">
+                {role}
+              </span>
+            ) : null}
           </figcaption>
         </div>
       </figure>

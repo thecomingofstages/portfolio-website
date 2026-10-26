@@ -20,7 +20,7 @@ export default function Article({ block }: BlockProps<"article">) {
 
   return (
     <div className="flex flex-col gap-6 py-8">
-      {title ? <h2>{title}</h2> : null}
+      {title ? <h2 data-field="title">{title}</h2> : null}
       <div className={image && beside ? "grid gap-6 md:grid-cols-2 md:items-start" : "flex flex-col gap-6"}>
         {image ? (
           // The block has no alt field, so the image is marked decorative. The API sends no
@@ -29,6 +29,8 @@ export default function Article({ block }: BlockProps<"article">) {
           <Media
             src={image}
             alt=""
+            data-field="image"
+            data-field-kind="image"
             width={1200}
             height={800}
             sizes={beside ? "(min-width: 768px) 40vw, 90vw" : "(min-width: 768px) 80vw, 90vw"}
@@ -36,7 +38,9 @@ export default function Article({ block }: BlockProps<"article">) {
             className={`aspect-[auto_3/2] ${image_side === "right" ? "md:order-2" : ""}`}
           />
         ) : null}
-        <Markdown className={BODY_CLASS}>{body}</Markdown>
+        <div data-field="body" data-field-kind="markdown">
+          <Markdown className={BODY_CLASS}>{body}</Markdown>
+        </div>
       </div>
     </div>
   );
