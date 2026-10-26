@@ -17,13 +17,8 @@ export default async function Dashboard() {
   const byNewest = [...projects].sort((a, b) => time(b.start_date) - time(a.start_date));
 
   return (
-    <div className="flex max-w-4xl flex-col gap-12">
+    <div className="flex flex-col gap-12">
       <h1 className="sr-only">Pages and projects</h1>
-      {process.env.USE_FIXTURES === "true" ? (
-        <p className="border-l-2 border-accent pl-3 text-muted">
-          นี่คือข้อมูลตัวอย่าง ที่แก้ไว้จะอยู่จนกว่าจะรีสตาร์ต editor และจะไม่ขึ้นเว็บจริง
-        </p>
-      ) : null}
       <section aria-labelledby="pages-heading" className="flex flex-col gap-2">
         <h2 id="pages-heading" className="text-h1 font-extrabold">
           Pages
