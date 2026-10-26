@@ -182,3 +182,94 @@ export function describeIssues(error: z.ZodError, blocks?: readonly { type?: unk
     return issue.path.length ? `${issue.path.join(".")}: ${issue.message}` : issue.message;
   });
 }
+
+// --- tracks and recruitment rounds (tcos_schema.mongodb.js, the server's track.schema.ts and apply.schema.ts) ---
+
+/** A list item's id: kept as sent, so the server keeps the item; a new item has none. */
+const itemId = z.string().regex(/^[0-9a-f]{24}$/i, "not an item id").optional();
+const nonNegativeInt = z.number().int().min(0, "use 0 or more");
+
+const achievementFields = {
+  project_slug: z.string().min(1, "project_slug is empty"),
+  year: intOrNull.optional(),
+  text: str.min(1, "text is empty"),
+  pics: strList.optional(),
+  is_shown: z.boolean(),
+};
+
+export const trackSchema = z
+  .object({
+    key: slugSchema,
+    display_name: str.min(1, "display_name is empty"),
+    desc: str.optional(),
+    pics: strList.optional(),
+    achievements: z.array(z.object({ _id: itemId, ...achievementFields }).strict()).optional(),
+    order: nonNegativeInt.optional(),
+    is_shown: z.boolean(),
+  })
+  .strict();
+
+/** A new track: the fields the schema requires. */
+export const newTrackSchema = trackSchema.pick({ key: true, display_name: true, is_shown: true });
+
+const audition = z
+  .object({
+    clip_required: z.boolean().optional(),
+    clip_brief: str.optional(),
+    clip_max_minutes: intOrNull.optional(),
+    clip_file_name: str.optional(),
+    clip_upload: str.optional(),
+    pieces: strList.optional(),
+    onsite: z.boolean().optional(),
+  })
+  .strict();
+
+const position = z
+  .object({
+    _id: itemId,
+    dept_key: z.string().min(1, "dept_key is empty"),
+    dept_name: str.optional(),
+    unit_name: strOrNull.optional(),
+    title: str.min(1, "title is empty"),
+    description: str.optional(),
+    requirements: strList.optional(),
+    portfolio_required: z.boolean().optional(),
+    onsite_required: z.boolean().optional(),
+    audition: audition.optional(),
+    is_shown: z.boolean(),
+  })
+  .strict();
+
+const timelineEvent = z
+  .object({
+    _id: itemId,
+    start_date: isoDate,
+    end_date: isoDate.nullable().optional(),
+    event_name: str.min(1, "event_name is empty"),
+    event_description: str.optional(),
+    location: strOrNull.optional(),
+    is_shown: z.boolean(),
+  })
+  .strict();
+
+export const roundSchema = z
+  .object({
+    project_slug: strOrNull.optional(),
+    title: str.min(1, "title is empty"),
+    opens_at: isoDate,
+    closes_at: isoDate,
+    extended_to: isoDate.nullable().optional(),
+    qualifications: z
+      .object({ age_min: intOrNull.optional(), age_max: intOrNull.optional(), age_note: strOrNull.optional(), items: strList.optional() })
+      .strict()
+      .optional(),
+    positions: z.array(position),
+    timeline: z.array(timelineEvent).optional(),
+    apply_url: strOrNull.optional(),
+    poster: strOrNull.optional(),
+    is_shown: z.boolean(),
+  })
+  .strict();
+
+/** A new round: the fields the schema requires; positions start empty. */
+export const newRoundSchema = roundSchema.pick({ title: true, opens_at: true, closes_at: true, positions: true, is_shown: true });

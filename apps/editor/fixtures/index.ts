@@ -1,4 +1,4 @@
-import type { PageDoc, ProjectDoc } from "@/types/admin";
+import type { PageDoc, ProjectDoc, RoundDoc, TrackDoc } from "@/types/admin";
 
 /**
  * Admin API documents for USE_FIXTURES=true, in their stored shape (is_shown on
@@ -147,6 +147,67 @@ export const projects: ProjectDoc[] = [
     pics: [],
     blocks: [],
     is_yearbook_shown: false,
+    is_shown: false,
+  },
+];
+
+/** The track example in docs/DATABASE.md "Full document examples". Item ids are made up: the server assigns real ones. */
+export const tracks: TrackDoc[] = [
+  {
+    _id: "6600000000000000000000a1",
+    key: "it",
+    display_name: "IT",
+    desc: "<...>",
+    pics: [],
+    achievements: [
+      { _id: "6600000000000000000000b1", project_slug: TCOS2_SLUG, year: 2025, text: "<...>", pics: [], is_shown: true },
+    ],
+    is_shown: false,
+  },
+];
+
+/** The recruitment round example in docs/DATABASE.md (TCOS 2, round 5: MC and ushers). */
+export const ROUND_ID = "6600000000000000000000c1";
+export const rounds: RoundDoc[] = [
+  {
+    _id: ROUND_ID,
+    project_slug: TCOS2_SLUG,
+    title: "<...>",
+    opens_at: "2025-04-28T00:00:00.000Z",
+    closes_at: "2025-05-01T00:00:00.000Z",
+    extended_to: null,
+    qualifications: { age_min: 14, age_max: 22, age_note: null, items: ["<...>"] },
+    positions: [
+      {
+        _id: "6600000000000000000000d1",
+        dept_key: "<track to confirm>",
+        dept_name: "MC and ushers",
+        title: "พิธีกร",
+        audition: {
+          clip_required: true,
+          clip_brief: "A clip introducing TCOS (who, what, why), plus a self-introduction clip",
+          clip_max_minutes: 5,
+          clip_file_name: "พิธีกร_ชื่อจริง-นามสกุล_ชื่อเล่น",
+          clip_upload: "public Google Drive link",
+        },
+        is_shown: true,
+      },
+    ],
+    timeline: [
+      {
+        _id: "6600000000000000000000e1",
+        start_date: "2025-04-28T00:00:00.000Z",
+        end_date: "2025-05-01T00:00:00.000Z",
+        event_name: "Apply",
+        event_description: "Google Form",
+        location: null,
+        is_shown: true,
+      },
+      { _id: "6600000000000000000000e2", start_date: "<...>", event_name: "Interview", event_description: "Google Meet", location: null, is_shown: true },
+      { _id: "6600000000000000000000e3", start_date: "<...>", event_name: "First meet", event_description: "<...>", location: "<venue>", is_shown: true },
+    ],
+    apply_url: "<...>",
+    poster: "<...>",
     is_shown: false,
   },
 ];

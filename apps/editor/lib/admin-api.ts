@@ -1,6 +1,6 @@
 import "server-only";
 import { connection } from "next/server";
-import type { Block, NewProject, PageDoc, PageFields, ProjectDoc, ProjectFields } from "@/types/admin";
+import type { Block, NewProject, PageDoc, PageFields, ProjectDoc, ProjectFields, RoundDoc, TrackDoc } from "@/types/admin";
 
 /**
  * The only way the editor reads and writes data: the server's admin API
@@ -65,10 +65,46 @@ export async function saveProjectBlocks(slug: string, blocks: Block[]): Promise<
   await required("PUT", `/api/admin/projects/${enc(slug)}/blocks`, blocks);
 }
 
+// --- tracks and recruitment rounds ------------------------------------------------
+// Each is saved whole (PUT): its lists keep their item ids, and new items get one from the server.
+
+export function listTracks(): Promise<TrackDoc[]> {
+  return required<TrackDoc[]>("GET", "/api/admin/tracks");
+}
+
+export function getTrack(key: string): Promise<TrackDoc | null> {
+  return call<TrackDoc>("GET", `/api/admin/tracks/${enc(key)}`);
+}
+
+export function createTrack(track: unknown): Promise<TrackDoc> {
+  return required<TrackDoc>("POST", "/api/admin/tracks", track);
+}
+
+/** A changed `key` renames the track; the server updates the rounds that point to it. */
+export async function saveTrack(key: string, track: unknown): Promise<void> {
+  await required("PUT", `/api/admin/tracks/${enc(key)}`, track);
+}
+
+export function listRounds(): Promise<RoundDoc[]> {
+  return required<RoundDoc[]>("GET", "/api/admin/apply");
+}
+
+export function getRound(id: string): Promise<RoundDoc | null> {
+  return call<RoundDoc>("GET", `/api/admin/apply/${enc(id)}`);
+}
+
+export function createRound(round: unknown): Promise<RoundDoc> {
+  return required<RoundDoc>("POST", "/api/admin/apply", round);
+}
+
+export async function saveRound(id: string, round: unknown): Promise<void> {
+  await required("PUT", `/api/admin/apply/${enc(id)}`, round);
+}
+
 // --- uploads -------------------------------------------------------------------
 
 /** Where an uploaded file is filed on the server: under a page's key or a project's slug. */
-export type UploadOwner = { collection: "pages" | "projects"; owner: string };
+export type UploadOwner = { collection: "pages" | "projects" | "tracks" | "apply"; owner: string };
 
 /**
  * POST /api/admin/uploads: passes one multipart body (a single `file` field) through to

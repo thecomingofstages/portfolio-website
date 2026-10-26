@@ -44,7 +44,7 @@ describe("POST /api/upload", () => {
   });
 
   it("refuses an unknown place to file it", async () => {
-    expect((await post("collection=apply&owner=x")).status).toBe(400);
+    expect((await post("collection=users&owner=x")).status).toBe(400);
     expect((await post("collection=pages&owner=../x")).status).toBe(400);
     expect(fetchMock).not.toHaveBeenCalled();
   });

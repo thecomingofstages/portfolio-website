@@ -19,7 +19,7 @@ Checks: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`.
 
 | Folder | What |
 | --- | --- |
-| `app/` | Routes: `/`, `/pages/[key]`, `/projects/[slug]`, `/projects/new`, `api/upload`; `actions.ts` (every write) |
+| `app/` | Routes: `/`, `/pages/[key]`, `/projects/[slug]`, `/new/project`, `api/upload`; `actions.ts` (every write) |
 | `components/` | `BlocksEditor`, `FieldInput`, `ProjectForm`, `PageFieldsForm`, `BlockDialogs`, `UploadButton`, `NavLinks`, `ui` |
 | `lib/admin-api.ts` | The only data access: the admin API, or the fixture store |
 | `lib/schemas.ts` | zod schemas, following `tcos_schema.mongodb.js` |
