@@ -193,14 +193,14 @@ export const blockInfo: Record<BlockType, BlockInfo> = {
   highlights: {
     label: "Highlights",
     kind: "data",
-    description: "Events from projects.highlights",
+    description: "Events from the projects' highlight lists",
     fields: [projectSlug, limit],
     defaults: () => ({ project_slug: null, limit: null }),
   },
   team: {
     label: "Team",
     kind: "data",
-    description: "People from projects.team, grouped by department",
+    description: "People from the team lists, grouped by department",
     fields: [
       projectSlug,
       { kind: "strings", key: "dept_keys", label: "Department keys", hint: "One track key per line. Empty: every department" },
@@ -212,7 +212,7 @@ export const blockInfo: Record<BlockType, BlockInfo> = {
   sponsors: {
     label: "Sponsors",
     kind: "data",
-    description: "Sponsors from projects.sponsors; logos only where allowed",
+    description: "Sponsors from the sponsor lists; logos only where the sponsor allowed it",
     fields: [projectSlug, { kind: "strings", key: "tiers", label: "Tiers", hint: "One tier per line. Empty: every tier" }],
     defaults: () => ({ project_slug: null, tiers: [] }),
   },
