@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { HIDDEN_SLUG, TCOS2_SLUG } from "@/fixtures";
-import type { Block, PageDoc, ProjectDoc } from "@/types/admin";
+import type { Block, PageDoc, ProjectDoc, RoundDoc, TrackDoc } from "@/types/admin";
 import { fixtureRequest, resetFixtureStore } from "./fixture-store";
 
 const body = <T>(method: string, path: string, data?: unknown) => fixtureRequest(method, path, data).body as T;
@@ -62,5 +62,29 @@ describe("fixture store", () => {
     const home = body<PageDoc>("GET", "/api/admin/pages/home");
     expect(home).toMatchObject({ title: "<...>", is_shown: false });
     expect(home.blocks.length).toBeGreaterThan(0);
+  });
+});
+
+describe("fixture store: tracks and rounds", () => {
+  beforeEach(() => resetFixtureStore());
+
+  it("renames a track key into the rounds that point to it, and refuses a taken key", () => {
+    const round = body<RoundDoc>("GET", "/api/admin/apply/6600000000000000000000c1");
+    round.positions[0].dept_key = "it";
+    expect(fixtureRequest("PUT", `/api/admin/apply/${round._id}`, round).status).toBe(200);
+
+    const track = body<TrackDoc>("GET", "/api/admin/tracks/it");
+    expect(fixtureRequest("PUT", "/api/admin/tracks/it", { ...track, key: "tech" }).status).toBe(200);
+    expect(body<RoundDoc>("GET", `/api/admin/apply/${round._id}`).positions[0].dept_key).toBe("tech");
+
+    expect(fixtureRequest("POST", "/api/admin/tracks", { key: "tech", display_name: "x", is_shown: false }).status).toBe(409);
+  });
+
+  it("gives new rounds and new list items an id", () => {
+    const created = body<RoundDoc>("POST", "/api/admin/apply", { title: "x", opens_at: "2026-01-01", closes_at: "2026-01-31", positions: [], is_shown: false });
+    expect(created._id).toMatch(/^[0-9a-f]{24}$/);
+    const saved = body<RoundDoc>("PUT", `/api/admin/apply/${created._id}`, { ...created, positions: [{ dept_key: "it", title: "y", is_shown: false }] });
+    expect(saved.positions[0]._id).toMatch(/^[0-9a-f]{24}$/);
+    expect(saved.opens_at).toBe("2026-01-01T00:00:00.000Z");
   });
 });

@@ -8,25 +8,30 @@ It is a Next.js (App Router) app. It talks only to the server's [Admin API](API.
 
 | Editor path | What | Admin API calls |
 | --- | --- | --- |
-| `/` | Lists pages and projects, hidden ones too | `GET /api/admin/pages`, `GET /api/admin/projects` |
+| `/` | Lists pages, projects, recruitment rounds and tracks, hidden ones too | `GET /api/admin/pages`, `/projects`, `/apply`, `/tracks` |
 | `/pages/[key]` | A page's `title`, `is_shown`, and its `blocks` | `GET /api/admin/pages/:key`, `PATCH /api/admin/pages/:key`, `PUT /api/admin/pages/:key/blocks` |
-| `/projects/new` | A new project: the required fields only | `POST /api/admin/projects` |
+| `/new/project` | A new project: the required fields only. Create pages live under `/new/`, so no slug or key (such as `new`) can clash with them | `POST /api/admin/projects` |
 | `/projects/[slug]` | A project's own fields (below), and its `blocks` | `GET /api/admin/projects/:slug`, `PATCH /api/admin/projects/:slug`, `PUT /api/admin/projects/:slug/blocks` |
+| `/new/track` | A new track: `key` and `display_name` | `POST /api/admin/tracks` |
+| `/tracks/[key]` | A whole track: its fields and its `achievements` | `GET /api/admin/tracks/:key`, `PUT /api/admin/tracks/:key` |
+| `/new/round` | A new recruitment round: `title`, `opens_at`, `closes_at` | `POST /api/admin/apply` |
+| `/apply/[id]` | A whole round: its fields, `qualifications`, `positions` (with `audition`) and `timeline` | `GET /api/admin/apply/:id`, `PUT /api/admin/apply/:id` |
 | `/api/upload` | Not a page: image uploads from the forms, passed on with the token | `POST /api/admin/uploads` |
 
 **Project fields it edits:** `slug`, `name`, `type`, `status`, `start_date`, `end_date`, `venue`, `summary`, `pics`, `org_chart_image`, `is_yearbook_shown`, `is_shown`.
 
 **Blocks:** add (any of the 15 types), remove, reorder, hide (`is_shown`), change `id`, and edit every field of the block's type in [tcos_schema.mongodb.js](../tcos_schema.mongodb.js). A save sends the whole `blocks` array, as the Admin API expects. A new block starts hidden (`is_shown: false`), so a half-made block never shows on the site. A data block edits only its pointer fields (`project_slug`, `limit`, `dept_keys`, `tiers` ...); its data is edited where it lives.
 
+**Tracks and rounds** are one form each, saved whole with `PUT`: list items keep their `_id`, and new ones get theirs from the server. The server checks that achievements point to real projects and positions to real track keys. A new `key` renames the track, and the server updates the rounds that point to it. New tracks, rounds and list items start hidden.
+
 **Dates** take an optional time, shown and entered in Bangkok time. A date without a time is sent as `YYYY-MM-DD` (stored as midnight UTC, shown without a time on the site); with a time it is sent with its zone, `YYYY-MM-DDTHH:MM:00+07:00`, as the server asks.
 
-**Images:** every image field (`pics`, `org_chart_image`, `media_url`, `slides`, `image`, `url`, `background_image`) takes a URL or an upload. The browser sends the file to the editor's own `/api/upload`, which passes it on as a stream to `POST /api/admin/uploads` with the token, filed under the page's key or the project's slug. The server checks the type (images only) and the size. A new project can take uploads once it is created.
+**Images:** every image field (`pics`, `org_chart_image`, `media_url`, `slides`, `image`, `url`, `background_image`) takes a URL or an upload. The browser sends the file to the editor's own `/api/upload`, which passes it on as a stream to `POST /api/admin/uploads` with the token, filed under the page's key, the project's slug, the track's key or the round's id. The server checks the type (images only) and the size. A new project can take uploads once it is created.
 
 **Blocks the site does not show yet:** the editor marks block types the client has no component for yet ("Not on the site yet"). They save as usual. The list follows `apps/client/components/blocks/index.ts`, and a test fails when the two drift apart.
 
 **Not in the editor yet:**
 - `team`, `sponsors` and `highlights` items, with their consent flags (`is_photo_allowed`, `logo_permission`). They are changed through the admin API for now.
-- `tracks` and `apply` rounds.
 - Deleting a project (the server answers `409` while it is referenced), and deleting uploaded files.
 
 ## Checks in the editor
