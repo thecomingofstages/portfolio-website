@@ -94,7 +94,8 @@ export default function Hero({ block }: BlockProps<"hero">) {
   }, [videoPlays, paused]);
 
   return (
-    <section className="hero-banner full-bleed relative grid h-[85svh] min-h-112 overflow-hidden bg-card-bg">
+    // At least 85% of the screen (28rem on short screens), and taller when the text needs it: never cut off.
+    <section className="hero-banner full-bleed relative grid min-h-[max(85svh,28rem)] overflow-hidden bg-card-bg">
       {kind === "video" ? (
         isImageUrl(media_url) ? (
           <video
@@ -105,12 +106,16 @@ export default function Hero({ block }: BlockProps<"hero">) {
             playsInline
             preload="metadata"
             aria-hidden="true"
+            data-field="media_url"
+            data-field-kind="image"
             className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
           <Media
             src={media_url}
             alt=""
+            data-field="media_url"
+            data-field-kind="image"
             fill
             sizes="100vw"
             className={MEDIA_CLASS}
@@ -122,6 +127,8 @@ export default function Hero({ block }: BlockProps<"hero">) {
             key={`${src}-${index}`}
             src={src}
             alt=""
+            data-field={index === 0 ? "media_url" : `slides.${index - 1}`}
+            data-field-kind="image"
             fill
             sizes="100vw"
             priority={index === 0}
@@ -134,14 +141,19 @@ export default function Hero({ block }: BlockProps<"hero">) {
       )}
       <div aria-hidden="true" className="absolute inset-0 bg-background/75" />
       <div className="page-width relative col-start-1 row-start-1 flex flex-col items-start gap-4 self-end pb-12 md:pb-16">
-        {title ? <h1>{title}</h1> : null}
-        {subtitle ? <p className="text-body-lg text-muted">{subtitle}</p> : null}
+        {title ? <h1 data-field="title">{title}</h1> : null}
+        {subtitle ? (
+          <p data-field="subtitle" className="text-body-lg text-muted">
+            {subtitle}
+          </p>
+        ) : null}
         {buttons.length > 0 ? (
           <div className="flex flex-wrap gap-4">
             {buttons.map((button, index) => (
               <a
                 key={`${button.url}-${index}`}
                 href={button.url}
+                data-field={`buttons.${index}.label`}
                 className={`${BUTTON_CLASS} ${button.style === "secondary" ? SECONDARY_CLASS : PRIMARY_CLASS}`}
               >
                 {button.label}
