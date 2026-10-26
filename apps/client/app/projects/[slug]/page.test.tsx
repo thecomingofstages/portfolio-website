@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { blockComponents } from "@/components/blocks";
 import { projectPages } from "@/fixtures/projects";
 import { HIDDEN_SLUG, TCOS2_NAME, TCOS2_SLUG } from "@/fixtures/shared";
 
@@ -37,8 +38,10 @@ describe("Project page", () => {
     const children = [...container.querySelectorAll(":scope > div > *")];
     expect(children[0].tagName).toBe("HEADER");
     const ids = children.slice(1).map((section) => section.id);
-    // Blocks without a component yet (stats, highlights, team) render nothing.
-    expect(ids).toEqual(["set-photo", "about", "gallery", "documentary", "quote-kan", "partners"]);
+    // Blocks without a component yet render nothing, so expect only the registered ones.
+    const rendered = project.blocks.filter((block) => Object.hasOwn(blockComponents, block.type));
+    expect(ids).toEqual(rendered.map((block) => block.id));
+    expect(ids.length).toBeGreaterThan(0);
     expect(notFound).not.toHaveBeenCalled();
   });
 
