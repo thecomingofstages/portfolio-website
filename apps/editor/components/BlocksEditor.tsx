@@ -1,9 +1,10 @@
 "use client";
 
-import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
+import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { saveBlocks } from "@/app/actions";
 import { AddBlockDialog, ImageDialog } from "@/components/BlockDialogs";
 import FieldInput from "@/components/FieldInput";
+import { useSaveable } from "@/components/SaveGroup";
 import { SaveStatus, ShownMark } from "@/components/ui";
 import type { UploadOwner } from "@/lib/admin-api";
 import { blockInfo, getPath, isPageField, moveItem, newBlock, ON_SITE, pageValue, setField, setPath } from "@/lib/blocks";
@@ -75,7 +76,6 @@ export default function BlocksEditor({
       setSelectedKey(null);
     }
   }
-  const [pending, startTransition] = useTransition();
   const slugListId = useId();
   const uploadTo: UploadOwner =
     target.kind === "page" ? { collection: "pages", owner: target.key } : { collection: "projects", owner: target.slug };
@@ -84,14 +84,6 @@ export default function BlocksEditor({
   const dirty = JSON.stringify(blocks) !== saved;
   const selectedIndex = rows.findIndex((r) => r.key === selectedKey);
   const selected = selectedIndex >= 0 ? rows[selectedIndex] : null;
-
-  // Warn before leaving with unsaved changes.
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
 
   const update = (key: string, block: Block) => setRows((rs) => rs.map((r) => (r.key === key ? { key, block } : r)));
   const move = (index: number, to: number) => setRows((rs) => moveItem(rs, index, to));
@@ -110,22 +102,24 @@ export default function BlocksEditor({
     setRows((rs) => rs.filter((_, i) => i !== index));
   }
 
-  function save() {
-    const sent = JSON.stringify(blocks);
-    startTransition(async () => {
+  // Saved and discarded with the rest of the page, from the header (SaveGroup).
+  useSaveable("blocks", {
+    dirty,
+    order: 1,
+    save: async () => {
+      const sent = JSON.stringify(blocks);
       const answer = await saveBlocks(target, blocks);
       setResult(answer);
       if (answer.ok) setSaved(sent);
-    });
-  }
-
-  function discard() {
-    if (!window.confirm("Discard every change since the last save?")) return;
-    setGeneration(generation + 1);
-    setRows(rowsOf(JSON.parse(saved) as Block[], generation + 1));
-    setSelectedKey(null);
-    setResult(null);
-  }
+      return answer.ok;
+    },
+    discard: () => {
+      setGeneration(generation + 1);
+      setRows(rowsOf(JSON.parse(saved) as Block[], generation + 1));
+      setSelectedKey(null);
+      setResult(null);
+    },
+  });
 
   // --- the page in the frame ---------------------------------------------------------
 
@@ -244,6 +238,7 @@ export default function BlocksEditor({
         </div>
 
         <aside ref={panel} className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1">
+          {result && !result.ok ? <SaveStatus result={result} /> : null}
           <nav aria-label="Blocks on this page" className="flex flex-col gap-1">
             <div className="flex items-baseline justify-between gap-3">
               <h2>Blocks</h2>
@@ -288,27 +283,10 @@ export default function BlocksEditor({
               onRemove={() => remove(selectedIndex)}
               onClose={() => setSelectedKey(null)}
             />
-          ) : (
-            settings
-          )}
+          ) : null}
+          {/* Hidden, not removed, while a block is selected: its unsaved changes must survive. */}
+          <div hidden={!!selected}>{settings}</div>
         </aside>
-      </div>
-
-      <div className="bar sticky bottom-4 z-10 flex flex-wrap items-center gap-3 px-3 py-2.5">
-        <button type="button" className="btn btn-primary" disabled={!dirty || pending} onClick={save}>
-          {pending ? "Saving…" : "Save blocks"}
-        </button>
-        <button type="button" className="btn" disabled={!dirty || pending} onClick={discard}>
-          Discard
-        </button>
-        <span role="status" className={dirty ? "text-foreground" : result?.ok ? "text-green" : "text-muted"}>
-          {dirty ? "Unsaved changes" : result?.ok ? result.message : "Everything is saved"}
-        </span>
-        {result && !result.ok ? (
-          <div className="w-full">
-            <SaveStatus result={result} />
-          </div>
-        ) : null}
       </div>
 
       {adding !== null ? <AddBlockDialog onPick={(type) => insert(adding, type)} onClose={() => setAdding(null)} /> : null}

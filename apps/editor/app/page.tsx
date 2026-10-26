@@ -19,6 +19,11 @@ export default async function Dashboard() {
   return (
     <div className="flex max-w-4xl flex-col gap-12">
       <h1 className="sr-only">Pages and projects</h1>
+      {process.env.USE_FIXTURES === "true" ? (
+        <p className="border-l-2 border-accent pl-3 text-muted">
+          Sample data: changes last until the editor restarts, and nothing reaches the real site.
+        </p>
+      ) : null}
       <section aria-labelledby="pages-heading" className="flex flex-col gap-2">
         <h2 id="pages-heading" className="text-h1 font-extrabold">
           Pages

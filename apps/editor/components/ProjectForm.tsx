@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { createProject, saveProjectFields } from "@/app/actions";
 import FieldInput from "@/components/FieldInput";
+import { useSaveable } from "@/components/SaveGroup";
 import { Label, SaveStatus } from "@/components/ui";
 import type { FieldSpec } from "@/lib/blocks";
 import { type DateParts, fromDateParts, normalizeDate, toDateParts } from "@/lib/date-input";
@@ -62,6 +63,24 @@ export default function ProjectForm({ project }: { project?: ProjectDoc }) {
   const [result, setResult] = useState<ActionResult | null>(null);
   const [pending, startTransition] = useTransition();
   const dirty = JSON.stringify(fields) !== initialJson;
+  // An emptied summary is sent as "", so the stored one is cleared too.
+  const sent = project ? { ...fields, summary: fields.summary ?? "" } : fields;
+
+  // An existing project saves with the rest of its page, from the header (SaveGroup).
+  useSaveable("project", {
+    dirty: !!project && dirty,
+    order: 2,
+    save: async () => {
+      if (!project) return true;
+      const answer = await saveProjectFields(project.slug, sent);
+      setResult(answer);
+      return answer.ok;
+    },
+    discard: () => {
+      setFields(initial);
+      setResult(null);
+    },
+  });
   const slugChanged = project && fields.slug !== project.slug;
 
   const field = (spec: FieldSpec) => (
@@ -133,11 +152,7 @@ export default function ProjectForm({ project }: { project?: ProjectDoc }) {
       className="flex flex-col gap-5"
       onSubmit={(e) => {
         e.preventDefault();
-        startTransition(async () => {
-          // An emptied summary is sent as "", so the stored one is cleared too.
-          const sent = project ? { ...fields, summary: fields.summary ?? "" } : fields;
-          setResult(project ? await saveProjectFields(project.slug, sent) : await createProject(sent));
-        });
+        if (!project) startTransition(async () => setResult(await createProject(sent)));
       }}
     >
       <div className="flex flex-col gap-5">
@@ -156,12 +171,14 @@ export default function ProjectForm({ project }: { project?: ProjectDoc }) {
           shared links stop working.
         </p>
       ) : null}
-      <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" className="btn btn-primary" disabled={(project && !dirty) || pending}>
-          {pending ? "Saving…" : project ? "Save project" : "Create project"}
-        </button>
-      </div>
-      <SaveStatus result={result} />
+      {project ? null : (
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="submit" className="btn btn-primary" disabled={pending}>
+            {pending ? "Creating…" : "Create project"}
+          </button>
+        </div>
+      )}
+      {result && !(project && result.ok) ? <SaveStatus result={result} /> : null}
     </form>
   );
 }

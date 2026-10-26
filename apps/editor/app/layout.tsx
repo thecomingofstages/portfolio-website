@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Prompt, Sarabun } from "next/font/google";
+import Image from "next/image";
 import Link from "next/link";
-import NavLinks from "@/components/NavLinks";
 import "./globals.css";
 
 const prompt = Prompt({
@@ -24,22 +24,21 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
-  const fixtures = process.env.USE_FIXTURES === "true";
   return (
     <html lang="th" className={`${prompt.variable} ${sarabun.variable}`}>
       <body className="antialiased">
-        <header className="editor-wide z-20 pt-3 sm:sticky sm:top-0">
-          <div className="bar flex flex-wrap items-center gap-x-8 gap-y-1 px-4 py-2.5">
-            <Link href="/" className="font-heading font-bold">
-              TCOS editor
+        <header className="editor-wide sticky top-0 z-20 pt-3">
+          <div className="bar flex items-center gap-x-4 px-3 py-2 sm:gap-x-6">
+            <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Portfolio website editor, all pages and projects">
+              <Image src="/logo.png" alt="The Coming of Stages" width={412} height={359} priority className="h-8 w-auto" />
+              <span className="hidden whitespace-nowrap font-body sm:inline">Portfolio website editor</span>
             </Link>
-            <NavLinks />
-            {fixtures ? (
-              <span className="text-muted sm:ml-auto">Sample data: saves last until the editor restarts</span>
-            ) : null}
+            {/* The page being edited, and its Save and Discard, come from the page (HeaderSlot). */}
+            <div id="header-title" className="flex min-w-0 flex-1 items-center" />
+            <div id="header-actions" className="flex shrink-0 items-center" />
           </div>
         </header>
-        <main className="editor-wide py-10">{children}</main>
+        <main className="editor-wide py-8">{children}</main>
       </body>
     </html>
   );

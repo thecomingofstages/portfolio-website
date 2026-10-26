@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { savePageFields } from "@/app/actions";
+import { useSaveable } from "@/components/SaveGroup";
 import { Label, SaveStatus } from "@/components/ui";
 import type { ActionResult, PageDoc } from "@/types/admin";
 
@@ -17,16 +18,28 @@ export default function PageFieldsForm({ page }: { page: PageDoc }) {
     setShown(page.is_shown);
   }
   const [result, setResult] = useState<ActionResult | null>(null);
-  const [pending, startTransition] = useTransition();
   const dirty = title !== page.title || shown !== page.is_shown;
+
+  // Saved with the rest of the page, from the header (SaveGroup).
+  useSaveable("page", {
+    dirty,
+    order: 2,
+    save: async () => {
+      const answer = await savePageFields(page.key, { title, is_shown: shown });
+      setResult(answer);
+      return answer.ok;
+    },
+    discard: () => {
+      setTitle(page.title);
+      setShown(page.is_shown);
+      setResult(null);
+    },
+  });
 
   return (
     <form
       className="flex flex-col gap-5"
-      onSubmit={(e) => {
-        e.preventDefault();
-        startTransition(async () => setResult(await savePageFields(page.key, { title, is_shown: shown })));
-      }}
+      onSubmit={(e) => e.preventDefault()}
     >
       <div className="flex max-w-xl flex-col gap-1">
         <Label htmlFor="page-title">Title *</Label>
@@ -38,12 +51,7 @@ export default function PageFieldsForm({ page }: { page: PageDoc }) {
           Shown on the site
         </Label>
       </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" className="btn btn-primary" disabled={!dirty || pending}>
-          {pending ? "Saving…" : "Save page"}
-        </button>
-      </div>
-      <SaveStatus result={result} />
+      {result && !result.ok ? <SaveStatus result={result} /> : null}
     </form>
   );
 }
