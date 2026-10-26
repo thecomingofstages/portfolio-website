@@ -32,6 +32,7 @@ The admin side is out of scope here: for now it is direct calls to the admin API
 | `/tracks`                   | Track list                                                            | 3      | `GET /api/tracks`                  | never                                              |
 | `/tracks/<key>`             | Track popup (over `/tracks`; a full page on a direct link or refresh) | 3      | `GET /api/tracks/:key`             | no track with that `key`, or it is not shown       |
 | `/api/revalidate`           | Not a page: the server calls it after a write                         | 1      | (none)                             | (none); answers `401` without `REVALIDATE_SECRET`  |
+| `/edit`                     | Edit mode, framed by the editor ([Edit mode](#edit-mode))             | editor | `GET /api/pages/home` or `GET /api/projects/:slug` | always, unless `EDITOR_ORIGIN` is set     |
 
 **Links between pages:**
 
@@ -69,6 +70,7 @@ app/
     [key]/page.tsx                   /tracks/<key>, popup content as a full page (direct link, refresh)  sprint 3
     @modal/(.)[key]/page.tsx         the same, shown as a popup over /tracks  sprint 3
   api/revalidate/route.ts            called by the server after a write  sprint 1
+  edit/page.tsx                      /edit, edit mode for the editor (below)
 components/
   blocks/                            one component per block type
   ...                                shared components (below)
@@ -164,6 +166,16 @@ Home (`/`) and the project list (`/projects`) render per request, so they always
 | `REVALIDATE_SECRET` | The same value as on the server                                                    |
 | `MEDIA_BASE_URL`    | The R2 media bucket's public URL, allowed in `next.config` `images.remotePatterns` |
 | `USE_FIXTURES`      | `true` serves the fixtures instead of calling `API_URL` (see below)                |
+| `EDITOR_ORIGIN`     | The editor's origin, e.g. `http://localhost:3001`, which may use edit mode. Unset: `/edit` is a 404 |
+
+### Edit mode
+
+The editor ([EDITOR.md](EDITOR.md) "Editing on the page") frames `/edit?page=home` or `/edit?project=<slug>` and sends it the page's unsaved blocks by `postMessage`. The page renders them with the same block components as the site, so what the editor shows is what the site will show.
+
+- **Off by default.** `/edit` is a 404 unless `EDITOR_ORIGIN` is set. It is not indexed.
+- **Messages only from the editor.** It accepts messages only from `EDITOR_ORIGIN` and only from the window framing it, and sends only to that origin. It keeps no data and writes nothing: the editor holds the blocks and saves them through the admin API.
+- **No hidden data from the server.** The blocks, hidden ones too, come from the editor. Data blocks show their saved, filled version from the public API (shown blocks only, as on the site) while their settings are unchanged, and a note otherwise.
+- **Field markers.** Each content block component marks the elements that show a field with `data-field="<path>"` (`title`, `items.2.desc`), plus `data-field-kind="image"` or `"markdown"` where the field is not plain text. Edit mode makes marked text typeable in place, opens a text box for Markdown, and asks the editor for a new image. Markers change nothing on the site. A new or changed field in a component keeps its marker; the editor's tests compare the markers with the fields it accepts.
 
 ### Images
 

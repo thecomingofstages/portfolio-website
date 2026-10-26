@@ -13,12 +13,13 @@ export default function ButtonBlock({ block }: BlockProps<"button">) {
 
   return (
     <div className={`flex flex-col gap-6 py-8 ${centered ? "items-center text-center" : ""}`}>
-      {title ? <h2>{title}</h2> : null}
+      {title ? <h2 data-field="title">{title}</h2> : null}
       <div className={`flex flex-wrap gap-4 ${centered ? "justify-center" : "justify-start"}`}>
         {buttons.map((button, index) => (
           <a
             key={`${button.url}-${index}`}
             href={button.url}
+            data-field={`buttons.${index}.label`}
             className={`${BASE_CLASS} ${button.style === "secondary" ? SECONDARY_CLASS : PRIMARY_CLASS}`}
           >
             {button.label}

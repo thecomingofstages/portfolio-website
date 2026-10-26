@@ -819,7 +819,7 @@ Dates are shown as strings for readability. In the database they are `Date` valu
 - [ ] Whether the Tracks page also gets `blocks`. (Join does not: `/join` is fixed, and its empty-state message is written in the client code.)
 - [ ] Later block types: event info, timeline, contact, cards, map, divider.
 - [ ] Whether English pages are needed. If yes, text fields become `{ th, en }`.
-- [x] Who edits the data, and how: through the server's admin API with a hand-made JWT, called directly for now; a separate admin interface comes later. See [API.md](API.md).
+- [x] Who edits the data, and how: through the server's admin API with a hand-made JWT, called directly for now; a separate admin interface is planned in [EDITOR.md](EDITOR.md). See [API.md](API.md).
 - [ ] Track team and open positions: the requirements list a team (ทีมงาน) under each track, but department names and structure vary between projects. Decide how people map to tracks before the popup lists them.
 - [ ] Sponsor benefits: the overall list of what sponsors get, for the Support article, and the wording of the line that sends sponsors to the email for amounts. Packages vary by project and are left out.
 - [ ] A page per person, so members can see their own growth across projects ("เห็นพัฒนาการของตัวเอง"): it would need a `people` collection and a `person_key` on each team member, and its own consent (plus guardian consent for minors), since it puts one person's history in one place. Later.

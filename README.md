@@ -23,6 +23,7 @@ You don't need a database or the server to run the client: it can serve fixtures
 ├── docs/
 │   ├── FRONTEND.md           Client plan: pages, components, design
 │   ├── API.md                Server API: endpoints, response shapes, auth
+│   ├── EDITOR.md             Editor plan: what the admin interface edits
 │   ├── DATABASE.md           Data model, consent rules, examples
 │   └── TASKS.md              Task briefs (F1–F7, sprints 1–3, S1–S10)
 ├── tcos_schema.mongodb.js    MongoDB collections, validators and indexes
@@ -37,7 +38,7 @@ You don't need a database or the server to run the client: it can serve fixtures
 │   │   ├── fixtures/         Sample API responses, for working without the server
 │   │   └── public/           Static files (logo)
 │   ├── server/               Express API on Cloudflare Workers (not set up yet: task S1)
-│   └── editor/               Admin interface (not in use yet)
+│   └── editor/               Admin interface: edits Home and project pages through the admin API
 └── .github/workflows/        CI checks for the client
 ```
 
@@ -101,6 +102,26 @@ The server runs at http://localhost:8787 in the Cloudflare Workers runtime.
   collection (one per domain, or `Full-Suite` for everything). Or, with the server
   running, `npm run test:postman` runs the Full-Suite from the terminal. List requests
   save a real slug/key for the detail requests; with an empty database those are skipped.
+
+### Editor
+
+```bash
+cd apps/editor
+npm ci
+cp .env.example .env.local
+npm run dev
+```
+
+Open http://localhost:3001. The example settings use `USE_FIXTURES=true`: the editor
+edits an in-memory copy of its fixtures, kept until the dev server restarts. To edit real
+data, set `API_URL` and `ADMIN_TOKEN` and remove `USE_FIXTURES`. Set `SITE_URL` to the
+client (e.g. http://localhost:3000), and `EDITOR_ORIGIN=http://localhost:3001` in the
+client's settings, to edit on the page itself. See [docs/EDITOR.md](docs/EDITOR.md).
+The editor has no sign-in of its own, so run it only on your own machine for now.
+
+Checks, in `apps/editor`: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`.
+
+### Server checks
 
 Checks, in `apps/server`: `npm run typecheck` and `npm test`. After changing
 `wrangler.jsonc`, run `npm run cf-typegen`.

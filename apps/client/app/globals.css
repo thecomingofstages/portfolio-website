@@ -134,3 +134,31 @@ main:has(> :first-child > section:first-child > .hero-banner) {
     font-weight: 600;
   }
 }
+
+/* Edit mode (/edit, inside the editor): marked fields show they can be clicked; empty ones show their label as a hint. */
+@layer base {
+  [data-editing] [data-field] {
+    cursor: text;
+    border-radius: var(--radius-button);
+  }
+
+  [data-editing] [data-field]:hover,
+  [data-editing] [data-field]:focus {
+    outline: 1px dashed var(--accent);
+    outline-offset: 3px;
+  }
+
+  [data-editing] [data-field-kind="image"] {
+    cursor: pointer;
+  }
+
+  /* Text that renders as nothing (e.g. only HTML, which Markdown drops) can still be clicked. */
+  [data-editing] [data-field-kind="markdown"] {
+    min-height: 3rem;
+  }
+
+  [data-editing] [data-empty] {
+    font-style: italic;
+    opacity: 0.55;
+  }
+}
