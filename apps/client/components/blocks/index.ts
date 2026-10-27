@@ -5,6 +5,7 @@ import ButtonBlock from "./ButtonBlock";
 import Gallery from "./Gallery";
 import Hero from "./Hero";
 import ImageBlock from "./ImageBlock";
+import Join from "./Join";
 import ProjectsBlock from "./ProjectsBlock";
 import Quote from "./Quote";
 import Sponsors from "./Sponsors";
@@ -32,6 +33,7 @@ export const blockComponents: BlockComponents = {
   gallery: Gallery,
   hero: Hero,
   image: ImageBlock,
+  join: Join,
   projects: ProjectsBlock,
   quote: Quote,
   sponsors: Sponsors,
