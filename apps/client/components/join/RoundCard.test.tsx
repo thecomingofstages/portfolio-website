@@ -8,7 +8,6 @@ import RoundCard, { APPLY_LABEL } from "./RoundCard";
 const round: Round = { ...tcos2Round5, apply_url: "https://forms.gle/example" };
 
 describe("RoundCard", () => {
-  // The round's own dates, in the card header (the timeline below has dates too).
   const headerDates = (container: HTMLElement) => container.querySelector("header time")?.textContent;
 
   it("shows the title, project name and dates from opens_at to closes_at", () => {

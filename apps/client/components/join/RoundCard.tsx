@@ -5,22 +5,12 @@ import PositionList from "./PositionList";
 import Qualifications from "./Qualifications";
 import Timeline from "./Timeline";
 
-// TODO(apply button wording): the docs call it the Apply button but give no Thai label.
 export const APPLY_LABEL = "Apply";
 
 export type RoundCardProps = {
   round: Round;
 };
 
-/**
- * One open recruitment round (task 2.4, docs/FRONTEND.md "Sprint 2: Apply info"),
- * in the enrollment site's card style: the poster on top (on the left from 768px up),
- * then `title`, the project name and the dates, then Qualifications, PositionList and
- * Timeline (tasks 2.1–2.3), and a full-width gold Apply button to `apply_url`.
- *
- * The dates run from `opens_at` to `extended_to` when the round was extended,
- * else to `closes_at`. Shared: used by the `join` block (2.5) and `/join` (2.6).
- */
 export default function RoundCard({ round }: RoundCardProps) {
   const { title, poster, opens_at, closes_at, extended_to, project_name, apply_url } = round;
   const dates = formatDate(opens_at, extended_to ?? closes_at);
@@ -28,7 +18,6 @@ export default function RoundCard({ round }: RoundCardProps) {
   return (
     <article className="grid grid-cols-1 overflow-hidden rounded-card border border-border bg-card-bg md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
       {poster !== null ? (
-        // TODO(poster ratio): recruitment posters' shape is not decided; square, cropped to fit.
         <div className="relative aspect-square w-full self-start overflow-hidden">
           <Media
             src={poster}
@@ -70,7 +59,6 @@ export default function RoundCard({ round }: RoundCardProps) {
   );
 }
 
-/** An absolute http(s) link; not null or a `<...>` placeholder from the fixtures. */
 function isApplyUrl(url: string | null): url is string {
   return url !== null && /^https?:\/\//.test(url);
 }
