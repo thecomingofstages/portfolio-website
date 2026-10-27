@@ -28,8 +28,8 @@ describe("Home page", () => {
     getHomePage.mockResolvedValue(structuredClone(homePage));
     const { container } = render(await Home());
     const ids = [...container.querySelectorAll(":scope > div > section")].map((section) => section.id);
-    // Blocks without a component yet (stats, join, yearbook) render nothing.
-    expect(ids).toEqual(["hero", "about", "projects", "tracks", "quote", "support", "support-benefits", "support-email", "partners"]);
+    // Blocks without a component yet (stats, yearbook) render nothing.
+    expect(ids).toEqual(["hero", "about", "projects", "tracks", "join", "quote", "support", "support-benefits", "support-email", "partners"]);
     expect(notFound).not.toHaveBeenCalled();
   });
 
