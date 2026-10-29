@@ -2,15 +2,15 @@
 
 import { useId, useState, useTransition } from "react";
 import FieldInput from "@/components/FieldInput";
-import { useSaveable } from "@/components/SaveGroup";
-import { SaveStatus } from "@/components/ui";
+import { HeaderSlot, useSaveable } from "@/components/SaveGroup";
+import { SaveStatus, Switch } from "@/components/ui";
 import type { UploadOwner } from "@/lib/admin-api";
 import { FORMS } from "@/lib/forms";
 import type { ActionResult } from "@/types/admin";
 
 type Doc = Record<string, unknown>;
 
-/** The <datalist>s that `project_slug` and `dept_key` fields suggest from. */
+/** The <datalist> that `project_slug` fields suggest from. */
 function Suggestions({ id, values }: { id: string; values: string[] }) {
   return (
     <datalist id={id}>
@@ -31,7 +31,6 @@ export function DocEditor({
   save,
   uploadTo,
   projectSlugs,
-  trackKeys,
 }: {
   form: "track" | "round";
   /** The document as `formValue` gives it. */
@@ -39,7 +38,6 @@ export function DocEditor({
   save: (doc: Doc) => Promise<ActionResult>;
   uploadTo: UploadOwner;
   projectSlugs: string[];
-  trackKeys: string[];
 }) {
   const initialJson = JSON.stringify(initial);
   const [doc, setDoc] = useState<Doc>(initial);
@@ -69,22 +67,31 @@ export function DocEditor({
   });
 
   return (
-    <form className="flex max-w-3xl flex-col gap-6" onSubmit={(e) => e.preventDefault()}>
+    <form className="@container flex max-w-3xl flex-col gap-6" onSubmit={(e) => e.preventDefault()}>
       <Suggestions id={`${listId}-projects`} values={projectSlugs} />
-      <Suggestions id={`${listId}-tracks`} values={trackKeys} />
-      {result && !result.ok ? <SaveStatus result={result} /> : null}
-      {specs.map((spec) => (
-        <FieldInput
-          key={spec.key}
-          spec={spec}
-          value={doc}
-          idPrefix="doc"
-          projectSlugsListId={`${listId}-projects`}
-          trackKeysListId={`${listId}-tracks`}
-          uploadTo={uploadTo}
-          onChange={setDoc}
+      {/* In the line under the document's title (the page's #title-shown), as on a project's page. */}
+      <HeaderSlot id="title-shown">
+        <Switch
+          id="doc-is_shown"
+          checked={doc.is_shown === true}
+          label="Shown on the site"
+          onChange={(on) => setDoc({ ...doc, is_shown: on })}
         />
-      ))}
+      </HeaderSlot>
+      {result && !result.ok ? <SaveStatus result={result} /> : null}
+      {specs.map((spec) =>
+        spec.key === "is_shown" ? null : (
+          <FieldInput
+            key={spec.key}
+            spec={spec}
+            value={doc}
+            idPrefix="doc"
+            projectSlugsListId={`${listId}-projects`}
+            uploadTo={uploadTo}
+            onChange={setDoc}
+          />
+        ),
+      )}
     </form>
   );
 }
