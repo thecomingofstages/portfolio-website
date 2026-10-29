@@ -28,6 +28,7 @@ export type Words = {
   undecided: (raw: string) => string;
   time: string;
   shown: string;
+  noProject: string;
 };
 
 export const WORDS = {
@@ -43,6 +44,7 @@ export const WORDS = {
     undecided: (raw) => `Now "${raw}", not decided yet. Pick a date before saving.`,
     time: "Optional, Bangkok time",
     shown: "Shown on the site",
+    noProject: "None",
   },
   th: {
     add: (name) => `เพิ่ม${name}`,
@@ -56,6 +58,7 @@ export const WORDS = {
     undecided: (raw) => `ตอนนี้เป็น "${raw}" คือยังไม่ได้กำหนด เลือกวันที่ก่อนบันทึก`,
     time: "ไม่ใส่ก็ได้ เวลากรุงเทพฯ",
     shown: "แสดงบนเว็บ",
+    noProject: "ไม่ผูกกับโปรเจกต์",
   },
 } satisfies Record<string, Words>;
 
@@ -69,6 +72,7 @@ export default function FieldInput({
   onChange,
   idPrefix,
   projectSlugsListId,
+  projectOptions,
   uploadTo,
   words = WORDS.en,
   heading,
@@ -79,6 +83,8 @@ export default function FieldInput({
   idPrefix: string;
   /** A <datalist> of project slugs, for `project_slug` fields. */
   projectSlugsListId?: string;
+  /** The projects a `project_slug` field picks from, as a dropdown; without it, a text box. */
+  projectOptions?: { slug: string; name: string }[];
   /** Where uploaded images are filed; without it, image fields take URLs only. */
   uploadTo?: UploadOwner;
   /** The form's language for its buttons and notes. */
@@ -102,6 +108,17 @@ export default function FieldInput({
           </Label>
           {spec.multiline ? (
             <textarea id={id} rows={5} value={text} onChange={(e) => update(e.target.value)} />
+          ) : spec.key === "project_slug" && projectOptions ? (
+            <select id={id} value={text} onChange={(e) => update(e.target.value)}>
+              <option value="">{words.noProject}</option>
+              {/* A project the list does not have (deleted, renamed) stays chosen until it is changed. */}
+              {text !== "" && !projectOptions.some((p) => p.slug === text) ? <option value={text}>{text}</option> : null}
+              {projectOptions.map((p) => (
+                <option key={p.slug} value={p.slug}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
           ) : spec.image && value.media_kind !== "video" ? (
             // Not a hero video: it plays in a plain <video>, which takes any URL.
             <ImageUrlInput id={id} value={text} onChange={update} />

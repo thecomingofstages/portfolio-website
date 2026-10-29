@@ -42,6 +42,10 @@ export default async function EditRound({ params }: PageProps<"/apply/[id]">) {
           save={saveRound.bind(null, round._id)}
           uploadTo={{ collection: "apply", owner: round._id.toLowerCase() }}
           projectSlugs={projects.map((p) => p.slug)}
+          // A round recruits for a project that has not ended; its own project stays listed.
+          projectOptions={projects
+            .filter((p) => (p.status !== "completed" && p.status !== "cancelled") || p.slug === round.project_slug)
+            .map(({ slug, name }) => ({ slug, name }))}
         />
       </div>
     </SaveGroup>

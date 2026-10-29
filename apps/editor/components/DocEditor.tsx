@@ -31,6 +31,7 @@ export function DocEditor({
   save,
   uploadTo,
   projectSlugs,
+  projectOptions,
 }: {
   form: "track" | "round";
   /** The document as `formValue` gives it. */
@@ -38,6 +39,8 @@ export function DocEditor({
   save: (doc: Doc) => Promise<ActionResult>;
   uploadTo: UploadOwner;
   projectSlugs: string[];
+  /** When given, `project_slug` fields are a dropdown of these instead. */
+  projectOptions?: { slug: string; name: string }[];
 }) {
   const initialJson = JSON.stringify(initial);
   const [doc, setDoc] = useState<Doc>(initial);
@@ -89,6 +92,7 @@ export function DocEditor({
             value={doc}
             idPrefix="doc"
             projectSlugsListId={`${listId}-projects`}
+            projectOptions={projectOptions}
             uploadTo={uploadTo}
             words={words}
             heading
