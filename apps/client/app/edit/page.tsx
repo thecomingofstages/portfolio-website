@@ -34,7 +34,7 @@ export default async function EditPage({ searchParams }: { searchParams: Promise
   }
   if (page === "home") {
     const home = await getHomePage();
-    return <EditCanvas editorOrigin={editorOrigin} saved={home?.blocks ?? []} />;
+    return <EditCanvas editorOrigin={editorOrigin} saved={home?.blocks ?? []} home />;
   }
   notFound();
 }

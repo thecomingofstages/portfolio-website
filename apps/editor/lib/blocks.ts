@@ -269,6 +269,7 @@ export const ON_SITE: ReadonlySet<BlockType> = new Set<BlockType>([
   "gallery",
   "hero",
   "image",
+  "join",
   "projects",
   "quote",
   "sponsors",
@@ -276,23 +277,33 @@ export const ON_SITE: ReadonlySet<BlockType> = new Set<BlockType>([
   "video",
 ]);
 
-/** `base`, or `base-2`, `base-3` ... : the first id not already used on the page. */
-export function nextBlockId(base: string, taken: Iterable<string>): string {
-  const used = new Set(taken);
-  if (!used.has(base)) return base;
-  for (let n = 2; ; n++) if (!used.has(`${base}-${n}`)) return `${base}-${n}`;
+/** The home page has no hide switches: the page and its blocks are always shown. */
+export const isAlwaysShown = (pageKey: string) => pageKey === "home";
+
+/** On the home page, a Hero as the first block is the banner (the client's app/page.tsx): it stays first. */
+export const hasHomeBanner = (pageKey: string, blocks: readonly { type: string }[]) =>
+  isAlwaysShown(pageKey) && blocks[0]?.type === "hero";
+
+/** A UUID v7 (RFC 9562): a 48-bit millisecond timestamp, then random bits. */
+export function uuidv7(now = Date.now()): string {
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  for (let i = 0; i < 6; i++) b[i] = Math.floor(now / 2 ** (8 * (5 - i))) & 0xff;
+  b[6] = (b[6] & 0x0f) | 0x70;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const hex = Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
 /**
- * A new block of `type`, hidden until it is filled in, so a half-made block
- * never shows on the site.
+ * A new block of `type` with a UUID v7 id. It starts hidden until it is filled in, so a
+ * half-made block never shows on the site, unless the page has no hide switch (`shown`).
  */
-export function newBlock(type: BlockType, takenIds: Iterable<string>): Block {
+export function newBlock(type: BlockType, shown = false): Block {
   return {
-    id: nextBlockId(type, takenIds),
+    id: uuidv7(),
     type,
     title: null,
-    is_shown: false,
+    is_shown: shown,
     ...blockInfo[type].defaults(),
   } as Block;
 }

@@ -20,15 +20,21 @@ It is a Next.js (App Router) app. It talks only to the server's [Admin API](API.
 
 **Project fields it edits:** `slug`, `name`, `type`, `status`, `start_date`, `end_date`, `venue`, `summary`, `pics`, `org_chart_image`, `is_yearbook_shown`, `is_shown`.
 
-**Blocks:** add (any of the 15 types), remove, reorder, hide (`is_shown`), change `id`, and edit every field of the block's type in [tcos_schema.mongodb.js](../tcos_schema.mongodb.js). A save sends the whole `blocks` array, as the Admin API expects. A new block starts hidden (`is_shown: false`), so a half-made block never shows on the site. A data block edits only its pointer fields (`project_slug`, `limit`, `dept_keys`, `tiers` ...); its data is edited where it lives.
+**Blocks:** add (any of the types the site shows, below), remove, reorder, hide (`is_shown`), and edit every field of the block's type in [tcos_schema.mongodb.js](../tcos_schema.mongodb.js). A save sends the whole `blocks` array, as the Admin API expects. A new block gets a UUID v7 `id`, which the editor does not show or change; blocks saved before keep their ids. A new block starts hidden (`is_shown: false`), so a half-made block never shows on the site, except on the home page.
+
+**The home page is always shown:** the editor has no "Shown on the site" switch for the home page or its blocks, and a new home block starts shown. A home block hidden before this stays hidden and is marked "Hidden" in the panel's list. Elsewhere, "Shown on the site" is a switch: for a project, in the line under its name; for a page, at the top left of its fields; for a block, at the top left of its panel.
+
+**The home banner:** on the home page, a Hero as the first block is the banner ([FRONTEND.md](FRONTEND.md) "Content blocks", `hero`). It stays first: it cannot be moved or removed, and nothing is added or moved above it. Its `subtitle` is the slogan under the logo.
+
+**A project's header** on the page follows the panel's unsaved fields (name, dates, venue, pictures) as they are typed. A data block edits only its pointer fields (`project_slug`, `limit`, `dept_keys`, `tiers` ...); its data is edited where it lives.
 
 **Tracks and rounds** are one form each, saved whole with `PUT`: list items keep their `_id`, and new ones get theirs from the server. The server checks that achievements point to real projects and positions to real track keys. A new `key` renames the track, and the server updates the rounds that point to it. New tracks, rounds and list items start hidden.
 
 **Dates** take an optional time, shown and entered in Bangkok time. A date without a time is sent as `YYYY-MM-DD` (stored as midnight UTC, shown without a time on the site); with a time it is sent with its zone, `YYYY-MM-DDTHH:MM:00+07:00`, as the server asks.
 
-**Images:** every image field (`pics`, `org_chart_image`, `media_url`, `slides`, `image`, `url`, `background_image`) takes a URL or an upload. The browser sends the file to the editor's own `/api/upload`, which passes it on as a stream to `POST /api/admin/uploads` with the token, filed under the page's key, the project's slug, the track's key or the round's id. The server checks the type (images only) and the size. A new project can take uploads once it is created.
+**Images:** every image field (`pics`, `org_chart_image`, `media_url`, `slides`, `image`, `url`, `background_image`) takes an upload, or a URL in the media bucket (`NEXT_PUBLIC_MEDIA_BASE_URL`): the site shows pictures only from there ([FRONTEND.md](FRONTEND.md) "Images"), so the editor refuses a picture URL from another website and asks for an upload instead. A hero video's URL is not checked; it plays in a plain `<video>`. The browser sends the file to the editor's own `/api/upload`, which passes it on as a stream to `POST /api/admin/uploads` with the token, filed under the page's key, the project's slug, the track's key or the round's id. The server checks the type (images only) and the size. A new project can take uploads once it is created.
 
-**Blocks the site does not show yet:** the editor marks block types the client has no component for yet ("Not on the site yet"). They save as usual. The list follows `apps/client/components/blocks/index.ts`, and a test fails when the two drift apart.
+**Blocks the site does not show yet:** "Add a block" does not offer block types the client has no component for yet. Blocks of those types already on a page are marked ("ตอนนี้เว็บยังไม่แสดงบล็อกแบบนี้") and save as usual. The list follows `apps/client/components/blocks/index.ts`, and a test fails when the two drift apart.
 
 **Not in the editor yet:**
 - `team`, `sponsors` and `highlights` items, with their consent flags (`is_photo_allowed`, `logo_permission`). They are changed through the admin API for now.
@@ -56,6 +62,7 @@ The editor keeps the admin token on its own server, never in the browser ([API.m
 | `ADMIN_TOKEN` | secret | A hand-made admin JWT ([API.md](API.md) "Auth") |
 | `SITE_URL` | env | The public site's base URL, for editing on the page and the "Open on the site" links. Optional |
 | `USE_FIXTURES` | env | `true` uses the editor's fixtures, kept in memory, instead of `API_URL` |
+| `NEXT_PUBLIC_MEDIA_BASE_URL` | env | The R2 media bucket's public URL, the same as the client's `MEDIA_BASE_URL`. Not a secret |
 
 **The editor has no sign-in of its own.** Anyone who can open it can change the site with its token. Run it only on your own machine, or behind access control set up outside the app: `TODO(editor access)`, for example Cloudflare Access. Where it is hosted is `TODO(editor hosting)`.
 
@@ -66,7 +73,7 @@ Home and each project are edited on the page itself: the client's edit mode ([FR
 - **Text:** click a heading, caption, quote or button label and type. An article's text opens in a box, in Markdown. Empty fields show a dim hint, such as "Section heading", which is never saved.
 - **Pictures:** click a picture, or the empty space over a background picture, to upload one, give a URL, or (where the field allows) remove it.
 - **Blocks:** point at a block for its toolbar: move up, move down, all fields, remove. "Add a block here" sits between blocks. The panel lists every block in order, hidden ones too, and the same controls work there.
-- **All fields:** the selected block's full form is in the panel, for what the page cannot show: links, sizes, alignment, video URLs, data-block settings, the id and "Shown on the site". Without a block selected, the panel shows the page's or project's own fields.
+- **All fields:** the selected block's full form is in the panel, for what the page cannot show: links, sizes, alignment, video URLs, data-block settings and "Shown on the site". Without a block selected, the panel shows the page's or project's own fields.
 - **Saving:** nothing reaches the site until Save; Discard goes back to the last save.
 
 The editor accepts from the page only the fields the client marks for that block type (`PAGE_FIELDS` in `lib/blocks.ts`, kept equal to the markers by a test), and only from `SITE_URL`'s origin and the framed window. The client must set `EDITOR_ORIGIN` to the editor's origin. Without `SITE_URL`, the panel alone edits the blocks.

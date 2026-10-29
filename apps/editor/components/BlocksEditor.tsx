@@ -1,13 +1,13 @@
 "use client";
 
-import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import { saveBlocks } from "@/app/actions";
 import { AddBlockDialog, ImageDialog } from "@/components/BlockDialogs";
 import FieldInput from "@/components/FieldInput";
 import { useSaveable } from "@/components/SaveGroup";
-import { SaveStatus, ShownMark } from "@/components/ui";
+import { SaveStatus, ShownMark, Switch } from "@/components/ui";
 import type { UploadOwner } from "@/lib/admin-api";
-import { blockInfo, getPath, isPageField, moveItem, newBlock, ON_SITE, pageValue, setField, setPath } from "@/lib/blocks";
+import { blockInfo, getPath, hasHomeBanner, isAlwaysShown, isPageField, moveItem, newBlock, ON_SITE, pageValue, setField, setPath } from "@/lib/blocks";
 import { canvasMessageSchema, isFromPage } from "@/lib/canvas";
 import { BLOCK_TYPES } from "@/lib/schemas";
 import type { ActionResult, Block, BlocksTarget, BlockType } from "@/types/admin";
@@ -20,6 +20,18 @@ const rowsOf = (blocks: Block[], generation: number): Row[] =>
 
 /** Block type → its name, for the page's toolbar. */
 const LABELS = Object.fromEntries(BLOCK_TYPES.map((t) => [t, blockInfo[t].label]));
+
+/** A project's header on the page in the frame: its unsaved fields, as ProjectHeader reads them. */
+export type PreviewProject = { name: string; start_date: string; end_date: string | null; venue: string | null; pics: string[] };
+
+const PreviewContext = createContext<((project: PreviewProject | null) => void) | null>(null);
+
+/** Shows a project's unsaved header fields on the page in the frame (from the panel's settings). */
+export function usePreviewProject(project: PreviewProject | null) {
+  const set = useContext(PreviewContext);
+  const json = JSON.stringify(project);
+  useEffect(() => set?.(JSON.parse(json) as PreviewProject | null), [set, json]);
+}
 
 /** Image fields that may be left empty: the dialog offers "No image" for these. */
 const NULLABLE_IMAGES = new Set(["image", "background_image"]);
@@ -61,6 +73,7 @@ export default function BlocksEditor({
   const [pageReady, setPageReady] = useState(false);
   const [pageSilent, setPageSilent] = useState(false);
   const panel = useRef<HTMLElement>(null);
+  const [previewProject, setPreviewProject] = useState<PreviewProject | null>(null);
 
   // New data from the server replaces the rows, unless it is this editor's own last save.
   // Pages stay mounted in the background between visits (cacheComponents), so without
@@ -80,25 +93,32 @@ export default function BlocksEditor({
   const uploadTo: UploadOwner =
     target.kind === "page" ? { collection: "pages", owner: target.key } : { collection: "projects", owner: target.slug };
 
+  const hideable = !(target.kind === "page" && isAlwaysShown(target.key));
   const blocks = useMemo(() => rows.map((r) => r.block), [rows]);
   const dirty = JSON.stringify(blocks) !== saved;
   const selectedIndex = rows.findIndex((r) => r.key === selectedKey);
   const selected = selectedIndex >= 0 ? rows[selectedIndex] : null;
 
   const update = (key: string, block: Block) => setRows((rs) => rs.map((r) => (r.key === key ? { key, block } : r)));
-  const move = (index: number, to: number) => setRows((rs) => moveItem(rs, index, to));
+  const pinned = target.kind === "page" && hasHomeBanner(target.key, blocks);
+  const canMove = (index: number, to: number) => to >= 0 && to < rows.length && !(pinned && (index === 0 || to === 0));
+  const move = (index: number, to: number) => {
+    if (canMove(index, to)) setRows((rs) => moveItem(rs, index, to));
+  };
 
   function insert(at: number, type: BlockType) {
+    if (pinned) at = Math.max(at, 1);
     const key = `new-${nextKey.current++}`;
-    const block = newBlock(type, blocks.map((b) => b.id));
+    const block = newBlock(type, !hideable);
     setRows((rs) => [...rs.slice(0, at), { key, block }, ...rs.slice(at)]);
     setSelectedKey(key);
     setAdding(null);
   }
 
   function remove(index: number) {
+    if (pinned && index === 0) return;
     const block = rows[index]?.block;
-    if (!block || !window.confirm(`Remove the block "${block.id}" (${blockInfo[block.type].label})?`)) return;
+    if (!block || !window.confirm(`Remove the block ${blockInfo[block.type].label}${block.title ? ` "${block.title}"` : ""}?`)) return;
     setRows((rs) => rs.filter((_, i) => i !== index));
   }
 
@@ -133,7 +153,14 @@ export default function BlocksEditor({
     );
   }, [blocks, selectedIndex, siteOrigin]);
 
+  // The project's header goes on its own, so typing in it does not redraw every block.
+  const sendProject = useCallback(() => {
+    if (!siteOrigin || !previewProject) return;
+    frame.current?.contentWindow?.postMessage({ tcos: "edit", type: "project", project: previewProject }, siteOrigin);
+  }, [previewProject, siteOrigin]);
+
   useEffect(sendToPage, [sendToPage]);
+  useEffect(sendProject, [sendProject]);
 
   // What the page asks for. It runs on another origin, so each message is checked first.
   function onPageMessage(data: unknown) {
@@ -142,6 +169,7 @@ export default function BlocksEditor({
     const m = parsed.data;
     if (m.type === "ready") {
       setPageReady(true);
+      sendProject();
       return sendToPage();
     }
     if (m.type === "insert") return setAdding(Math.min(m.at, rows.length));
@@ -247,14 +275,14 @@ export default function BlocksEditor({
               </button>
             </div>
             {rows.length === 0 ? <p className="text-muted">ยังไม่มีบล็อก เพิ่มบล็อกแรกได้เลย</p> : null}
-            <ol className="flex flex-col">
+            <ol className="flex flex-col gap-1">
               {rows.map(({ key, block }, index) => (
                 <li key={key}>
                   <button
                     type="button"
                     aria-current={key === selectedKey ? "true" : undefined}
                     onClick={() => setSelectedKey(key === selectedKey ? null : key)}
-                    className={`flex w-full items-baseline gap-3 rounded-[var(--radius-button)] px-2 py-1.5 text-left hover:bg-card-bg ${
+                    className={`flex w-full items-baseline gap-3 rounded-[var(--radius-button)] border border-border px-2 py-1.5 text-left hover:bg-card-bg ${
                       key === selectedKey ? "bg-card-bg" : ""
                     }`}
                   >
@@ -263,7 +291,8 @@ export default function BlocksEditor({
                       {blockInfo[block.type].label}
                       {block.title ? <span className="ml-2 text-muted">{block.title}</span> : null}
                     </span>
-                    <ShownMark shown={block.is_shown} />
+                    {/* On home, only a block hidden before the switch went away is marked. */}
+                    {hideable || !block.is_shown ? <ShownMark shown={block.is_shown} /> : null}
                   </button>
                 </li>
               ))}
@@ -275,7 +304,9 @@ export default function BlocksEditor({
               key={selected.key}
               row={selected}
               index={selectedIndex}
-              count={rows.length}
+              hideable={hideable}
+              canMoveTo={(to) => canMove(selectedIndex, to)}
+              removable={!(pinned && selectedIndex === 0)}
               slugListId={slugListId}
               uploadTo={uploadTo}
               onChange={(block) => update(selected.key, block)}
@@ -285,7 +316,9 @@ export default function BlocksEditor({
             />
           ) : null}
           {/* Hidden, not removed, while a block is selected: its unsaved changes must survive. */}
-          <div hidden={!!selected}>{settings}</div>
+          <div hidden={!!selected}>
+            <PreviewContext.Provider value={setPreviewProject}>{settings}</PreviewContext.Provider>
+          </div>
         </aside>
       </div>
 
@@ -310,7 +343,9 @@ export default function BlocksEditor({
 function BlockPanel({
   row: { key, block },
   index,
-  count,
+  hideable,
+  canMoveTo,
+  removable,
   slugListId,
   uploadTo,
   onChange,
@@ -320,7 +355,11 @@ function BlockPanel({
 }: {
   row: Row;
   index: number;
-  count: number;
+  /** Whether the block has a "Shown on the site" switch (not on the home page). */
+  hideable: boolean;
+  canMoveTo: (to: number) => boolean;
+  /** False for the home banner, which stays. */
+  removable: boolean;
   slugListId: string;
   uploadTo: UploadOwner;
   onChange: (block: Block) => void;
@@ -332,6 +371,15 @@ function BlockPanel({
   const idPrefix = `b${key}`;
   return (
     <section aria-label={`${info.label} block, all fields`} className="spotlight flex flex-col gap-5 rounded-[var(--radius-card)] border border-border p-4">
+      {hideable ? (
+        <Switch
+          id={`${idPrefix}-is_shown`}
+          checked={block.is_shown}
+          label="Shown on the site"
+          hint="ถ้าปิด บล็อกยังถูกบันทึกไว้ แต่จะไม่แสดงบนหน้าเว็บ"
+          onChange={(shown) => onChange(setField(block, "is_shown", shown))}
+        />
+      ) : null}
       <div className="flex items-start gap-2">
         <div className="mr-auto flex flex-col">
           <h2>{info.label}</h2>
@@ -345,7 +393,7 @@ function BlockPanel({
               .join(" ")}
           </p>
         </div>
-        <button type="button" className="btn-icon" aria-label="Move up" title="Move up" disabled={index === 0} onClick={() => onMove(index - 1)}>
+        <button type="button" className="btn-icon" aria-label="Move up" title="Move up" disabled={!canMoveTo(index - 1)} onClick={() => onMove(index - 1)}>
           ↑
         </button>
         <button
@@ -353,25 +401,21 @@ function BlockPanel({
           className="btn-icon"
           aria-label="Move down"
           title="Move down"
-          disabled={index === count - 1}
+          disabled={!canMoveTo(index + 1)}
           onClick={() => onMove(index + 1)}
         >
           ↓
         </button>
-        <button type="button" className="btn-icon" aria-label="Remove" title="Remove" onClick={onRemove}>
-          ✕
-        </button>
+        {removable ? (
+          <button type="button" className="btn-icon" aria-label="Remove" title="Remove" onClick={onRemove}>
+            ✕
+          </button>
+        ) : null}
         <button type="button" className="btn" onClick={onClose}>
           Done
         </button>
       </div>
 
-      <FieldInput
-        spec={{ kind: "bool", key: "is_shown", label: "Shown on the site", hint: "ถ้าปิด บล็อกยังถูกบันทึกไว้ แต่จะไม่แสดงบนหน้าเว็บ" }}
-        value={block}
-        idPrefix={idPrefix}
-        onChange={(next) => onChange(setField(block, "is_shown", next.is_shown === true))}
-      />
       <FieldInput
         spec={{ kind: "text", key: "title", label: "Section heading", nullable: true }}
         value={block}
@@ -389,12 +433,6 @@ function BlockPanel({
           onChange={(next) => onChange(next as Block)}
         />
       ))}
-      <FieldInput
-        spec={{ kind: "text", key: "id", label: "Block id", required: true, hint: "ห้ามซ้ำกับบล็อกอื่นในหน้าเดียวกัน ใช้เป็น #anchor ในลิงก์ด้วย" }}
-        value={block}
-        idPrefix={idPrefix}
-        onChange={(next) => onChange(next as Block)}
-      />
     </section>
   );
 }

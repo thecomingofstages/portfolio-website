@@ -1,10 +1,12 @@
 "use client";
 
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import BlockSketch, { DataIcon, FILL_IN, PictureIcon, TextIcon } from "@/components/BlockSketch";
+import BlockSketch from "@/components/BlockSketch";
+import { OffSiteImageError } from "@/components/ui";
 import UploadButton from "@/components/UploadButton";
 import type { UploadOwner } from "@/lib/admin-api";
 import { blockInfo, ON_SITE } from "@/lib/blocks";
+import { isAllowedImage } from "@/lib/media";
 import { BLOCK_TYPES } from "@/lib/schemas";
 import type { BlockType } from "@/types/admin";
 
@@ -34,54 +36,27 @@ function Dialog({ title, onClose, children }: { title: string; onClose: () => vo
   );
 }
 
-/** One line of what a block asks for: an icon, then the words. */
-function Fill({ icon, children }: { icon: ReactNode; children: ReactNode }) {
-  return (
-    <span className="flex items-start gap-1.5">
-      <span className="pt-1">{icon}</span>
-      <span>{children}</span>
-    </span>
-  );
-}
-
-/** Picks the type of a new block: a sketch of each, and what you fill in. */
+/** Picks the type of a new block: a sketch of each. Only types the site shows (ON_SITE) are offered. */
 export function AddBlockDialog({ onPick, onClose }: { onPick: (type: BlockType) => void; onClose: () => void }) {
   const group = (kind: "content" | "data", heading: string) => (
     <section className="flex flex-col gap-1">
       <h3 className="px-3 text-muted">{heading}</h3>
       <ul className="flex flex-col">
-        {BLOCK_TYPES.filter((t) => blockInfo[t].kind === kind).map((type) => {
-          const fill = FILL_IN[type];
-          return (
-            <li key={type}>
-              <button
-                type="button"
-                onClick={() => onPick(type)}
-                className="flex w-full flex-col items-start gap-3 rounded-[var(--radius-button)] px-3 py-3 text-left hover:bg-background focus-visible:bg-background sm:flex-row sm:gap-4"
-              >
-                <BlockSketch type={type} />
-                <span className="flex min-w-0 flex-col gap-1">
-                  <span className="font-heading font-semibold">
-                    {blockInfo[type].label}
-                    {ON_SITE.has(type) ? null : <span className="font-body font-normal text-muted"> (เว็บยังไม่แสดง)</span>}
-                  </span>
-                  <span className="text-muted">{blockInfo[type].description}</span>
-                  {fill.upload ? (
-                    <Fill icon={<PictureIcon />}>
-                      <span className="font-bold">อัปโหลด:</span> {fill.upload}
-                    </Fill>
-                  ) : null}
-                  {fill.type ? (
-                    <Fill icon={<TextIcon />}>
-                      <span className="font-bold">พิมพ์:</span> {fill.type}
-                    </Fill>
-                  ) : null}
-                  {fill.data ? <Fill icon={<DataIcon />}>{fill.data} ไม่ต้องพิมพ์หรืออัปโหลดอะไร</Fill> : null}
-                </span>
-              </button>
-            </li>
-          );
-        })}
+        {BLOCK_TYPES.filter((t) => blockInfo[t].kind === kind && ON_SITE.has(t)).map((type) => (
+          <li key={type}>
+            <button
+              type="button"
+              onClick={() => onPick(type)}
+              className="flex w-full flex-col items-start gap-3 rounded-[var(--radius-button)] px-3 py-3 text-left hover:bg-background focus-visible:bg-background sm:flex-row sm:gap-4"
+            >
+              <BlockSketch type={type} />
+              <span className="flex min-w-0 flex-col gap-1">
+                <span className="font-heading font-semibold">{blockInfo[type].label}</span>
+                <span className="text-muted">{blockInfo[type].description}</span>
+              </span>
+            </button>
+          </li>
+        ))}
       </ul>
     </section>
   );
@@ -114,6 +89,7 @@ export function ImageDialog({
   onClose: () => void;
 }) {
   const [url, setUrl] = useState(current);
+  const allowed = isAllowedImage(url);
   return (
     <Dialog title="Image" onClose={onClose}>
       <UploadButton to={uploadTo} onUploaded={onPick} />
@@ -121,18 +97,27 @@ export function ImageDialog({
         className="flex flex-col gap-1"
         onSubmit={(e) => {
           e.preventDefault();
-          onPick(url.trim());
+          if (allowed) onPick(url.trim());
         }}
       >
         <label htmlFor="image-dialog-url" className="font-bold">
           Or an image URL
         </label>
         <div className="flex gap-2">
-          <input id="image-dialog-url" type="text" inputMode="url" value={url} onChange={(e) => setUrl(e.target.value)} />
-          <button type="submit" className="btn" disabled={url.trim() === "" || url.trim() === current}>
+          <input
+            id="image-dialog-url"
+            type="text"
+            inputMode="url"
+            value={url}
+            aria-invalid={!allowed}
+            aria-describedby={allowed ? undefined : "image-dialog-error"}
+            onChange={(e) => setUrl(e.target.value)}
+          />
+          <button type="submit" className="btn" disabled={!allowed || url.trim() === "" || url.trim() === current}>
             Use it
           </button>
         </div>
+        {allowed ? null : <OffSiteImageError id="image-dialog-error" />}
       </form>
       {canRemove ? (
         <div>

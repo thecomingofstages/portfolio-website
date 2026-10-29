@@ -10,8 +10,8 @@ export const homePage = {
     {
       id: "hero",
       type: "hero",
-      title: "The Coming of Stages",
-      subtitle: "เด็กไทยติดเวที",
+      title: "<...>",
+      subtitle: "<...>",
       media_url: "<first slide URL>",
       media_kind: "slideshow",
       slides: ["<slide URL>", "<slide URL>"],

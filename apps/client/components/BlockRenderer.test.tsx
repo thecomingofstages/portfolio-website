@@ -26,7 +26,7 @@ describe("BlockRenderer", () => {
     const { container } = render(<BlockRenderer blocks={homePage.blocks} components={testComponents} />);
     const sections = [...container.querySelectorAll("section")];
     expect(sections.map((section) => section.id)).toEqual(["hero", "about", "support", "support-benefits"]);
-    expect(sections[0].textContent).toBe("hero เด็กไทยติดเวที");
+    expect(sections[0].textContent).toBe("hero <...>");
   });
 
   it("skips unknown types and types without a component", () => {

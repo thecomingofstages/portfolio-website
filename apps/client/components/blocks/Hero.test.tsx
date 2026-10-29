@@ -69,6 +69,19 @@ describe("Hero", () => {
     expect(screen.queryByRole("link")).toBeNull();
   });
 
+  it("as the home banner, centres the logo, subtitle and buttons, with the title for screen readers", () => {
+    const { container } = render(<Hero block={base} home />);
+    expect(container.querySelector('img[src*="logo.png"]')).not.toBeNull();
+    expect(screen.getByRole("heading", { level: 1 }).className).toContain("sr-only");
+    expect(screen.getByText("<subtitle>").parentElement?.className).toContain("items-center");
+    expect(screen.getByRole("link", { name: "<...>" }).getAttribute("href")).toBe("/join");
+  });
+
+  it("names the home banner's logo when there is no title", () => {
+    render(<Hero block={{ ...base, title: null }} home />);
+    expect(screen.getByRole("img", { name: "The Coming of Stages" })).not.toBeNull();
+  });
+
   it("is a full-bleed banner with the image covering it", () => {
     const { container } = render(<Hero block={base} />);
     expect(container.querySelector("section")?.className).toContain("full-bleed");

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { BLOCK_TYPES } from "./schemas";
-import { blockInfo, isPageField, moveItem, newBlock, nextBlockId, ON_SITE, PAGE_FIELDS, pageValue, parseStatValue, setField, setPath } from "./blocks";
+import { blockInfo, isPageField, moveItem, newBlock, uuidv7, ON_SITE, PAGE_FIELDS, pageValue, parseStatValue, setField, setPath } from "./blocks";
 
 const fromClient = (path: string) => readFileSync(new URL(`../../client/${path}`, import.meta.url), "utf8");
 
@@ -10,11 +10,13 @@ describe("blocks", () => {
     for (const type of BLOCK_TYPES) expect(blockInfo[type].label).not.toBe("");
   });
 
-  it("gives new blocks a free id, hidden", () => {
-    expect(nextBlockId("hero", [])).toBe("hero");
-    expect(nextBlockId("hero", ["hero", "hero-2"])).toBe("hero-3");
-    const block = newBlock("gallery", ["gallery"]);
-    expect(block).toMatchObject({ id: "gallery-2", type: "gallery", is_shown: false, items: [] });
+  it("gives new blocks a UUID v7 id, hidden unless asked", () => {
+    const block = newBlock("gallery");
+    expect(block).toMatchObject({ type: "gallery", is_shown: false, items: [] });
+    expect(block.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(newBlock("gallery").id).not.toBe(block.id);
+    expect(newBlock("gallery", true).is_shown).toBe(true);
+    expect(uuidv7(0x0123456789ab).slice(0, 13)).toBe("01234567-89ab");
   });
 
   it("moves items without changing the original", () => {

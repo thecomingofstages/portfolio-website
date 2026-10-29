@@ -229,7 +229,7 @@ A page is an ordered `blocks[]` array, stored in `projects.blocks` for project p
 
 | Field      | Type           | Required | Description                                                                                                              |
 | ---------- | -------------- | -------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `id`       | string         | yes      | Unique within the page; also the `#anchor` (e.g. `partners`, `contact`). The app checks uniqueness, `$jsonSchema` cannot |
+| `id`       | string         | yes      | Unique within the page; also the `#anchor`. The editor gives new blocks a UUID v7; older blocks keep readable ids (e.g. `partners`, `contact`). The app checks uniqueness, `$jsonSchema` cannot |
 | `type`     | enum           | yes      | One of the 15 types below                                                                                                |
 | `title`    | string or null |          | Optional section heading                                                                                                 |
 | `is_shown` | bool           | yes      | `false` keeps the block in the layout but does not show it                                                               |
@@ -270,8 +270,8 @@ Values from the sources are real (see [tcos_facts.csv](../tcos_facts.csv) and [t
   "id": "hero",
   "type": "hero",
   "is_shown": true,
-  "title": "The Coming of Stages",
-  "subtitle": "เด็กไทยติดเวที",
+  "title": "<...>",
+  "subtitle": "<...>",
   "media_url": "<cover image URL>",
   "media_kind": "image",
   "buttons": [{ "label": "<...>", "url": "/join", "style": "primary" }]
@@ -287,8 +287,8 @@ For a slideshow, set `media_kind` to `slideshow`. `media_url` is the first slide
   "id": "hero",
   "type": "hero",
   "is_shown": true,
-  "title": "The Coming of Stages",
-  "subtitle": "เด็กไทยติดเวที",
+  "title": "<...>",
+  "subtitle": "<...>",
   "media_url": "<first slide URL>",
   "media_kind": "slideshow",
   "slides": ["<slide URL>", "<slide URL>"],

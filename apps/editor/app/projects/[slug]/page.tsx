@@ -7,7 +7,7 @@ import {
   SaveButtons,
   SaveGroup,
 } from "@/components/SaveGroup";
-import { ShownMark, SiteLink } from "@/components/ui";
+import { SiteLink } from "@/components/ui";
 import { getProject, listProjects } from "@/lib/admin-api";
 import { canvasUrl } from "@/lib/canvas";
 import { formatDate } from "@/lib/dates";
@@ -41,18 +41,19 @@ export default async function EditProject({
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-3">
           <h1>{project.name}</h1>
-          <p className="flex flex-wrap gap-x-5 gap-y-1">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
             {when ? <span>{when}</span> : null}
             {project.venue ? (
               <span className="text-muted">{project.venue}</span>
             ) : null}
-            <ShownMark shown={project.is_shown} />
+            {/* "Shown on the site", a switch from ProjectForm (HeaderSlot). */}
+            <span id="title-shown" className="contents" />
             {project.is_shown ? (
               <SiteLink
                 path={`/projects/${encodeURIComponent(project.slug)}`}
               />
             ) : null}
-          </p>
+          </div>
         </div>
 
         <BlocksEditor

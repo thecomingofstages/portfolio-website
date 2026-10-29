@@ -161,4 +161,32 @@ main:has(> :first-child > section:first-child > .hero-banner) {
     font-style: italic;
     opacity: 0.55;
   }
+
+  /*
+   * Each block's outline: grey on hover, gold when selected. It sits on a layer above the block
+   * (Hero's dark overlay would cover it) and spans the window edge to edge, as full-bleed does,
+   * square and just inside; the block keeps its own width.
+   */
+  [data-editing] [data-block-index]::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline: calc(50% - 50vw);
+    z-index: 10;
+    pointer-events: none;
+    outline-offset: -2px;
+  }
+
+  [data-editing] [data-block-index]:hover::after {
+    outline: 1px solid var(--border);
+  }
+
+  [data-editing] [data-block-index][data-selected]::after {
+    outline: 2px solid var(--accent);
+  }
+
+  /* Only the selected block shows its empty fields; the others look as the site will. */
+  [data-editing] [data-block-index]:not([data-selected]) [data-empty] {
+    display: none;
+  }
 }

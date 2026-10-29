@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { OFF_SITE_IMAGE } from "@/lib/media";
 
 /** Small shared pieces of the editor's forms. */
 
@@ -12,6 +13,39 @@ export function ShownMark({ shown }: { shown: boolean }) {
       />
       {shown ? "Shown" : "Hidden"}
     </span>
+  );
+}
+
+/** An on/off switch: a checkbox with `role="switch"`, drawn by the `switch` utility. */
+export function Switch({
+  id,
+  checked,
+  label,
+  hint,
+  onChange,
+}: {
+  id: string;
+  checked: boolean;
+  label: string;
+  hint?: string;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="flex items-start gap-2.5">
+      <input id={id} type="checkbox" role="switch" className="switch" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <Label htmlFor={id} hint={hint}>
+        {label}
+      </Label>
+    </div>
+  );
+}
+
+/** Under a picture URL from another website, which the site cannot show (lib/media.ts). */
+export function OffSiteImageError({ id }: { id: string }) {
+  return (
+    <p id={id} className="text-red">
+      {OFF_SITE_IMAGE}
+    </p>
   );
 }
 
