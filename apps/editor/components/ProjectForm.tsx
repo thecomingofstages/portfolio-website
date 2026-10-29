@@ -5,7 +5,7 @@ import { createProject, saveProjectFields } from "@/app/actions";
 import { usePreviewProject } from "@/components/BlocksEditor";
 import FieldInput from "@/components/FieldInput";
 import { HeaderSlot, useSaveable } from "@/components/SaveGroup";
-import { SaveStatus, Switch } from "@/components/ui";
+import { RequiredMark, SaveStatus, Switch } from "@/components/ui";
 import type { FieldSpec } from "@/lib/blocks";
 import { type DateParts, fromDateParts, normalizeDate, toDateParts } from "@/lib/date-input";
 import { PROJECT_STATUSES, PROJECT_TYPES } from "@/lib/schemas";
@@ -117,7 +117,7 @@ export default function ProjectForm({ project }: { project?: ProjectDoc }) {
       <fieldset className="flex flex-col gap-1">
         <legend className="font-bold">
           {label}
-          {required ? " *" : ""}
+          {required ? <RequiredMark /> : null}
         </legend>
         <span className="text-muted">
           {parts ? "จะใส่เวลาด้วยก็ได้ (เวลากรุงเทพฯ)" : `ตอนนี้เป็น "${raw}" คือยังไม่ได้กำหนด เลือกวันที่ก่อนบันทึก`}

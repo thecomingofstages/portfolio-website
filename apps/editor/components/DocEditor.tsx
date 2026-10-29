@@ -1,16 +1,16 @@
 "use client";
 
 import { useId, useState, useTransition } from "react";
-import FieldInput from "@/components/FieldInput";
-import { useSaveable } from "@/components/SaveGroup";
-import { SaveStatus } from "@/components/ui";
+import FieldInput, { WORDS } from "@/components/FieldInput";
+import { HeaderSlot, useSaveable } from "@/components/SaveGroup";
+import { SaveStatus, Switch } from "@/components/ui";
 import type { UploadOwner } from "@/lib/admin-api";
 import { FORMS } from "@/lib/forms";
 import type { ActionResult } from "@/types/admin";
 
 type Doc = Record<string, unknown>;
 
-/** The <datalist>s that `project_slug` and `dept_key` fields suggest from. */
+/** The <datalist> that `project_slug` fields suggest from. */
 function Suggestions({ id, values }: { id: string; values: string[] }) {
   return (
     <datalist id={id}>
@@ -31,7 +31,7 @@ export function DocEditor({
   save,
   uploadTo,
   projectSlugs,
-  trackKeys,
+  projectOptions,
 }: {
   form: "track" | "round";
   /** The document as `formValue` gives it. */
@@ -39,7 +39,8 @@ export function DocEditor({
   save: (doc: Doc) => Promise<ActionResult>;
   uploadTo: UploadOwner;
   projectSlugs: string[];
-  trackKeys: string[];
+  /** When given, `project_slug` fields are a dropdown of these instead. */
+  projectOptions?: { slug: string; name: string }[];
 }) {
   const initialJson = JSON.stringify(initial);
   const [doc, setDoc] = useState<Doc>(initial);
@@ -53,6 +54,8 @@ export function DocEditor({
   }
   const listId = useId();
   const specs = FORMS[form];
+  // The round form is in Thai; the track form is not yet.
+  const words = form === "round" ? WORDS.th : WORDS.en;
 
   useSaveable("doc", {
     dirty: JSON.stringify(doc) !== initialJson,
@@ -69,22 +72,34 @@ export function DocEditor({
   });
 
   return (
-    <form className="flex max-w-3xl flex-col gap-6" onSubmit={(e) => e.preventDefault()}>
+    <form className="@container flex max-w-3xl flex-col gap-6" onSubmit={(e) => e.preventDefault()}>
       <Suggestions id={`${listId}-projects`} values={projectSlugs} />
-      <Suggestions id={`${listId}-tracks`} values={trackKeys} />
-      {result && !result.ok ? <SaveStatus result={result} /> : null}
-      {specs.map((spec) => (
-        <FieldInput
-          key={spec.key}
-          spec={spec}
-          value={doc}
-          idPrefix="doc"
-          projectSlugsListId={`${listId}-projects`}
-          trackKeysListId={`${listId}-tracks`}
-          uploadTo={uploadTo}
-          onChange={setDoc}
+      {/* In the line under the document's title (the page's #title-shown), as on a project's page. */}
+      <HeaderSlot id="title-shown">
+        <Switch
+          id="doc-is_shown"
+          checked={doc.is_shown === true}
+          label={words.shown}
+          onChange={(on) => setDoc({ ...doc, is_shown: on })}
         />
-      ))}
+      </HeaderSlot>
+      {result && !result.ok ? <SaveStatus result={result} /> : null}
+      {specs.map((spec) =>
+        spec.key === "is_shown" ? null : (
+          <FieldInput
+            key={spec.key}
+            spec={spec}
+            value={doc}
+            idPrefix="doc"
+            projectSlugsListId={`${listId}-projects`}
+            projectOptions={projectOptions}
+            uploadTo={uploadTo}
+            words={words}
+            heading
+            onChange={setDoc}
+          />
+        ),
+      )}
     </form>
   );
 }
