@@ -28,10 +28,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="th" className={`${prompt.variable} ${sarabun.variable}`}>
       <body className="antialiased">
         <header className="editor-wide sticky top-0 z-20 pt-3">
-          <div className="bar flex items-center gap-x-4 px-3 py-2 sm:gap-x-6">
+          {/* One look for everything in the bar: Prompt 600 at body size, controls 2rem tall. */}
+          <div className="bar flex items-center gap-x-4 p-2 font-heading font-semibold sm:gap-x-6">
             <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Portfolio website editor, all pages and projects">
               <Image src="/logo.png" alt="The Coming of Stages" width={412} height={359} priority className="h-8 w-auto" />
-              <span className="hidden whitespace-nowrap font-body sm:inline">Portfolio website editor</span>
+              <span className="hidden whitespace-nowrap sm:inline">Portfolio website editor</span>
             </Link>
             {/* The page being edited, and its Save and Discard, come from the page (HeaderSlot). */}
             <div id="header-title" className="flex min-w-0 flex-1 items-center" />

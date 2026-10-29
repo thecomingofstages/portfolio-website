@@ -161,47 +161,12 @@ export default function BlockSketch({ type }: { type: BlockType }) {
   );
 }
 
-/** What an editor fills in for each block: pictures to upload, and text to type. Data blocks fill themselves. */
-export const FILL_IN: Record<BlockType, { upload?: string; type?: string; data?: string }> = {
-  hero: { upload: "รูปหนึ่งรูป หรือหลายรูปถ้าทำเป็นสไลด์โชว์ (วิดีโอใส่เป็นลิงก์)", type: "ชื่อ คำโปรย และข้อความบนปุ่ม" },
-  article: { upload: "รูปหนึ่งรูป จะใส่หรือไม่ใส่ก็ได้", type: "หัวข้อและเนื้อหา" },
-  image: { upload: "รูปหนึ่งรูป", type: "คำบรรยายใต้รูปและเครดิต" },
-  quote: { upload: "รูปพื้นหลัง จะใส่หรือไม่ใส่ก็ได้", type: "คำพูด ชื่อคนพูด และตำแหน่งของเขา" },
-  gallery: { upload: "หลายรูป", type: "คำอธิบายของแต่ละรูป" },
-  video: { type: "ลิงก์วิดีโอ (YouTube, TikTok, Instagram, Drive) ชื่อตอน และคำบรรยาย" },
-  button: { type: "ข้อความบนปุ่ม และลิงก์ที่ปุ่มพาไป" },
-  stats: { type: "ตัวเลข และบอกว่านับอะไร" },
-  highlights: { data: "ดึงมาจากไฮไลต์ของโปรเจกต์ให้เอง" },
-  team: { data: "ดึงมาจากรายชื่อทีมให้เอง" },
-  sponsors: { data: "ดึงมาจากรายชื่อสปอนเซอร์ให้เอง" },
-  join: { data: "ดึงรอบรับสมัครที่เปิดอยู่ตอนนี้มาให้เอง" },
-  projects: { data: "ดึงโปรเจกต์ที่แสดงอยู่มาให้เอง" },
-  tracks: { data: "ดึงสายงานที่แสดงอยู่มาให้เอง" },
-  yearbook: { data: "ดึงโปรเจกต์ที่มีหนังสือรุ่นมาให้เอง" },
-};
-
-export function PictureIcon() {
+function PictureIcon() {
   return (
     <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" className="shrink-0 text-muted">
       <rect x="1.5" y="2.5" width="13" height="11" rx="1" />
       <circle cx="5.5" cy="6.5" r="1.25" />
       <path d="M2 12l4-4 3 3 2-2 3 3" />
-    </svg>
-  );
-}
-
-export function TextIcon() {
-  return (
-    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" className="shrink-0 text-muted">
-      <path d="M3 4h10M8 4v9M5.5 13h5" />
-    </svg>
-  );
-}
-
-export function DataIcon() {
-  return (
-    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" className="shrink-0 text-muted">
-      <path d="M2.5 8a5.5 5.5 0 0 1 9.5-3.8M13.5 8A5.5 5.5 0 0 1 4 11.8M12 1.5v3h-3M4 14.5v-3h3" />
     </svg>
   );
 }

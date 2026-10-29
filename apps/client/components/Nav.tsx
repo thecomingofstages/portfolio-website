@@ -17,8 +17,9 @@ export function isCurrent(pathname: string, href: string): boolean {
 export default function Nav() {
   const pathname = usePathname() ?? "/";
 
+  // Sticky, as frosted glass over the page scrolling under it.
   return (
-    <header className="border-b border-border">
+    <header className="sticky top-0 z-30 border-b border-border bg-background/60 backdrop-blur-md">
       <nav
         aria-label="Main"
         className="page-width flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-3"

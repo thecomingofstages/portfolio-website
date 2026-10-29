@@ -10,12 +10,12 @@ describe("block schemas", () => {
   });
 
   it("accept a new block of every type", () => {
-    const blocks = BLOCK_TYPES.map((type, i) => newBlock(type, [`taken-${i}`]));
+    const blocks = BLOCK_TYPES.map((type) => newBlock(type));
     expect(blocksSchema.safeParse(blocks).success).toBe(true);
   });
 
   it("reject repeated ids, naming the block", () => {
-    const result = blocksSchema.safeParse([newBlock("article", []), newBlock("article", [])]);
+    const result = blocksSchema.safeParse([{ ...newBlock("article"), id: "article" }, { ...newBlock("article"), id: "article" }]);
     expect(result.success).toBe(false);
     if (!result.success) expect(describeIssues(result.error, [{ type: "article" }, { type: "article" }])).toEqual([
       'Block 2 (article) › id: id "article" is used twice',
@@ -23,21 +23,21 @@ describe("block schemas", () => {
   });
 
   it("reject fields the schema does not list, and missing required ones", () => {
-    const extra = { ...newBlock("quote", []), color: "x" };
+    const extra = { ...newBlock("quote"), color: "x" };
     expect(blocksSchema.safeParse([extra]).success).toBe(false);
-    const noBody: Record<string, unknown> = { ...newBlock("article", []) };
+    const noBody: Record<string, unknown> = { ...newBlock("article") };
     delete noBody.body;
     expect(blocksSchema.safeParse([noBody]).success).toBe(false);
   });
 
   it("reject public-only data keys sent back by mistake", () => {
-    const filled = { ...newBlock("projects", []), projects: [] };
+    const filled = { ...newBlock("projects"), projects: [] };
     expect(blocksSchema.safeParse([filled]).success).toBe(false);
   });
 
   it("reject an empty id or one with spaces", () => {
-    expect(blocksSchema.safeParse([{ ...newBlock("tracks", []), id: "" }]).success).toBe(false);
-    expect(blocksSchema.safeParse([{ ...newBlock("tracks", []), id: "our partners" }]).success).toBe(false);
+    expect(blocksSchema.safeParse([{ ...newBlock("tracks"), id: "" }]).success).toBe(false);
+    expect(blocksSchema.safeParse([{ ...newBlock("tracks"), id: "our partners" }]).success).toBe(false);
   });
 });
 

@@ -14,8 +14,10 @@ import {
   useState,
 } from "react";
 import { blockComponents } from "@/components/blocks";
+import Hero from "@/components/blocks/Hero";
+import ProjectHeader from "@/components/ProjectHeader";
 import type { Block } from "@/types/api";
-import { type CanvasMessage, type EditorMessage, filledVersion, getPath, readLoad, withEmptyLabels } from "./draft";
+import { type CanvasMessage, type DraftProject, type EditorMessage, filledVersion, getPath, readLoad, readProject, withEmptyLabels } from "./draft";
 
 /** Content blocks are rendered from the draft; the others need the server's data. */
 const CONTENT_TYPES = new Set(["hero", "article", "image", "quote", "gallery", "video", "button", "stats"]);
@@ -51,14 +53,18 @@ export default function EditCanvas({
   editorOrigin,
   saved,
   header,
+  home = false,
 }: {
   editorOrigin: string;
   /** The page's shown blocks as last saved, filled in by the server, for data blocks. */
   saved: readonly Block[];
   /** The fixed header above a project's blocks. */
   header?: ReactNode;
+  /** The home page: a Hero as its first block is the home banner, kept first (app/page.tsx). */
+  home?: boolean;
 }) {
   const [doc, setDoc] = useState<EditorMessage | null>(null);
+  const [project, setProject] = useState<DraftProject | null>(null);
   const [markdown, setMarkdown] = useState<Markdown | null>(null);
   // Typing in place changes the page outside React, so a block is drawn afresh once its typing ends.
   const [revisions, setRevisions] = useState<Record<number, number>>({});
@@ -76,6 +82,8 @@ export default function EditCanvas({
   useEffect(() => {
     function receive(event: MessageEvent) {
       if (event.origin !== editorOrigin || event.source !== window.parent) return;
+      const project = readProject(event.data);
+      if (project) return setProject(project);
       const load = readLoad(event.data);
       if (!load) return;
       if (typing.current) pending.current = load;
@@ -191,8 +199,11 @@ export default function EditCanvas({
   if (!doc) return <Note>กำลังรอ editor…</Note>;
 
   const label = (type: string) => doc.labels[type] ?? type;
+  // The home banner stays first: no adding above it, moving it or removing it.
+  const pinned = home && doc.blocks[0]?.type === "hero";
   const insert = (at: number) => (
-    <div data-edit-chrome="" className="flex justify-center py-2">
+    <div data-edit-chrome="" className="full-bleed flex items-center gap-3 py-2">
+      <span aria-hidden="true" className="h-px flex-1 bg-border" />
       <button
         type="button"
         onClick={() => send({ tcos: "edit", type: "insert", at })}
@@ -200,26 +211,28 @@ export default function EditCanvas({
       >
         + Add a block here
       </button>
+      <span aria-hidden="true" className="h-px flex-1 bg-border" />
     </div>
   );
 
   return (
     <div ref={root} data-editing="" className="relative" onClick={onClick} onInput={onInput} onKeyDown={onKeyDown}>
-      {header}
-      {insert(0)}
+      {/* A project's header from the editor's unsaved fields; the saved one until they arrive. */}
+      {project ? <ProjectHeader project={project} /> : header}
+      {pinned ? null : insert(0)}
       {rendered.map(({ block }, index) => {
         const draft = doc.blocks[index];
         const Shown = blockComponents[block.type as keyof typeof blockComponents] as ComponentType<{ block: Block }> | undefined;
         const data = CONTENT_TYPES.has(block.type) ? (block as unknown as Block) : filledVersion(draft, saved);
         const isSelected = doc.selected === index;
+        const isBanner = pinned && index === 0;
         return (
           <div key={`${draft.id}-${index}-${revisions[index] ?? 0}`}>
             <section
               id={draft.id}
               data-block-index={index}
-              className={`group relative rounded-card outline-offset-4 ${
-                isSelected ? "outline-2 outline-accent" : "hover:outline hover:outline-border"
-              }`}
+              data-selected={isSelected ? "" : undefined}
+              className="group relative"
             >
               <div
                 data-edit-chrome=""
@@ -231,12 +244,12 @@ export default function EditCanvas({
                   {label(block.type)}
                   {draft.is_shown ? "" : " (hidden)"}
                 </span>
-                <ChromeButton label="Move up" disabled={index === 0} onClick={() => send({ tcos: "edit", type: "move", index, to: index - 1 })}>
+                <ChromeButton label="Move up" disabled={index === 0 || isBanner || (pinned && index === 1)} onClick={() => send({ tcos: "edit", type: "move", index, to: index - 1 })}>
                   ↑
                 </ChromeButton>
                 <ChromeButton
                   label="Move down"
-                  disabled={index === doc.blocks.length - 1}
+                  disabled={index === doc.blocks.length - 1 || isBanner}
                   onClick={() => send({ tcos: "edit", type: "move", index, to: index + 1 })}
                 >
                   ↓
@@ -244,9 +257,11 @@ export default function EditCanvas({
                 <ChromeButton label="All fields" onClick={() => send({ tcos: "edit", type: "fields", index })}>
                   All fields
                 </ChromeButton>
-                <ChromeButton label="Remove" onClick={() => send({ tcos: "edit", type: "remove", index })}>
-                  ✕
-                </ChromeButton>
+                {isBanner ? null : (
+                  <ChromeButton label="Remove" onClick={() => send({ tcos: "edit", type: "remove", index })}>
+                    ✕
+                  </ChromeButton>
+                )}
               </div>
               <div className={draft.is_shown ? "" : "opacity-50"}>
                 {!Shown ? (
@@ -255,7 +270,7 @@ export default function EditCanvas({
                   <Note>{label(block.type)}: เปิดให้บล็อกแสดง แล้วกด Save เพื่อดูข้อมูลตรงนี้</Note>
                 ) : (
                   <BlockBoundary resetKey={JSON.stringify(block)}>
-                    <Shown block={data} />
+                    {isBanner ? <Hero block={data as Extract<Block, { type: "hero" }>} home /> : <Shown block={data} />}
                   </BlockBoundary>
                 )}
               </div>

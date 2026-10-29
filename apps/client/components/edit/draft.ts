@@ -1,3 +1,4 @@
+import type { ProjectHeaderProps } from "@/components/ProjectHeader";
 import type { Block } from "@/types/api";
 
 /**
@@ -17,6 +18,9 @@ export type EditorMessage = {
   /** Block type → its name in the editor, for the toolbar. */
   labels: Record<string, string>;
 };
+
+/** A project's unsaved header fields, sent apart from the blocks: `{ tcos: "edit", type: "project", project }`. */
+export type DraftProject = ProjectHeaderProps["project"];
 
 export type CanvasMessage =
   | { tcos: "edit"; type: "ready" }
@@ -52,6 +56,21 @@ export function readLoad(data: unknown): EditorMessage | null {
     blocks,
     selected: typeof m.selected === "number" ? m.selected : null,
     labels: m.labels && typeof m.labels === "object" ? m.labels : {},
+  };
+}
+
+/** The editor's "project" message's header fields, or null for anything else. */
+export function readProject(data: unknown): DraftProject | null {
+  const m = data as { tcos?: unknown; type?: unknown; project?: unknown } | null;
+  if (!m || m.tcos !== "edit" || m.type !== "project" || !m.project || typeof m.project !== "object") return null;
+  const p = m.project as Record<string, unknown>;
+  const text = (v: unknown) => (typeof v === "string" ? v : null);
+  return {
+    name: text(p.name) ?? "",
+    start_date: text(p.start_date) ?? "",
+    end_date: text(p.end_date),
+    venue: text(p.venue),
+    pics: Array.isArray(p.pics) ? p.pics.filter((v): v is string => typeof v === "string") : [],
   };
 }
 

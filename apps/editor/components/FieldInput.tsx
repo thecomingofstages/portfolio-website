@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Label } from "@/components/ui";
+import { Label, OffSiteImageError } from "@/components/ui";
 import UploadButton from "@/components/UploadButton";
 import type { UploadOwner } from "@/lib/admin-api";
 import { type FieldSpec, moveItem, parseStatValue, setField } from "@/lib/blocks";
 import { type DateParts, fromDateParts, toDateParts } from "@/lib/date-input";
+import { isAllowedImage } from "@/lib/media";
 
 type Obj = Record<string, unknown>;
 
@@ -49,13 +50,14 @@ export default function FieldInput({
           </Label>
           {spec.multiline ? (
             <textarea id={id} rows={5} value={text} onChange={(e) => update(e.target.value)} />
+          ) : spec.image && value.media_kind !== "video" ? (
+            // Not a hero video: it plays in a plain <video>, which takes any URL.
+            <ImageUrlInput id={id} value={text} onChange={update} />
           ) : (
             <input
               id={id}
               type="text"
-              inputMode={spec.image ? "url" : undefined}
               value={text}
-              placeholder={spec.image ? "https://" : undefined}
               onChange={(e) => update(e.target.value)}
               list={spec.key === "project_slug" ? projectSlugsListId : spec.key === "dept_key" ? trackKeysListId : undefined}
             />
@@ -125,7 +127,7 @@ export default function FieldInput({
     case "strings":
       return (
         <div className="flex flex-col gap-1">
-          <StringsInput id={id} label={label} hint={spec.hint} value={current} onChange={set} />
+          <StringsInput id={id} label={label} hint={spec.hint} value={current} images={spec.images} onChange={set} />
           {spec.images && uploadTo ? (
             <UploadButton
               to={uploadTo}
@@ -299,18 +301,23 @@ function StringsInput({
   label,
   hint,
   value,
+  images,
   onChange,
 }: {
   id: string;
   label: string;
   hint?: string;
   value: unknown;
+  /** Picture URLs: a line from another website holds the whole list back (isAllowedImage). */
+  images?: boolean;
   onChange: (list: string[]) => void;
 }) {
   const list = Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
   const [text, setText] = useState(() => list.join("\n"));
   // A list changed from outside (an upload added a line) replaces the text.
-  if (linesOf(text).join("\n") !== list.join("\n")) setText(list.join("\n"));
+  const lines = linesOf(text);
+  const allowed = !images || lines.every(isAllowedImage);
+  if (allowed && lines.join("\n") !== list.join("\n")) setText(list.join("\n"));
   return (
     <div className="flex flex-col gap-1">
       <Label htmlFor={id} hint={hint}>
@@ -320,11 +327,15 @@ function StringsInput({
         id={id}
         rows={Math.max(2, list.length + 1)}
         value={text}
+        aria-invalid={!allowed}
+        aria-describedby={allowed ? undefined : `${id}-error`}
         onChange={(e) => {
           setText(e.target.value);
-          onChange(linesOf(e.target.value));
+          const next = linesOf(e.target.value);
+          if (!images || next.every(isAllowedImage)) onChange(next);
         }}
       />
+      {allowed ? null : <OffSiteImageError id={`${id}-error`} />}
     </div>
   );
 }
@@ -334,3 +345,39 @@ const linesOf = (text: string) =>
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean);
+
+/**
+ * A picture URL. A URL from another website stays in the box with a message and is passed on
+ * as empty, so the page in the frame never gets a picture it cannot show.
+ */
+function ImageUrlInput({ id, value, onChange }: { id: string; value: string; onChange: (url: string) => void }) {
+  const [text, setText] = useState(value);
+  const [seen, setSeen] = useState(value);
+  // A value changed from outside (an upload, a discard) replaces the text; this box's own does not.
+  if (seen !== value) {
+    setSeen(value);
+    setText(value);
+  }
+  const allowed = isAllowedImage(text);
+  return (
+    <>
+      <input
+        id={id}
+        type="text"
+        inputMode="url"
+        placeholder="https://"
+        value={text}
+        aria-invalid={!allowed}
+        aria-describedby={allowed ? undefined : `${id}-error`}
+        onChange={(e) => {
+          setText(e.target.value);
+          // A refused URL counts as no picture, so a save never keeps a half-typed one.
+          const sent = isAllowedImage(e.target.value) ? e.target.value : "";
+          setSeen(sent);
+          onChange(sent);
+        }}
+      />
+      {allowed ? null : <OffSiteImageError id={`${id}-error`} />}
+    </>
+  );
+}

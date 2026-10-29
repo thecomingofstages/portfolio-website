@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Block } from "@/types/api";
-import { type DraftBlock, filledVersion, getPath, NO_IMAGE, readLoad, setPath, withEmptyLabels } from "./draft";
+import { type DraftBlock, filledVersion, getPath, NO_IMAGE, readLoad, readProject, setPath, withEmptyLabels } from "./draft";
 
 const draft = (fields: Record<string, unknown>): DraftBlock => ({ id: "b", type: "article", is_shown: true, ...fields }) as DraftBlock;
 
@@ -55,6 +55,18 @@ describe("editor messages", () => {
     const load = readLoad({ tcos: "edit", type: "load", blocks: [{ id: "a", type: "hero" }, null, { id: 3 }], selected: 0 });
     expect(load?.blocks).toHaveLength(1);
     expect(load?.selected).toBe(0);
+  });
+
+  it("read a project's header fields, dropping anything that is not text", () => {
+    const project = { name: "<...>", start_date: "2026-01-01", end_date: 5, venue: null, pics: ["/a.jpg", 7] };
+    expect(readProject({ tcos: "edit", type: "project", project })).toEqual({
+      name: "<...>",
+      start_date: "2026-01-01",
+      end_date: null,
+      venue: null,
+      pics: ["/a.jpg"],
+    });
+    expect(readProject({ tcos: "edit", type: "load", blocks: [] })).toBeNull();
   });
 
   it("ignore other messages", () => {

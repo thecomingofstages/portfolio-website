@@ -219,6 +219,46 @@
   }
 }
 
+/* An on/off switch on a checkbox (ui.tsx Switch): a pill with a knob, gold when on. */
+@utility switch {
+  appearance: none;
+  position: relative;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 1.25rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  background-color: var(--card-bg);
+  cursor: pointer;
+  transition: background-color 150ms, border-color 150ms;
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0.125rem;
+    left: 0.125rem;
+    width: 0.875rem;
+    height: 0.875rem;
+    border-radius: 9999px;
+    background-color: var(--muted);
+    transition: transform 150ms, background-color 150ms;
+  }
+  &:checked {
+    border-color: var(--accent);
+    background-color: var(--accent);
+  }
+  &:checked::after {
+    transform: translateX(1rem);
+    background-color: var(--background);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    &::after {
+      transition: none;
+    }
+  }
+}
+
 @keyframes lights-up {
   from {
     background-color: var(--background);

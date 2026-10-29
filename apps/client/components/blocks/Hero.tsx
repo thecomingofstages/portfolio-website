@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Media, { isImageUrl } from "@/components/Media";
 import type { BlockProps } from ".";
@@ -59,8 +60,11 @@ function PauseButton({ paused, onToggle }: { paused: boolean; onToggle: () => vo
  * slideshow, under a #000 layer at 75%, with `title`, `subtitle` and `buttons` at the bottom left.
  * A full-bleed banner: full window width, media covering it and cropped (project lead, 26 Oct 2026).
  * With reduced motion the video stays stopped and a slideshow shows `media_url` only.
+ *
+ * `home`: the home page's banner, its first block. The same media behind, with a large TCOS logo,
+ * `subtitle` and `buttons` centred over it, and `title` as a heading for screen readers only.
  */
-export default function Hero({ block }: BlockProps<"hero">) {
+export default function Hero({ block, home = false }: BlockProps<"hero"> & { home?: boolean }) {
   const { title, subtitle, media_url, media_kind, slides, slide_seconds, buttons } = block;
   // TODO(hero media_kind null): the docs do not say what `null` shows; it shows the image, as for "image".
   const kind = media_kind ?? "image";
@@ -140,15 +144,28 @@ export default function Hero({ block }: BlockProps<"hero">) {
         ))
       )}
       <div aria-hidden="true" className="absolute inset-0 bg-background/75" />
-      <div className="page-width relative col-start-1 row-start-1 flex flex-col items-start gap-4 self-end pb-12 md:pb-16">
-        {title ? <h1 data-field="title">{title}</h1> : null}
+      <div
+        className={`page-width relative col-start-1 row-start-1 flex flex-col ${
+          home ? "items-center gap-8 self-center py-12 text-center" : "items-start gap-4 self-end pb-12 md:pb-16"
+        }`}
+      >
+        {home ? (
+          // The heading below names the page; without one, the logo does.
+          <Image src="/logo.png" alt={title ? "" : "The Coming of Stages"} width={412} height={359} priority className="h-auto w-48 md:w-72" />
+        ) : null}
+        {title ? (
+          <h1 data-field="title" className={home ? "sr-only" : undefined}>
+            {title}
+          </h1>
+        ) : null}
         {subtitle ? (
-          <p data-field="subtitle" className="text-body-lg text-muted">
+          // On the home banner the slogan is set in the Header 1 style.
+          <p data-field="subtitle" className={home ? "font-heading text-h1 leading-tight font-extrabold" : "text-body-lg text-muted"}>
             {subtitle}
           </p>
         ) : null}
         {buttons.length > 0 ? (
-          <div className="flex flex-wrap gap-4">
+          <div className={`flex flex-wrap gap-4 ${home ? "justify-center" : ""}`}>
             {buttons.map((button, index) => (
               <a
                 key={`${button.url}-${index}`}

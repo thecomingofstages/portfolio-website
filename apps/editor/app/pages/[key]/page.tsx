@@ -9,6 +9,7 @@ import {
 } from "@/components/SaveGroup";
 import { ShownMark, SiteLink } from "@/components/ui";
 import { getPage, listProjects } from "@/lib/admin-api";
+import { isAlwaysShown } from "@/lib/blocks";
 import { canvasUrl } from "@/lib/canvas";
 import { formatDate } from "@/lib/dates";
 
@@ -37,7 +38,7 @@ export default async function EditPage({ params }: PageProps<"/pages/[key]">) {
         <div className="flex flex-col gap-3">
           <h1>{page.title}</h1>
           <p className="flex flex-wrap gap-x-5 gap-y-1">
-            <ShownMark shown={page.is_shown} />
+            {isAlwaysShown(page.key) ? null : <ShownMark shown={page.is_shown} />}
             {page.updated_at ? (
               <span className="text-muted">
                 Last saved {formatDate(page.updated_at)}

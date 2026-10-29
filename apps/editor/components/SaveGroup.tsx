@@ -119,10 +119,10 @@ export function SaveButtons() {
       <span role="status" className={`hidden whitespace-nowrap md:inline ${failed ? "text-red" : "text-muted"}`}>
         {pending ? "Saving…" : failed ? "Not saved: see the messages" : dirty ? "Unsaved changes" : "All saved"}
       </span>
-      <button type="button" className="btn" disabled={!dirty || pending} onClick={discardAll}>
+      <button type="button" className="btn h-8 py-0" disabled={!dirty || pending} onClick={discardAll}>
         Discard
       </button>
-      <button type="button" className="btn btn-primary" disabled={!dirty || pending} onClick={saveAll}>
+      <button type="button" className="btn btn-primary h-8 py-0" disabled={!dirty || pending} onClick={saveAll}>
         {pending ? "Saving…" : "Save"}
       </button>
     </div>
@@ -130,7 +130,7 @@ export function SaveButtons() {
 }
 
 /** Puts its children into a slot in the layout's header (`id`), from inside a page. */
-export function HeaderSlot({ id, children }: { id: "header-title" | "header-actions"; children: ReactNode }) {
+export function HeaderSlot({ id, children }: { id: "header-title" | "header-actions" | "title-shown"; children: ReactNode }) {
   // The slot is in the layout, so it exists in the browser and never changes; on the server there is none.
   const slot = useSyncExternalStore(noSubscription, () => document.getElementById(id), () => null);
   return slot ? createPortal(children, slot) : null;
@@ -154,7 +154,7 @@ export function BackTitle({ title }: { title: string }) {
           <path d="M10 3 5 8l5 5" />
         </svg>
       </button>
-      <span className="truncate font-heading font-semibold">{title}</span>
+      <span className="truncate">{title}</span>
     </div>
   );
 }

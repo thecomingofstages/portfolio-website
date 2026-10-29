@@ -2,9 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { createProject, saveProjectFields } from "@/app/actions";
+import { usePreviewProject } from "@/components/BlocksEditor";
 import FieldInput from "@/components/FieldInput";
-import { useSaveable } from "@/components/SaveGroup";
-import { Label, SaveStatus } from "@/components/ui";
+import { HeaderSlot, useSaveable } from "@/components/SaveGroup";
+import { SaveStatus, Switch } from "@/components/ui";
 import type { FieldSpec } from "@/lib/blocks";
 import { type DateParts, fromDateParts, normalizeDate, toDateParts } from "@/lib/date-input";
 import { PROJECT_STATUSES, PROJECT_TYPES } from "@/lib/schemas";
@@ -82,6 +83,18 @@ export default function ProjectForm({ project }: { project?: ProjectDoc }) {
     },
   });
   const slugChanged = project && fields.slug !== project.slug;
+  const text = (key: string) => (typeof fields[key] === "string" ? (fields[key] as string) : "");
+  usePreviewProject(
+    project
+      ? {
+          name: text("name"),
+          start_date: text("start_date"),
+          end_date: text("end_date") || null,
+          venue: text("venue") || null,
+          pics: Array.isArray(fields.pics) ? (fields.pics as string[]) : [],
+        }
+      : null,
+  );
 
   const field = (spec: FieldSpec) => (
     <FieldInput
@@ -130,22 +143,15 @@ export default function ProjectForm({ project }: { project?: ProjectDoc }) {
     );
   }
 
-  function checkbox(key: "is_shown" | "is_yearbook_shown", label: string, hint: string) {
-    return (
-      <div className="flex items-start gap-2.5">
-        <input
-          id={`project-${key}`}
-          type="checkbox"
-          className="mt-1"
-          checked={fields[key] === true}
-          onChange={(e) => setFields({ ...fields, [key]: e.target.checked })}
-        />
-        <Label htmlFor={`project-${key}`} hint={hint}>
-          {label}
-        </Label>
-      </div>
-    );
-  }
+  const shownSwitch = (key: "is_shown" | "is_yearbook_shown", label: string, hint?: string) => (
+    <Switch
+      id={`project-${key}`}
+      checked={fields[key] === true}
+      label={label}
+      hint={hint}
+      onChange={(on) => setFields({ ...fields, [key]: on })}
+    />
+  );
 
   return (
     <form
@@ -161,9 +167,14 @@ export default function ProjectForm({ project }: { project?: ProjectDoc }) {
         {project ? dateField("end_date", "End date", false) : null}
       </div>
       {project ? moreFields.map(field) : null}
-      {checkbox("is_shown", "Shown on the site", "ถ้าปิด โปรเจกต์จะไม่อยู่ในรายการไหนเลย และหน้าของโปรเจกต์จะขึ้นว่าไม่พบหน้า")}
+      {project ? (
+        // In the line under the project's name (app/projects/[slug]/page.tsx).
+        <HeaderSlot id="title-shown">{shownSwitch("is_shown", "Shown on the site")}</HeaderSlot>
+      ) : (
+        shownSwitch("is_shown", "Shown on the site", "ถ้าปิด โปรเจกต์จะไม่อยู่ในรายการไหนเลย และหน้าของโปรเจกต์จะขึ้นว่าไม่พบหน้า")
+      )}
       {project
-        ? checkbox("is_yearbook_shown", "Yearbook shown", "เปิดหน้า /projects/<slug>/yearbook และปุ่มที่พาไปหน้านั้น")
+        ? shownSwitch("is_yearbook_shown", "Yearbook shown", "เปิดหน้า /projects/<slug>/yearbook และปุ่มที่พาไปหน้านั้น")
         : null}
       {slugChanged ? (
         <p className="border-l-2 border-accent pl-3">
