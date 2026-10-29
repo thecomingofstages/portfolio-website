@@ -15,6 +15,50 @@ const ROW = "flex flex-col gap-1 @lg:grid @lg:grid-cols-[10rem_1fr] @lg:items-ba
 /** A group of fields: an object, or one item of a list. */
 const CARD = "flex flex-col gap-3 rounded-card border border-border p-4";
 
+/** The form's own words (buttons, notes); the field labels come from the FieldSpecs. */
+export type Words = {
+  add: (name: string) => string;
+  remove: (name: string) => string;
+  noneYet: string;
+  moveUp: string;
+  moveDown: string;
+  removeItem: string;
+  uploadImage: string;
+  uploadAndAdd: string;
+  undecided: (raw: string) => string;
+  time: string;
+  shown: string;
+};
+
+export const WORDS = {
+  en: {
+    add: (name) => `Add ${name.toLowerCase()}`,
+    remove: (name) => `Remove ${name.toLowerCase()}`,
+    noneYet: "None yet.",
+    moveUp: "Move up",
+    moveDown: "Move down",
+    removeItem: "Remove",
+    uploadImage: "Upload image",
+    uploadAndAdd: "Upload and add",
+    undecided: (raw) => `Now "${raw}", not decided yet. Pick a date before saving.`,
+    time: "Optional, Bangkok time",
+    shown: "Shown on the site",
+  },
+  th: {
+    add: (name) => `เพิ่ม${name}`,
+    remove: (name) => `ลบ${name}`,
+    noneYet: "ยังไม่มี",
+    moveUp: "เลื่อนขึ้น",
+    moveDown: "เลื่อนลง",
+    removeItem: "ลบ",
+    uploadImage: "อัปโหลดรูป",
+    uploadAndAdd: "อัปโหลดแล้วเพิ่ม",
+    undecided: (raw) => `ตอนนี้เป็น "${raw}" คือยังไม่ได้กำหนด เลือกวันที่ก่อนบันทึก`,
+    time: "ไม่ใส่ก็ได้ เวลากรุงเทพฯ",
+    shown: "แสดงบนเว็บ",
+  },
+} satisfies Record<string, Words>;
+
 /**
  * One form field of a block (or of a list item in it), from its FieldSpec.
  * `value` is the whole object the field belongs to; `onChange` gets a new copy.
@@ -26,6 +70,8 @@ export default function FieldInput({
   idPrefix,
   projectSlugsListId,
   uploadTo,
+  words = WORDS.en,
+  heading,
 }: {
   spec: FieldSpec;
   value: Obj;
@@ -35,6 +81,10 @@ export default function FieldInput({
   projectSlugsListId?: string;
   /** Where uploaded images are filed; without it, image fields take URLs only. */
   uploadTo?: UploadOwner;
+  /** The form's language for its buttons and notes. */
+  words?: Words;
+  /** A list's label as a heading (<h3>): a list at the top of a document's form. */
+  heading?: boolean;
 }) {
   const id = `${idPrefix}-${spec.key}`;
   const current = value[spec.key];
@@ -64,7 +114,7 @@ export default function FieldInput({
               list={spec.key === "project_slug" ? projectSlugsListId : undefined}
             />
           )}
-          {spec.image && uploadTo ? <UploadButton to={uploadTo} onUploaded={update} /> : null}
+          {spec.image && uploadTo ? <UploadButton to={uploadTo} label={words.uploadImage} onUploaded={update} /> : null}
         </div>
       );
     }
@@ -139,7 +189,7 @@ export default function FieldInput({
           {spec.images && uploadTo ? (
             <UploadButton
               to={uploadTo}
-              label="Upload and add"
+              label={words.uploadAndAdd}
               onUploaded={(url) => set([...(Array.isArray(current) ? current : []), url])}
             />
           ) : null}
@@ -167,7 +217,7 @@ export default function FieldInput({
           <span id={`${id}-label`} className="flex flex-col">
             <span className="font-bold">{label}</span>
             {!parts ? (
-              <span className="text-muted">Now &quot;{raw}&quot;, not decided yet. Pick a date before saving.</span>
+              <span className="text-muted">{words.undecided(raw)}</span>
             ) : spec.hint ? (
               <span className="text-muted">{spec.hint}</span>
             ) : null}
@@ -181,8 +231,8 @@ export default function FieldInput({
               onChange={(e) => setParts({ date: e.target.value, time: parts?.time ?? "" })}
             />
             <input
-              aria-label={`${spec.label}: time, Bangkok`}
-              title="Optional, Bangkok time"
+              aria-label={`${spec.label}: ${words.time}`}
+              title={words.time}
               type="time"
               className="max-w-36"
               value={parts?.time ?? ""}
@@ -205,7 +255,7 @@ export default function FieldInput({
             </span>
             <div>
               <button type="button" className="btn" onClick={() => set({})}>
-                Add {spec.label.toLowerCase()}
+                {words.add(spec.label)}
               </button>
             </div>
           </div>
@@ -219,7 +269,7 @@ export default function FieldInput({
             </span>
             {spec.optional ? (
               <button type="button" className="btn" onClick={() => set(undefined)}>
-                Remove {spec.label.toLowerCase()}
+                {words.remove(spec.label)}
               </button>
             ) : null}
           </div>
@@ -232,6 +282,7 @@ export default function FieldInput({
               idPrefix={id}
               projectSlugsListId={projectSlugsListId}
               uploadTo={uploadTo}
+              words={words}
               onChange={set}
             />
           ))}
@@ -242,15 +293,14 @@ export default function FieldInput({
     case "items": {
       const items = Array.isArray(current) ? (current as Obj[]) : [];
       const setItems = (next: Obj[]) => set(next);
-      const name = spec.itemLabel.toLowerCase();
       const shown = spec.fields.find((f) => f.key === "is_shown" && f.kind === "bool");
       const fields = spec.fields.filter((f) => f !== shown);
       const setItem = (index: number, next: Obj) => setItems(items.map((it, i) => (i === index ? next : it)));
       return (
         <fieldset className="flex flex-col gap-3">
-          <legend className="font-bold">{spec.label}</legend>
+          <legend className="font-bold">{heading ? <h3>{spec.label}</h3> : spec.label}</legend>
           {spec.hint ? <p className="text-muted">{spec.hint}</p> : null}
-          {items.length === 0 ? <p className="text-muted">None yet.</p> : null}
+          {items.length === 0 ? <p className="text-muted">{words.noneYet}</p> : null}
           <ol className="flex flex-col gap-5">
             {items.map((item, index) => (
               <li key={index} className={CARD}>
@@ -271,8 +321,8 @@ export default function FieldInput({
                   <button
                     type="button"
                     className="btn-icon"
-                    aria-label={`Move ${name} ${index + 1} up`}
-                    title="Move up"
+                    aria-label={`${words.moveUp}: ${spec.itemLabel} ${index + 1}`}
+                    title={words.moveUp}
                     disabled={index === 0}
                     onClick={() => setItems(moveItem(items, index, index - 1))}
                   >
@@ -281,8 +331,8 @@ export default function FieldInput({
                   <button
                     type="button"
                     className="btn-icon"
-                    aria-label={`Move ${name} ${index + 1} down`}
-                    title="Move down"
+                    aria-label={`${words.moveDown}: ${spec.itemLabel} ${index + 1}`}
+                    title={words.moveDown}
                     disabled={index === items.length - 1}
                     onClick={() => setItems(moveItem(items, index, index + 1))}
                   >
@@ -291,8 +341,8 @@ export default function FieldInput({
                   <button
                     type="button"
                     className="btn-icon"
-                    aria-label={`Remove ${name} ${index + 1}`}
-                    title="Remove"
+                    aria-label={`${words.removeItem}: ${spec.itemLabel} ${index + 1}`}
+                    title={words.removeItem}
                     onClick={() => setItems(items.filter((_, i) => i !== index))}
                   >
                     ✕
@@ -305,7 +355,8 @@ export default function FieldInput({
                     value={item}
                     idPrefix={`${id}-${index}`}
                     projectSlugsListId={projectSlugsListId}
-                          uploadTo={uploadTo}
+                    uploadTo={uploadTo}
+                    words={words}
                     onChange={(next) => setItem(index, next)}
                   />
                 ))}
@@ -314,7 +365,7 @@ export default function FieldInput({
           </ol>
           <div>
             <button type="button" className="btn" onClick={() => setItems([...items, spec.newItem()])}>
-              Add {name}
+              {words.add(spec.itemLabel)}
             </button>
           </div>
         </fieldset>
@@ -369,14 +420,41 @@ function StringsInput({
           if (!images && text === "") setText(BULLET);
         }}
         onKeyDown={(e) => {
-          // Enter starts the next bullet; not while a Thai input method is composing.
-          if (images || e.key !== "Enter" || e.nativeEvent.isComposing) return;
-          e.preventDefault();
+          // Not while a Thai input method is composing.
+          if (images || e.nativeEvent.isComposing) return;
           const box = e.currentTarget;
-          box.setRangeText(`\n${BULLET}`, box.selectionStart, box.selectionEnd, "end");
+          const at = box.selectionStart;
+          if (e.key === "Enter") {
+            // Enter starts the next bullet.
+            e.preventDefault();
+            box.setRangeText(`\n${BULLET}`, at, box.selectionEnd, "end");
+          } else if ((e.key === "Backspace" || e.key === "Delete") && at === box.selectionEnd) {
+            // Backspace in a bullet, or Delete at a line's end, joins the lines: the bullet goes with the line break.
+            const lineStart = box.value.lastIndexOf("\n", at - 1) + 1;
+            const inBullet = e.key === "Backspace" && at > lineStart && at <= lineStart + BULLET.length;
+            const beforeBullet = e.key === "Delete" && box.value.startsWith(`\n${BULLET}`, at);
+            if (!inBullet && !beforeBullet) return;
+            e.preventDefault();
+            if (beforeBullet) box.setRangeText("", at, at + 1 + BULLET.length, "start");
+            else if (lineStart > 0) box.setRangeText("", lineStart - 1, lineStart + BULLET.length, "start");
+            // The first bullet goes only with the last of the text.
+            else if (box.value === BULLET) box.value = "";
+            else return;
+          } else return;
           change(box.value);
         }}
-        onChange={(e) => change(e.target.value)}
+        onChange={(e) => {
+          // A bullet deleted any other way (a selection, cutting) comes back, the cursor where it was.
+          const box = e.currentTarget;
+          const next = images ? box.value : bulleted(box.value);
+          if (next !== box.value) {
+            const before = box.value.slice(0, box.selectionStart);
+            const at = before === "" ? BULLET.length : bulleted(before).length;
+            box.value = next;
+            box.setSelectionRange(at, at);
+          }
+          change(next);
+        }}
       />
       {allowed ? null : <OffSiteImageError id={`${id}-error`} />}
     </>
@@ -384,6 +462,10 @@ function StringsInput({
 }
 
 const BULLET = "• ";
+
+/** Every line of `text` starting with one bullet (`• `); no text stays no text. */
+export const bulleted = (text: string) =>
+  text === "" ? "" : text.split("\n").map((line) => BULLET + line.replace(/^• ?/, "")).join("\n");
 
 const textOf = (list: string[], images?: boolean) => (images ? list : list.map((line) => BULLET + line)).join("\n");
 

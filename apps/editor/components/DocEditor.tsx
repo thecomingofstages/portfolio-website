@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, useTransition } from "react";
-import FieldInput from "@/components/FieldInput";
+import FieldInput, { WORDS } from "@/components/FieldInput";
 import { HeaderSlot, useSaveable } from "@/components/SaveGroup";
 import { SaveStatus, Switch } from "@/components/ui";
 import type { UploadOwner } from "@/lib/admin-api";
@@ -51,6 +51,8 @@ export function DocEditor({
   }
   const listId = useId();
   const specs = FORMS[form];
+  // The round form is in Thai; the track form is not yet.
+  const words = form === "round" ? WORDS.th : WORDS.en;
 
   useSaveable("doc", {
     dirty: JSON.stringify(doc) !== initialJson,
@@ -74,7 +76,7 @@ export function DocEditor({
         <Switch
           id="doc-is_shown"
           checked={doc.is_shown === true}
-          label="Shown on the site"
+          label={words.shown}
           onChange={(on) => setDoc({ ...doc, is_shown: on })}
         />
       </HeaderSlot>
@@ -88,6 +90,8 @@ export function DocEditor({
             idPrefix="doc"
             projectSlugsListId={`${listId}-projects`}
             uploadTo={uploadTo}
+            words={words}
+            heading
             onChange={setDoc}
           />
         ),
