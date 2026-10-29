@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Label, OffSiteImageError, Switch } from "@/components/ui";
+import { type ReactNode, useState } from "react";
+import { Label, OffSiteImageError, RequiredMark, Switch } from "@/components/ui";
 import UploadButton from "@/components/UploadButton";
 import type { UploadOwner } from "@/lib/admin-api";
 import { type FieldSpec, moveItem, parseStatValue, setField } from "@/lib/blocks";
@@ -95,7 +95,15 @@ export default function FieldInput({
   const id = `${idPrefix}-${spec.key}`;
   const current = value[spec.key];
   const set = (v: unknown) => onChange(setField(value, spec.key, v));
-  const label = spec.kind !== "items" && "required" in spec && spec.required ? `${spec.label} *` : spec.label;
+  const label =
+    spec.kind !== "items" && "required" in spec && spec.required ? (
+      <>
+        {spec.label}
+        <RequiredMark />
+      </>
+    ) : (
+      spec.label
+    );
 
   switch (spec.kind) {
     case "text": {
@@ -404,7 +412,7 @@ function StringsInput({
   onChange,
 }: {
   id: string;
-  label: string;
+  label: ReactNode;
   hint?: string;
   value: unknown;
   /** Picture URLs: a line from another website holds the whole list back (isAllowedImage). */
