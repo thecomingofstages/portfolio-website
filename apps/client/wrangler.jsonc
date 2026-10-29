@@ -24,8 +24,8 @@
   },
   "previews": {},
   "vars": {
-    // Serve fixtures until the server is deployed (task X3 turns this off per page).
-    "USE_FIXTURES": "true",
+    // Live data from the server; "true" serves fixtures instead.
+    "USE_FIXTURES": "false",
   },
   // Secrets (API_URL, REVALIDATE_SECRET) are set with `npx wrangler secret put <NAME>`,
   // and in .dev.vars for `npm run preview`. See .env.example.
