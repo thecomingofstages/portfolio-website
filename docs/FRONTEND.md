@@ -151,12 +151,12 @@ types/api.ts                         response types, matching API.md
 
 ### Keeping pages fresh
 
-Home (`/`) and the project list (`/projects`) render per request, so they always show the latest data, and builds need no `API_URL`. The other pages follow the table below.
+Home (`/`), the project list (`/projects`) and Apply info (`/join`) render per request, so they always show the latest data, and builds need no `API_URL`. The other pages follow the table below.
 
 | What changes                                              | How the client finds out                                                                                                                                                                                         |
 | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | An admin edits data                                       | The server calls `POST /api/revalidate` with the changed paths. The route checks `REVALIDATE_SECRET` and calls `revalidatePath`                                                                                  |
-| A round opens or closes (time passes, nothing is written) | `/join`, and pages with a `join` block, also revalidate on a timer: once a day (`revalidate = 86400`). A round that opens or closes during the day can show up to a day late; an admin edit refreshes it at once |
+| A round opens or closes (time passes, nothing is written) | `/join` and Home render per request, so they show it at once. Project pages, which can hold a `join` block, also revalidate on a timer: once a day (`revalidate = 86400`). There, a round that opens or closes during the day can show up to a day late; an admin edit refreshes it at once |
 
 ### Environment
 
