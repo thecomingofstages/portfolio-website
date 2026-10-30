@@ -200,11 +200,20 @@ export function MediaDialog({
   );
 }
 
+/** True when the URL's path ends in .mp4 or .webm, whatever query or hash follows. */
+const isVideoUrl = (url: string) => {
+  try {
+    return /\.(mp4|webm)$/i.test(new URL(url).pathname);
+  } catch {
+    return false;
+  }
+};
+
 /** A small view of a media URL: the picture, the video, or the text when it is not a link (`<...>`). */
 export function MediaPreview({ url }: { url: string }) {
   if (!/^https?:\/\//i.test(url)) return <span className="text-muted">{url}</span>;
   const box = "h-20 w-32 shrink-0 rounded-[var(--radius-button)] border border-border bg-background object-cover";
-  if (/\.(mp4|webm)$/i.test(url)) return <video src={url} className={box} muted playsInline preload="metadata" aria-label="Video" />;
+  if (isVideoUrl(url)) return <video src={url} className={box} muted playsInline preload="metadata" aria-label="Video" />;
   // eslint-disable-next-line @next/next/no-img-element -- a thumbnail from the bucket; next/image would need its host configured
   return <img src={url} alt="" className={box} />;
 }

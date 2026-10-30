@@ -144,11 +144,8 @@ export async function deleteUnusedMedia(urls: string[]): Promise<void> {
   for (const url of urls) {
     const key = mediaKey(url);
     if (!key) continue;
-    try {
-      await call("DELETE", `/api/admin/uploads/${key.split("/").map(enc).join("/")}`);
-    } catch (error) {
-      if (!(error instanceof AdminApiError)) throw error;
-    }
+    // Any failure (409 still used, a dropped connection) leaves the file: the save already worked.
+    await call("DELETE", `/api/admin/uploads/${key.split("/").map(enc).join("/")}`).catch(() => {});
   }
 }
 

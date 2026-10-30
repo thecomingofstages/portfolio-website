@@ -340,35 +340,15 @@ export default function FieldInput({
                       />
                     </div>
                   ) : null}
-                  <button
-                    type="button"
-                    className="btn-icon"
-                    aria-label={`${words.moveUp}: ${spec.itemLabel} ${index + 1}`}
-                    title={words.moveUp}
-                    disabled={index === 0}
-                    onClick={() => setItems(moveItem(items, index, index - 1))}
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-icon"
-                    aria-label={`${words.moveDown}: ${spec.itemLabel} ${index + 1}`}
-                    title={words.moveDown}
-                    disabled={index === items.length - 1}
-                    onClick={() => setItems(moveItem(items, index, index + 1))}
-                  >
-                    ↓
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-icon"
-                    aria-label={`${words.removeItem}: ${spec.itemLabel} ${index + 1}`}
-                    title={words.removeItem}
-                    onClick={() => setItems(items.filter((_, i) => i !== index))}
-                  >
-                    ✕
-                  </button>
+                  <MoveRemoveButtons
+                    name={`${spec.itemLabel} ${index + 1}`}
+                    index={index}
+                    count={items.length}
+                    arrows={["↑", "↓"]}
+                    words={words}
+                    onMove={(to) => setItems(moveItem(items, index, to))}
+                    onRemove={() => setItems(items.filter((_, i) => i !== index))}
+                  />
                 </div>
                 {fields.map((field) => (
                   <FieldInput
@@ -490,6 +470,53 @@ export const linesOf = (text: string) =>
     .map((line) => line.replace(/^\s*•/, "").trim())
     .filter(Boolean);
 
+/** Move back, move forward and remove, for one item of a list; `name` ends each button's label. */
+function MoveRemoveButtons({
+  name,
+  index,
+  count,
+  arrows,
+  words,
+  onMove,
+  onRemove,
+}: {
+  name: string;
+  index: number;
+  count: number;
+  arrows: [back: string, forward: string];
+  words: Words;
+  onMove: (to: number) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <>
+      <button
+        type="button"
+        className="btn-icon"
+        aria-label={`${words.moveUp}: ${name}`}
+        title={words.moveUp}
+        disabled={index === 0}
+        onClick={() => onMove(index - 1)}
+      >
+        {arrows[0]}
+      </button>
+      <button
+        type="button"
+        className="btn-icon"
+        aria-label={`${words.moveDown}: ${name}`}
+        title={words.moveDown}
+        disabled={index === count - 1}
+        onClick={() => onMove(index + 1)}
+      >
+        {arrows[1]}
+      </button>
+      <button type="button" className="btn-icon" aria-label={`${words.removeItem}: ${name}`} title={words.removeItem} onClick={onRemove}>
+        ✕
+      </button>
+    </>
+  );
+}
+
 /** One picture (or hero video) field: what it holds, a button that opens MediaDialog, and Remove. */
 function MediaInput({
   id,
@@ -567,35 +594,15 @@ function MediaListInput({
               <li key={`${index}-${url}`} className="flex flex-col items-start gap-1">
                 <MediaPreview url={url} />
                 <div className="flex">
-                  <button
-                    type="button"
-                    className="btn-icon"
-                    aria-label={`${words.moveUp}: ${index + 1}`}
-                    title={words.moveUp}
-                    disabled={index === 0}
-                    onClick={() => onChange(moveItem(list, index, index - 1))}
-                  >
-                    ←
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-icon"
-                    aria-label={`${words.moveDown}: ${index + 1}`}
-                    title={words.moveDown}
-                    disabled={index === list.length - 1}
-                    onClick={() => onChange(moveItem(list, index, index + 1))}
-                  >
-                    →
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-icon"
-                    aria-label={`${words.removeItem}: ${index + 1}`}
-                    title={words.removeItem}
-                    onClick={() => onChange(list.filter((_, i) => i !== index))}
-                  >
-                    ✕
-                  </button>
+                  <MoveRemoveButtons
+                    name={String(index + 1)}
+                    index={index}
+                    count={list.length}
+                    arrows={["←", "→"]}
+                    words={words}
+                    onMove={(to) => onChange(moveItem(list, index, to))}
+                    onRemove={() => onChange(list.filter((_, i) => i !== index))}
+                  />
                 </div>
               </li>
             ))}

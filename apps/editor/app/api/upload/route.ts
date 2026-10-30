@@ -65,9 +65,12 @@ async function fetchFromDrive(json: unknown): Promise<{ body: ReadableStream<Uin
   // A private file answers a sign-in page, not the file.
   if (!response.ok || (response.headers.get("content-type") ?? "").startsWith("text/html")) return notShared;
   if (Number(response.headers.get("content-length") ?? 0) > DRIVE_MAX_BYTES) return { error: "The file is too large." };
-  // shortcut: the file is held in memory (up to DRIVE_MAX_BYTES) to build the multipart body; stream it if larger files are allowed.
+  // shortcut: the whole file is read into memory to build the multipart body, even past the cap when Drive
+  // sends no length; stream it with a byte count if larger files or more editors are expected.
+  const file = await response.blob();
+  if (file.size > DRIVE_MAX_BYTES) return { error: "The file is too large." };
   const form = new FormData();
-  form.append("file", await response.blob(), "drive");
+  form.append("file", file, "drive");
   const wrapped = new Response(form);
   return { body: wrapped.body as ReadableStream<Uint8Array<ArrayBuffer>>, contentType: wrapped.headers.get("content-type")! };
 }
