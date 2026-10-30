@@ -26,7 +26,7 @@ export default function RoundCard({ round }: RoundCardProps) {
   return (
     <article className="grid grid-cols-1 overflow-hidden rounded-card border border-border bg-card-bg md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
       {poster !== null ? (
-        <div className="relative aspect-square w-full self-start overflow-hidden">
+        <div className="relative aspect-square w-full self-start overflow-hidden mt-4 md:mt-6">
           <Media
             src={poster}
             alt={title}
