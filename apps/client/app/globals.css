@@ -78,6 +78,33 @@
   margin-inline: calc(50% - 50vw);
 }
 
+/*
+ * Each block's section fades and slides up as it scrolls into view (a CSS scroll-driven
+ * animation). Browsers without it, and devices that ask for reduced motion, show it as it is.
+ * An animated section traps fixed-position children (Team's track popup) inside it, so a
+ * section with an open modal stops animating.
+ */
+@keyframes section-reveal {
+  from {
+    opacity: 0;
+    translate: 0 2rem;
+  }
+  to {
+    opacity: 1;
+    translate: none;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    main > * > section:not(:has([aria-modal="true"])) {
+      animation: section-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 60%;
+    }
+  }
+}
+
 /* A Hero that opens the page sits right under the nav. */
 main:has(> :first-child > section:first-child > .hero-banner) {
   padding-top: 0;
@@ -86,6 +113,14 @@ main:has(> :first-child > section:first-child > .hero-banner) {
 @layer base {
   html {
     background-color: var(--background);
+    /* Anchor links and scrollIntoView glide; page changes still jump (data-scroll-behavior in layout.tsx). */
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 
   body {
