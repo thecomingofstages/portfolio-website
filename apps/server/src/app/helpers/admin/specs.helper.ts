@@ -3,7 +3,7 @@
  * Every write path below goes through crud.helper.ts with one of these specs.
  */
 import type { Collection } from "mongodb";
-import type { Models, ProjectDoc } from "../../models";
+import type { Models } from "../../models";
 import { applySchema, positionSchema, timelineEventSchema } from "../../schemas/admin/apply.schema";
 import { pageSchema } from "../../schemas/admin/page.schema";
 import { highlightSchema, projectSchema, sponsorSchema, teamMemberSchema } from "../../schemas/admin/project.schema";
@@ -14,8 +14,6 @@ import {
   assertTrackDeletable,
   assertTrackKeys,
   checkBlocks,
-  deleteUnusedPhotos,
-  removedPhotos,
   renameProjectSlug,
   renameTrackKey,
 } from "./checks.helper";
@@ -23,7 +21,6 @@ import type { Doc, DocSpec, ItemSpec } from "./crud.helper";
 import { applyPaths, pagePaths, projectPaths, trackPaths } from "./paths.helper";
 
 const col = (pick: (m: Models) => Collection<never>) => pick as unknown as (m: Models) => Collection<Doc>;
-const team = (d: Doc | null) => (d?.team ?? []) as NonNullable<ProjectDoc["team"]>;
 const strings = (list: unknown, field: string) =>
   (Array.isArray(list) ? list : []).flatMap((x: Doc) => (typeof x[field] === "string" ? [x[field] as string] : []));
 
@@ -47,12 +44,7 @@ export const projectSpec: DocSpec = {
       await renameProjectSlug(m, before.slug as string, doc.slug as string);
     }
   },
-  async afterSave(m, ctx, doc, before) {
-    if (before) await deleteUnusedPhotos(m, ctx, removedPhotos(team(before), team(doc)));
-  },
   beforeDelete: (m, doc) => assertProjectDeletable(m, doc.slug as string),
-  // A deleted project's team photos go too, unless another document still uses them.
-  afterDelete: (m, ctx, doc) => deleteUnusedPhotos(m, ctx, team(doc).map((t) => t.photo)),
   checkBlocks: (m, blocks, parent) => checkBlocks(m, blocks as never, [parent.slug as string]),
 };
 
@@ -62,14 +54,13 @@ export const teamSpec: ItemSpec = {
   field: "team",
   schema: teamMemberSchema,
   check: (m, item) => assertTrackKeys(m, [item.dept_key as string], "team"),
-  // Withdrawing consent (is_photo_allowed: false) removes the photo in the same request.
+  // Withdrawing consent (is_photo_allowed: false) removes the photo in the same request;
+  // the write then deletes its file (crud.helper deleteRemovedMedia).
   mergePatch(stored, patch) {
     const merged = { ...stored, ...patch };
     if (merged.is_photo_allowed !== true && patch.photo === undefined) delete merged.photo;
     return merged;
   },
-  afterChange: (m, ctx, before, after) =>
-    deleteUnusedPhotos(m, ctx, before?.photo && before.photo !== after?.photo ? [before.photo as string] : []),
 };
 
 export const sponsorItemSpec: ItemSpec = { name: "sponsor", parent: projectSpec, field: "sponsors", schema: sponsorSchema };

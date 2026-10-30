@@ -160,6 +160,50 @@ describe("DELETE /api/admin/uploads/:key", () => {
   });
 });
 
+describe("a write that removes a media URL deletes its file from R2", () => {
+  const upload = async () => (await api.upload("collection=projects&owner=p", file(PNG))).body as { key: string; url: string };
+  const imageBlock = (id: string, url: string) => ({ id, type: "image", is_shown: true, url });
+
+  it("a blocks save deletes the picture of a removed block, and keeps the others", async () => {
+    const kept = await upload();
+    const dropped = await upload();
+    await api.put("/projects/p/blocks", [imageBlock("a", kept.url), imageBlock("b", dropped.url)]);
+    expect((await api.put("/projects/p/blocks", [imageBlock("a", kept.url)])).status).toBe(200);
+    expect(api.stored.has(dropped.key)).toBe(false);
+    expect(api.stored.has(kept.key)).toBe(true);
+  });
+
+  it("a picture another document still uses stays", async () => {
+    const shared = await upload();
+    await api.post("/projects", projectBody("q", { pics: [shared.url] }));
+    await api.patch("/projects/p", { pics: [shared.url] });
+    await api.patch("/projects/p", { pics: [] });
+    expect(api.stored.has(shared.key)).toBe(true);
+  });
+
+  it("replacing a picture deletes the old one", async () => {
+    const old = await upload();
+    const now = await upload();
+    await api.patch("/projects/p", { org_chart_image: old.url });
+    await api.patch("/projects/p", { org_chart_image: now.url });
+    expect(api.stored.has(old.key)).toBe(false);
+    expect(api.stored.has(now.key)).toBe(true);
+  });
+
+  it("deleting a project deletes its pictures", async () => {
+    const pic = await upload();
+    await api.patch("/projects/p", { pics: [pic.url] });
+    expect((await api.delete("/projects/p")).status).toBe(204);
+    expect(api.stored.has(pic.key)).toBe(false);
+  });
+
+  it("links outside the media bucket are never touched", async () => {
+    await api.patch("/projects/p", { pics: ["https://elsewhere.example/a.png"] });
+    await api.patch("/projects/p", { pics: [] });
+    expect(api.deleted).toEqual([]);
+  });
+});
+
 describe("cut-off uploads (review on PR #33)", () => {
   const BOUNDARY = "----tcos-test-boundary";
   /** A multipart body whose file part stops after `bytes`, with no closing boundary: the connection was cut. */

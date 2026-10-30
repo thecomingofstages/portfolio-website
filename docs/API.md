@@ -225,6 +225,7 @@ MongoDB's validator rejects wrong shapes. The server also checks what the valida
 - **Deleting a project or track:** refused (`409`) while `tracks.achievements`, `apply` or blocks still point to it.
 - **Renaming a `slug` or `key`:** updates those references in the same request.
 - **Photo consent withdrawn:** when `is_photo_allowed` is set to false, the server unsets `photo` and deletes the file from R2 in the same request.
+- **Media removed:** a write that removes or replaces a media URL deletes the file from R2, unless another document still uses it (see [Uploads](#uploads)).
 - **Item `_id`:** the server adds one to every new list item (`withId`, see [Database access](#database-access)).
 
 ### After a write
@@ -255,7 +256,7 @@ It answers `200 { "revalidated": [...paths] }`, `401` without the right secret, 
 - **Streaming:** Workers have no disk, so uploads stream from the request straight into R2. No middleware that saves to disk first.
 - **Object keys:** `<collection>/<slug or key>/<random id>.<ext>`, e.g. `projects/tcos-2-the-hidden-saloon/<id>.webp`. Names are random, so a file's URL does not reveal a person's name.
 - **Allowed file types:** JPEG, PNG, GIF, WebP and AVIF pictures, and MP4 or WebM video for the hero's `media_url`, recognised from the file's bytes. **Maximum size:** `FILE_SIZE_LIMIT` MB. See [question 1](#open-questions).
-- **Deleting:** `DELETE /api/admin/uploads/:key` refuses (`409`) while any document still uses the file. The editor calls it after a save for each media URL that the save removed or replaced, so a file shared with another page stays.
+- **Deleting:** every admin write that removes or replaces a media URL (a field, a list item, a block, a whole document) deletes that file from R2 in the same request, unless another document still uses it. `DELETE /api/admin/uploads/:key` deletes one file by hand, and refuses (`409`) while any document still uses it.
 
 ## Client components and what they read
 

@@ -39,17 +39,3 @@ describe("driveFileId", () => {
     }
   });
 });
-
-describe("mediaUrlsIn", () => {
-  afterEach(() => vi.unstubAllEnvs());
-
-  it("finds every bucket URL in a document, once", async () => {
-    vi.stubEnv("NEXT_PUBLIC_MEDIA_BASE_URL", "https://media.example.org");
-    vi.resetModules();
-    const { mediaUrlsIn, mediaKey } = await import("./media");
-    const a = "https://media.example.org/pages/home/a.jpg";
-    const b = "https://media.example.org/pages/home/b.mp4";
-    expect(mediaUrlsIn([{ media_url: a, slides: [b, a] }, { url: "https://other.example/c.jpg" }, 3, null])).toEqual([a, b]);
-    expect(mediaKey(b)).toBe("pages/home/b.mp4");
-  });
-});
