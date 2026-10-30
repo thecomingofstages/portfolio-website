@@ -144,16 +144,14 @@ export default function PositionList({ positions }: PositionListProps) {
                 <div className="flex flex-col gap-3 rounded-card bg-background/40 p-5">
                   {/* Audition section heading */}
                   <h4 className="font-heading text-body-lg font-semibold text-accent">
-                    {"<...>"}
+                    {"คลิปประกอบการสมัคร"}
                   </h4>
 
                   <dl className="grid grid-cols-1 gap-4 font-body text-body sm:grid-cols-3">
                     {/* audition.clip_brief */}
                     {clipBrief ? (
                       <div className="flex flex-col gap-0.5 sm:col-span-3">
-                        <dt className="text-muted">
-                          {"รายละเอียดคลิปที่ต้องส่ง"}
-                        </dt>
+                        <dt className="text-muted">{"รายละเอียด"}</dt>
                         <dd className="text-foreground">{clipBrief}</dd>
                       </div>
                     ) : null}
