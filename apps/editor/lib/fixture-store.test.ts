@@ -68,14 +68,9 @@ describe("fixture store", () => {
 describe("fixture store: tracks and rounds", () => {
   beforeEach(() => resetFixtureStore());
 
-  it("renames a track key into the rounds that point to it, and refuses a taken key", () => {
-    const round = body<RoundDoc>("GET", "/api/admin/apply/6600000000000000000000c1");
-    round.positions[0].dept_key = "it";
-    expect(fixtureRequest("PUT", `/api/admin/apply/${round._id}`, round).status).toBe(200);
-
+  it("renames a track key, and refuses a taken key", () => {
     const track = body<TrackDoc>("GET", "/api/admin/tracks/it");
     expect(fixtureRequest("PUT", "/api/admin/tracks/it", { ...track, key: "tech" }).status).toBe(200);
-    expect(body<RoundDoc>("GET", `/api/admin/apply/${round._id}`).positions[0].dept_key).toBe("tech");
 
     expect(fixtureRequest("POST", "/api/admin/tracks", { key: "tech", display_name: "x", is_shown: false }).status).toBe(409);
   });

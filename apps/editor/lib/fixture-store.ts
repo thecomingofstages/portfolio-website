@@ -6,8 +6,7 @@ import type { Block, PageDoc, ProjectDoc, RoundDoc, TrackDoc } from "@/types/adm
  * before the admin API exists"). It answers the paths lib/admin-api.ts calls,
  * with the server's checks the editor relies on: 404 for a missing page or
  * project, 400 for repeated block ids, 409 for a slug or track key that is
- * taken, slug renames carried into `project_slug` references in blocks, and
- * track key renames carried into the rounds' `positions[].dept_key`.
+ * taken, and slug renames carried into `project_slug` references in blocks.
  *
  * Dev only. Saves last until the dev server restarts.
  */
@@ -211,7 +210,6 @@ export function fixtureRequest(method: string, path: string, body?: unknown): Fi
       const track = asStored<TrackDoc>(body, ["achievements"], []);
       if (track.key !== id) {
         if (s.tracks.some((t) => t.key === track.key)) return fail(409, `track with key "${track.key}" already exists`);
-        for (const round of s.rounds) for (const p of round.positions) if (p.dept_key === id) p.dept_key = track.key;
       }
       s.tracks[index] = { ...track, _id: s.tracks[index]._id };
       return ok(s.tracks[index]);

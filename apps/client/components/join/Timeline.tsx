@@ -4,7 +4,7 @@ import type { TimelineEvent } from "@/types/api";
 // TODO(timeline wording): the docs do not specify the exact Thai/English labels;
 // kept in one constants object set to "<...>" until the wording is decided.
 export const LABELS = {
-  heading: "<...>",
+  heading: "กำหนดการรับสมัคร",
   online: "<...>",
 } as const;
 

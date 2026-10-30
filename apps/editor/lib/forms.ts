@@ -86,7 +86,7 @@ export const ROUND_FIELDS: readonly FieldSpec[] = [
       AUDITION,
       { kind: "bool", key: "is_shown", label: "แสดงบนเว็บ" },
     ],
-    // shortcut: dept_key has no field, so a new position fails to save until the form sets it again.
+    // dept_key has no field and is not tied to a track: new positions start with it empty.
     newItem: () => ({ dept_key: "", title: "", is_shown: false }),
   },
   {

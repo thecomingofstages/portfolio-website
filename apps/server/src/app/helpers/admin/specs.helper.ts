@@ -104,7 +104,6 @@ export const applySpec: DocSpec = {
   paths: applyPaths,
   async beforeSave(m, doc) {
     if (typeof doc.project_slug === "string") await assertProjectSlugs(m, [doc.project_slug], "project_slug");
-    await assertTrackKeys(m, strings(doc.positions, "dept_key"), "positions");
   },
 };
 
@@ -113,7 +112,6 @@ export const positionItemSpec: ItemSpec = {
   parent: applySpec,
   field: "positions",
   schema: positionSchema,
-  check: (m, item) => assertTrackKeys(m, [item.dept_key as string], "positions"),
 };
 
 export const timelineItemSpec: ItemSpec = { name: "timeline event", parent: applySpec, field: "timeline", schema: timelineEventSchema };

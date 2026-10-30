@@ -42,6 +42,7 @@ export default function PositionList({ positions }: PositionListProps) {
   return (
     <section className="flex flex-col gap-4">
       {/* TODO(positions wording): the docs do not specify the exact labels for position flags or audition fields; using "<...>" until confirmed. */}
+      <h3 className="font-heading text-h3 font-semibold text-foreground">ตำแหน่งที่เปิดรับ</h3>
       <ul className="flex flex-col gap-4">
         {positions.map((position, index) => {
           const deptName = nonEmpty(position.dept_name);

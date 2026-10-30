@@ -50,8 +50,7 @@ export default function Qualifications({ qualifications }: QualificationsProps) 
 
   return (
     <section className="flex flex-col gap-3 rounded-card border border-border bg-card-bg p-6">
-      {/* TODO(qualifications wording): the docs give no Thai heading; "Qualifications" follows tcos_ui_flow.drawio. */}
-      <h3 className="font-heading text-h3 font-semibold text-foreground">Qualifications</h3>
+      <h3 className="font-heading text-h3 font-semibold text-foreground">คุณสมบัติ</h3>
       <ul className="list-disc space-y-2 pl-6 font-body text-body text-foreground marker:text-accent">
         {ageText || noteText ? (
           <li>

@@ -159,7 +159,7 @@ describe("PositionList", () => {
     const positionHeadings = screen
       .getAllByRole("heading", { level: 3 })
       .map((h) => h.textContent);
-    expect(positionHeadings).toEqual([fixturePosition.title, "<...>"]);
+    expect(positionHeadings).toEqual(["ตำแหน่งที่เปิดรับ", fixturePosition.title, "<...>"]);
 
     const firstPositionItem = container.querySelector("section > ul > li") as HTMLElement;
     const pieceList = within(firstPositionItem).getAllByRole("listitem");

@@ -219,10 +219,10 @@ MongoDB's validator rejects wrong shapes. The server also checks what the valida
 
 - **Blocks:** `id`s are unique within a page's `blocks`.
 - **References:**
-  - every `dept_key` matches a `tracks.key`;
+  - every `dept_key` of a team member or a block matches a `tracks.key` (a position's `dept_key` is free text, not checked);
   - every `project_slug` (blocks, achievements, `apply`) matches a project;
   - `project_slug` in a data block may be `null`.
-- **Deleting a project or track:** refused (`409`) while `tracks.achievements`, `apply` or blocks still point to it.
+- **Deleting a project or track:** refused (`409`) while `tracks.achievements`, `apply` or blocks (for a track: team members or blocks) still point to it.
 - **Renaming a `slug` or `key`:** updates those references in the same request.
 - **Photo consent withdrawn:** when `is_photo_allowed` is set to false, the server unsets `photo` and deletes the file from R2 in the same request.
 - **Media removed:** a write that removes or replaces a media URL deletes the file from R2, unless another document still uses it (see [Uploads](#uploads)).
