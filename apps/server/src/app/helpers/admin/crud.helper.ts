@@ -6,8 +6,8 @@
  * - PUT replaces; PATCH merges the body into the stored document, then is checked
  *   exactly like a PUT, so both go through the same validation.
  * - New list items get an `_id` (withId); a whole-document PUT keeps given item ids.
- * - Every write that removes or replaces a media URL deletes its file from R2,
- *   unless another document still uses it (deleteRemovedMedia).
+ * - Every write that removes or replaces a media URL takes its file off the site,
+ *   unless another document still uses it (deleteRemovedMedia, after the pages refresh).
  */
 import type { Collection, Document, ObjectId, Sort } from "mongodb";
 import type { ZodTypeAny } from "zod";
@@ -130,8 +130,8 @@ export async function replaceDoc(m: Models, ctx: WriteContext, spec: DocSpec, id
   await spec.beforeSave?.(m, doc, before);
   await spec.collection(m).replaceOne({ _id: before._id }, doc);
   const saved = { ...doc, _id: before._id };
-  await deleteRemovedMedia(m, ctx, before, saved);
   await refresh(m, ctx, spec, [before, saved]);
+  await deleteRemovedMedia(m, ctx, before, saved);
   return saved;
 }
 
@@ -139,8 +139,8 @@ export async function deleteDoc(m: Models, ctx: WriteContext, spec: DocSpec, id:
   const before = await getDoc(m, spec, id);
   await spec.beforeDelete?.(m, before);
   await spec.collection(m).deleteOne({ _id: before._id });
-  await deleteRemovedMedia(m, ctx, before, null);
   await refresh(m, ctx, spec, [before]);
+  await deleteRemovedMedia(m, ctx, before, null);
 }
 
 // ---------------------------------------------------------------------------
@@ -187,8 +187,8 @@ export async function replaceItem(m: Models, ctx: WriteContext, spec: ItemSpec, 
     { _id: parent._id, [`${spec.field}._id`]: before._id },
     { $set: { [`${spec.field}.$`]: item, ...touchSet(spec) } },
   );
-  await deleteRemovedMedia(m, ctx, before, item);
   await refresh(m, ctx, spec.parent, [parent]);
+  await deleteRemovedMedia(m, ctx, before, item);
   return item;
 }
 
@@ -198,8 +198,8 @@ export async function deleteItem(m: Models, ctx: WriteContext, spec: ItemSpec, i
     { _id: parent._id },
     { $pull: { [spec.field]: { _id: before._id } }, ...(spec.parent.touch ? { $set: touchSet(spec) } : {}) } as Document,
   );
-  await deleteRemovedMedia(m, ctx, before, null);
   await refresh(m, ctx, spec.parent, [parent]);
+  await deleteRemovedMedia(m, ctx, before, null);
 }
 
 // ---------------------------------------------------------------------------
@@ -214,7 +214,7 @@ export async function saveBlocks(m: Models, ctx: WriteContext, spec: DocSpec, id
   const blocks = blocksSchema.parse(body) as Doc[];
   await spec.checkBlocks?.(m, blocks, parent);
   await spec.collection(m).updateOne({ _id: parent._id }, { $set: { blocks, ...(spec.touch ? { updated_at: new Date() } : {}) } });
-  await deleteRemovedMedia(m, ctx, parent.blocks, blocks);
   await refresh(m, ctx, spec, [parent]);
+  await deleteRemovedMedia(m, ctx, parent.blocks, blocks);
   return blocks;
 }

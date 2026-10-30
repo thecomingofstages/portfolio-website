@@ -150,52 +150,64 @@ const MEDIA_FIELDS = {
   pages: BLOCK_MEDIA,
 } as const;
 
+/** Calls `visit` with every string in `value` (a document, an item, a blocks array) and the field it is in. */
+function eachString(value: unknown, visit: (s: string, field?: string) => void, field?: string) {
+  if (typeof value === "string") visit(value, field);
+  else if (Array.isArray(value)) for (const v of value) eachString(v, visit, field);
+  else if (value && typeof value === "object" && !(value instanceof Date) && !("_bsontype" in value)) {
+    for (const [k, v] of Object.entries(value)) eachString(v, visit, k);
+  }
+}
+
+/** The URLs of `urls` that any document still points to, in any media field: one query per collection. */
+async function urlsInUse(m: Models, urls: readonly string[]): Promise<Set<string>> {
+  const used = new Set<string>();
+  if (urls.length === 0) return used;
+  const wanted = new Set(urls);
+  for (const [name, fields] of Object.entries(MEDIA_FIELDS)) {
+    const filter = { $or: fields.map((f) => ({ [f]: { $in: urls } })) };
+    const projection = Object.fromEntries(fields.map((f) => [f, 1]));
+    const docs = await m[name as keyof typeof MEDIA_FIELDS].find(filter as never, { projection }).toArray();
+    for (const doc of docs) eachString(doc, (s) => wanted.has(s) && used.add(s));
+  }
+  return used;
+}
+
 /** True while any document still points to this URL, in any media field (review on PR #28). */
 export async function isUrlReferenced(m: Models, url: string): Promise<boolean> {
-  for (const [name, fields] of Object.entries(MEDIA_FIELDS)) {
-    const filter = { $or: fields.map((f) => ({ [f]: url })) };
-    if (await m[name as keyof typeof MEDIA_FIELDS].countDocuments(filter as never, { limit: 1 })) return true;
-  }
-  return false;
+  return (await urlsInUse(m, [url])).size > 0;
 }
 
+/** Where removed files wait before they are gone: an R2 lifecycle rule empties it after 30 days (docs/API.md "Uploads"). */
+export const TRASH = "trash/";
+
 /**
- * Deletes from R2 the files of these URLs that no document points to any more.
- * Runs after the write, so it sees the saved state: a file kept in the same document,
- * moved elsewhere, or shared with another page or project stays.
- * URLs outside the media bucket are never touched.
+ * After a write: every media file `before` used and `after` no longer does leaves the site,
+ * unless another document still uses it. Team photos (personal data, consent) are deleted;
+ * other files move to trash/, so a picture removed by mistake can still be restored.
+ * Never throws: the write already happened. URLs outside the media bucket are never touched.
  */
-async function deleteUnusedMedia(m: Models, ctx: WriteContext, urls: readonly (string | undefined)[]) {
-  const candidates = [...new Set(urls)].filter((u): u is string => !!u && mediaKey(u, ctx.mediaBaseUrl) !== null);
-  const unused: string[] = [];
-  for (const url of candidates) if (!(await isUrlReferenced(m, url))) unused.push(url);
-  const keys = unused.map((u) => mediaKey(u, ctx.mediaBaseUrl) as string);
-  if (keys.length === 0) return;
+export async function deleteRemovedMedia(m: Models, ctx: WriteContext, before: unknown, after: unknown) {
   try {
-    await ctx.bucket.delete(keys);
+    const kept = new Set<string>();
+    eachString(after, (s) => kept.add(s));
+    // URL → whether it was a team photo anywhere in `before`.
+    const removed = new Map<string, boolean>();
+    eachString(before, (s, field) => {
+      if (!kept.has(s) && mediaKey(s, ctx.mediaBaseUrl) !== null) removed.set(s, removed.get(s) === true || field === "photo");
+    });
+    const used = await urlsInUse(m, [...removed.keys()]);
+    for (const [url, isPhoto] of removed) {
+      if (used.has(url)) continue;
+      const key = mediaKey(url, ctx.mediaBaseUrl) as string;
+      if (!isPhoto) {
+        const file = await ctx.bucket.get(key);
+        if (file) await ctx.bucket.put(TRASH + key, file.body, { httpMetadata: file.httpMetadata });
+      }
+      await ctx.bucket.delete(key);
+    }
   } catch (err) {
-    // The database no longer points to the file; log (without names or URLs) so it can be cleaned up.
-    Logger.error("R2: could not delete media files", err, { count: keys.length });
+    // The database no longer points to these files; log (without names or URLs) so they can be cleaned up.
+    Logger.error("R2: could not clean up removed media files", err);
   }
-}
-
-/** Every media bucket URL anywhere in `value` (a document, an item, a blocks array). */
-function mediaUrlsIn(value: unknown, mediaBaseUrl: string, found = new Set<string>()): Set<string> {
-  if (typeof value === "string") {
-    if (mediaKey(value, mediaBaseUrl) !== null) found.add(value);
-  } else if (Array.isArray(value)) {
-    for (const v of value) mediaUrlsIn(v, mediaBaseUrl, found);
-  } else if (value && typeof value === "object" && !(value instanceof Date) && !("_bsontype" in value)) {
-    for (const v of Object.values(value)) mediaUrlsIn(v, mediaBaseUrl, found);
-  }
-  return found;
-}
-
-/**
- * After a write: deletes from R2 every media file `before` used and `after` no longer does,
- * unless another document still uses it. `after` is null for a delete.
- */
-export function deleteRemovedMedia(m: Models, ctx: WriteContext, before: unknown, after: unknown) {
-  const kept = mediaUrlsIn(after, ctx.mediaBaseUrl);
-  return deleteUnusedMedia(m, ctx, [...mediaUrlsIn(before, ctx.mediaBaseUrl)].filter((url) => !kept.has(url)));
 }
