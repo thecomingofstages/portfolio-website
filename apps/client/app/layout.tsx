@@ -24,7 +24,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="th" className={`${prompt.variable} ${sarabun.variable}`}>
+    // data-scroll-behavior: Next.js turns the smooth scroll (globals.css) off while it moves to a new page.
+    <html lang="th" className={`${prompt.variable} ${sarabun.variable}`} data-scroll-behavior="smooth">
       <body className="antialiased">
         <Nav />
         <main className="page-width py-8">{children}</main>
