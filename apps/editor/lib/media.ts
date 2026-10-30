@@ -13,24 +13,6 @@ export function isMediaUrl(url: string): boolean {
   return mediaBase !== "" && url.trim().startsWith(`${mediaBase}/`);
 }
 
-/** The bucket's object key of a media URL ("<base>/pages/home/x.jpg" → "pages/home/x.jpg"), or null. */
-export function mediaKey(url: string): string | null {
-  return isMediaUrl(url) ? url.trim().slice(mediaBase.length + 1) : null;
-}
-
-/** Every media bucket URL anywhere in `value` (a block, a document), each once. */
-export function mediaUrlsIn(value: unknown): string[] {
-  const found = new Set<string>();
-  const walk = (v: unknown) => {
-    if (typeof v === "string") {
-      if (isMediaUrl(v)) found.add(v.trim());
-    } else if (Array.isArray(v)) v.forEach(walk);
-    else if (v && typeof v === "object") Object.values(v).forEach(walk);
-  };
-  walk(value);
-  return [...found];
-}
-
 /**
  * The file id of a Google Drive share link, or null for any other URL.
  * Takes drive.google.com/file/d/<id>/view, drive.google.com/open?id=<id> and …/uc?id=<id>.

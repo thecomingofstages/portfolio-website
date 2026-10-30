@@ -9,7 +9,7 @@
  * - Renaming a slug or key updates its references in the same request.
  * - A photo that is withdrawn (consent removed) or replaced is deleted from R2.
  */
-import type { Models, ProjectDoc } from "../../models";
+import type { Models } from "../../models";
 import { ApiError } from "../../utils/ApiError";
 import { Logger } from "../../utils/Logger";
 
@@ -130,7 +130,7 @@ export async function renameTrackKey(m: Models, from: string, to: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Photos: withdrawn or replaced photos leave R2 too
+// Media: removed, replaced or withdrawn files leave R2 too
 
 /** The R2 object key of a URL in the site media bucket, or null for any other URL. */
 export function mediaKey(url: string | undefined | null, mediaBaseUrl: string): string | null {
@@ -150,37 +150,64 @@ const MEDIA_FIELDS = {
   pages: BLOCK_MEDIA,
 } as const;
 
+/** Calls `visit` with every string in `value` (a document, an item, a blocks array) and the field it is in. */
+function eachString(value: unknown, visit: (s: string, field?: string) => void, field?: string) {
+  if (typeof value === "string") visit(value, field);
+  else if (Array.isArray(value)) for (const v of value) eachString(v, visit, field);
+  else if (value && typeof value === "object" && !(value instanceof Date) && !("_bsontype" in value)) {
+    for (const [k, v] of Object.entries(value)) eachString(v, visit, k);
+  }
+}
+
+/** The URLs of `urls` that any document still points to, in any media field: one query per collection. */
+async function urlsInUse(m: Models, urls: readonly string[]): Promise<Set<string>> {
+  const used = new Set<string>();
+  if (urls.length === 0) return used;
+  const wanted = new Set(urls);
+  for (const [name, fields] of Object.entries(MEDIA_FIELDS)) {
+    const filter = { $or: fields.map((f) => ({ [f]: { $in: urls } })) };
+    const projection = Object.fromEntries(fields.map((f) => [f, 1]));
+    const docs = await m[name as keyof typeof MEDIA_FIELDS].find(filter as never, { projection }).toArray();
+    for (const doc of docs) eachString(doc, (s) => wanted.has(s) && used.add(s));
+  }
+  return used;
+}
+
 /** True while any document still points to this URL, in any media field (review on PR #28). */
 export async function isUrlReferenced(m: Models, url: string): Promise<boolean> {
-  for (const [name, fields] of Object.entries(MEDIA_FIELDS)) {
-    const filter = { $or: fields.map((f) => ({ [f]: url })) };
-    if (await m[name as keyof typeof MEDIA_FIELDS].countDocuments(filter as never, { limit: 1 })) return true;
-  }
-  return false;
+  return (await urlsInUse(m, [url])).size > 0;
 }
+
+/** Where removed files wait before they are gone: an R2 lifecycle rule empties it after 30 days (docs/API.md "Uploads"). */
+export const TRASH = "trash/";
 
 /**
- * Deletes from R2 the files of these URLs that no document points to any more.
- * Runs after the write, so it sees the saved state: a photo kept by the same person,
- * moved to another person, or shared with another project stays.
- * URLs outside the media bucket are never touched.
+ * After a write: every media file `before` used and `after` no longer does leaves the site,
+ * unless another document still uses it. Team photos (personal data, consent) are deleted;
+ * other files move to trash/, so a picture removed by mistake can still be restored.
+ * Never throws: the write already happened. URLs outside the media bucket are never touched.
  */
-export async function deleteUnusedPhotos(m: Models, ctx: WriteContext, urls: readonly (string | undefined)[]) {
-  const candidates = [...new Set(urls)].filter((u): u is string => !!u && mediaKey(u, ctx.mediaBaseUrl) !== null);
-  const unused: string[] = [];
-  for (const url of candidates) if (!(await isUrlReferenced(m, url))) unused.push(url);
-  const keys = unused.map((u) => mediaKey(u, ctx.mediaBaseUrl) as string);
-  if (keys.length === 0) return;
+export async function deleteRemovedMedia(m: Models, ctx: WriteContext, before: unknown, after: unknown) {
   try {
-    await ctx.bucket.delete(keys);
+    const kept = new Set<string>();
+    eachString(after, (s) => kept.add(s));
+    // URL → whether it was a team photo anywhere in `before`.
+    const removed = new Map<string, boolean>();
+    eachString(before, (s, field) => {
+      if (!kept.has(s) && mediaKey(s, ctx.mediaBaseUrl) !== null) removed.set(s, removed.get(s) === true || field === "photo");
+    });
+    const used = await urlsInUse(m, [...removed.keys()]);
+    for (const [url, isPhoto] of removed) {
+      if (used.has(url)) continue;
+      const key = mediaKey(url, ctx.mediaBaseUrl) as string;
+      if (!isPhoto) {
+        const file = await ctx.bucket.get(key);
+        if (file) await ctx.bucket.put(TRASH + key, file.body, { httpMetadata: file.httpMetadata });
+      }
+      await ctx.bucket.delete(key);
+    }
   } catch (err) {
-    // The database no longer points to the file; log (without names or URLs) so it can be cleaned up.
-    Logger.error("R2: could not delete photo files", err, { count: keys.length });
+    // The database no longer points to these files; log (without names or URLs) so they can be cleaned up.
+    Logger.error("R2: could not clean up removed media files", err);
   }
-}
-
-/** Photo URLs in `before` that are not in `after` at all (compared by URL, not by member _id). */
-export function removedPhotos(before: ProjectDoc["team"], after: ProjectDoc["team"]): string[] {
-  const kept = new Set((after ?? []).map((m) => m.photo));
-  return (before ?? []).flatMap((m) => (m.photo && !kept.has(m.photo) ? [m.photo] : []));
 }

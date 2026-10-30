@@ -225,6 +225,7 @@ MongoDB's validator rejects wrong shapes. The server also checks what the valida
 - **Deleting a project or track:** refused (`409`) while `tracks.achievements`, `apply` or blocks still point to it.
 - **Renaming a `slug` or `key`:** updates those references in the same request.
 - **Photo consent withdrawn:** when `is_photo_allowed` is set to false, the server unsets `photo` and deletes the file from R2 in the same request.
+- **Media removed:** a write that removes or replaces a media URL deletes the file from R2, unless another document still uses it (see [Uploads](#uploads)).
 - **Item `_id`:** the server adds one to every new list item (`withId`, see [Database access](#database-access)).
 
 ### After a write
@@ -255,7 +256,8 @@ It answers `200 { "revalidated": [...paths] }`, `401` without the right secret, 
 - **Streaming:** Workers have no disk, so uploads stream from the request straight into R2. No middleware that saves to disk first.
 - **Object keys:** `<collection>/<slug or key>/<random id>.<ext>`, e.g. `projects/tcos-2-the-hidden-saloon/<id>.webp`. Names are random, so a file's URL does not reveal a person's name.
 - **Allowed file types:** JPEG, PNG, GIF, WebP and AVIF pictures, and MP4 or WebM video for the hero's `media_url`, recognised from the file's bytes. **Maximum size:** `FILE_SIZE_LIMIT` MB. See [question 1](#open-questions).
-- **Deleting:** `DELETE /api/admin/uploads/:key` refuses (`409`) while any document still uses the file. The editor calls it after a save for each media URL that the save removed or replaced, so a file shared with another page stays.
+- **Removing:** every admin write that removes or replaces a media URL (a field, a list item, a block, a whole document) takes that file off the site in the same request, after the pages refresh, unless another document still uses it. The file moves to `trash/<key>`, so a picture removed by mistake can be copied back. Team photos (`team.photo`) are deleted outright, never kept: they are personal data under consent. A failed cleanup is logged and never fails the write. `DELETE /api/admin/uploads/:key` deletes one file by hand, and refuses (`409`) while any document still uses it.
+- **Trash, set up in the Cloudflare dashboard:** an R2 lifecycle rule on the bucket deletes objects under the `trash/` prefix 30 days after they are created. The bucket is public, so block `/trash/*` on its public URL too (a WAF custom rule on the custom domain, and the `r2.dev` URL off).
 
 ## Client components and what they read
 

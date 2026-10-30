@@ -6,6 +6,8 @@
  * - PUT replaces; PATCH merges the body into the stored document, then is checked
  *   exactly like a PUT, so both go through the same validation.
  * - New list items get an `_id` (withId); a whole-document PUT keeps given item ids.
+ * - Every write that removes or replaces a media URL takes its file off the site,
+ *   unless another document still uses it (deleteRemovedMedia, after the pages refresh).
  */
 import type { Collection, Document, ObjectId, Sort } from "mongodb";
 import type { ZodTypeAny } from "zod";
@@ -13,7 +15,7 @@ import { toObjectId, withId } from "../../database/db";
 import type { Models } from "../../models";
 import { blocksSchema } from "../../schemas/admin/block.schema";
 import { ApiError } from "../../utils/ApiError";
-import type { WriteContext } from "./checks.helper";
+import { deleteRemovedMedia, type WriteContext } from "./checks.helper";
 
 export type Doc = Document & { _id?: ObjectId };
 type Item = Document & { _id: ObjectId };
@@ -32,10 +34,7 @@ export type DocSpec = {
   touch?: boolean;
   /** S7 checks and rename cascades before a create/replace; `before` is null on create. */
   beforeSave?: (m: Models, doc: Doc, before: Doc | null) => Promise<void>;
-  /** After a successful create/replace: photo cleanup. */
-  afterSave?: (m: Models, ctx: WriteContext, doc: Doc, before: Doc | null) => Promise<void>;
   beforeDelete?: (m: Models, doc: Doc) => Promise<void>;
-  afterDelete?: (m: Models, ctx: WriteContext, doc: Doc) => Promise<void>;
   /** The site pages this resource's documents appear on (S9); given every version of the written document. */
   paths?: (m: Models, docs: (Doc | null)[]) => Promise<string[]>;
   /** Checks for a whole blocks array (resources with blocks). */
@@ -50,8 +49,6 @@ export type ItemSpec = {
   check?: (m: Models, item: Item, parent: Doc) => Promise<void>;
   /** How a PATCH body merges into the stored item (default: shallow). */
   mergePatch?: (stored: Doc, patch: Doc) => Doc;
-  /** After a create/replace/delete; `before` or `after` is null. */
-  afterChange?: (m: Models, ctx: WriteContext, before: Item | null, after: Item | null) => Promise<void>;
 };
 
 function asObject(body: unknown): Doc {
@@ -120,7 +117,6 @@ export async function createDoc(m: Models, ctx: WriteContext, spec: DocSpec, bod
   await spec.beforeSave?.(m, doc, null);
   const { insertedId } = await spec.collection(m).insertOne(doc);
   const saved = { ...doc, _id: insertedId };
-  await spec.afterSave?.(m, ctx, saved, null);
   await refresh(m, ctx, spec, [saved]);
   return saved;
 }
@@ -134,8 +130,8 @@ export async function replaceDoc(m: Models, ctx: WriteContext, spec: DocSpec, id
   await spec.beforeSave?.(m, doc, before);
   await spec.collection(m).replaceOne({ _id: before._id }, doc);
   const saved = { ...doc, _id: before._id };
-  await spec.afterSave?.(m, ctx, saved, before);
   await refresh(m, ctx, spec, [before, saved]);
+  await deleteRemovedMedia(m, ctx, before, saved);
   return saved;
 }
 
@@ -143,8 +139,8 @@ export async function deleteDoc(m: Models, ctx: WriteContext, spec: DocSpec, id:
   const before = await getDoc(m, spec, id);
   await spec.beforeDelete?.(m, before);
   await spec.collection(m).deleteOne({ _id: before._id });
-  await spec.afterDelete?.(m, ctx, before);
   await refresh(m, ctx, spec, [before]);
+  await deleteRemovedMedia(m, ctx, before, null);
 }
 
 // ---------------------------------------------------------------------------
@@ -176,7 +172,6 @@ export async function createItem(m: Models, ctx: WriteContext, spec: ItemSpec, i
     { _id: parent._id },
     { $push: { [spec.field]: item }, ...(spec.parent.touch ? { $set: touchSet(spec) } : {}) } as Document,
   );
-  await spec.afterChange?.(m, ctx, null, item);
   await refresh(m, ctx, spec.parent, [parent]);
   return item;
 }
@@ -192,8 +187,8 @@ export async function replaceItem(m: Models, ctx: WriteContext, spec: ItemSpec, 
     { _id: parent._id, [`${spec.field}._id`]: before._id },
     { $set: { [`${spec.field}.$`]: item, ...touchSet(spec) } },
   );
-  await spec.afterChange?.(m, ctx, before, item);
   await refresh(m, ctx, spec.parent, [parent]);
+  await deleteRemovedMedia(m, ctx, before, item);
   return item;
 }
 
@@ -203,8 +198,8 @@ export async function deleteItem(m: Models, ctx: WriteContext, spec: ItemSpec, i
     { _id: parent._id },
     { $pull: { [spec.field]: { _id: before._id } }, ...(spec.parent.touch ? { $set: touchSet(spec) } : {}) } as Document,
   );
-  await spec.afterChange?.(m, ctx, before, null);
   await refresh(m, ctx, spec.parent, [parent]);
+  await deleteRemovedMedia(m, ctx, before, null);
 }
 
 // ---------------------------------------------------------------------------
@@ -220,5 +215,6 @@ export async function saveBlocks(m: Models, ctx: WriteContext, spec: DocSpec, id
   await spec.checkBlocks?.(m, blocks, parent);
   await spec.collection(m).updateOne({ _id: parent._id }, { $set: { blocks, ...(spec.touch ? { updated_at: new Date() } : {}) } });
   await refresh(m, ctx, spec, [parent]);
+  await deleteRemovedMedia(m, ctx, parent.blocks, blocks);
   return blocks;
 }

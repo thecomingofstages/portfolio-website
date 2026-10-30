@@ -133,22 +133,6 @@ export async function uploadFile(
   return answer;
 }
 
-/**
- * DELETE /api/admin/uploads/:key for each media URL that a save took out. The server keeps
- * (409) a file any document still uses, so a file shared with another page stays. Cleanup is
- * best effort: the save already worked, so a file that cannot be deleted is left in the bucket.
- */
-export async function deleteUnusedMedia(urls: string[]): Promise<void> {
-  if (process.env.USE_FIXTURES === "true") return;
-  const { mediaKey } = await import("./media");
-  for (const url of urls) {
-    const key = mediaKey(url);
-    if (!key) continue;
-    // Any failure (409 still used, a dropped connection) leaves the file: the save already worked.
-    await call("DELETE", `/api/admin/uploads/${key.split("/").map(enc).join("/")}`).catch(() => {});
-  }
-}
-
 // ---------------------------------------------------------------------------
 
 function settings() {

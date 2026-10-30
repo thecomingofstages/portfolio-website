@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Prompt, Sarabun } from "next/font/google";
+import Reveal from "@/components/Reveal";
 import Nav from "@/components/Nav";
 import "./globals.css";
 
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className="antialiased">
         <Nav />
         <main className="page-width py-8">{children}</main>
+        <Reveal />
       </body>
     </html>
   );

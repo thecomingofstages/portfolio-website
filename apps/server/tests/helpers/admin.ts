@@ -20,6 +20,8 @@ export async function adminClient(db: ReturnType<typeof useTestDb>, overrides: P
   /** Files in the fake bucket: key → bytes and content type. */
   const stored = new Map<string, { bytes: Uint8Array; type?: string; parts: number }>();
   const multipart = { started: 0, aborted: 0, failPart: 0 };
+  /** Set to make every R2 delete fail. */
+  const faults = { delete: false };
   const join = (list: Uint8Array[]) => {
     const out = new Uint8Array(list.reduce((n, b) => n + b.length, 0));
     let at = 0;
@@ -28,9 +30,14 @@ export async function adminClient(db: ReturnType<typeof useTestDb>, overrides: P
   };
   const bucket = {
     delete: async (keys: string | string[]) => {
+      if (faults.delete) throw new Error("R2 is down");
       for (const k of [keys].flat()) (deleted.push(k), stored.delete(k));
     },
     head: async (key: string) => (stored.has(key) ? { key } : null),
+    get: async (key: string) => {
+      const file = stored.get(key);
+      return file ? { body: file.bytes, httpMetadata: { contentType: file.type } } : null;
+    },
     put: async (key: string, body: Uint8Array, opts?: { httpMetadata?: { contentType?: string } }) => {
       stored.set(key, { bytes: new Uint8Array(body), type: opts?.httpMetadata?.contentType, parts: 1 });
     },
@@ -64,6 +71,7 @@ export async function adminClient(db: ReturnType<typeof useTestDb>, overrides: P
   return {
     /** R2 keys deleted so far. */
     deleted,
+    faults,
     /** Files in the fake bucket, and multipart upload counters. */
     stored,
     multipart,

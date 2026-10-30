@@ -157,6 +157,71 @@ describe("DELETE /api/admin/uploads/:key", () => {
     const member = (await api.post("/projects/p/team", memberBody({ photo: url, is_photo_allowed: true }))).body._id;
     await api.patch(`/projects/p/team/${member}`, { is_photo_allowed: false });
     expect(api.stored.has(key)).toBe(false);
+    expect(api.stored.has(`trash/${key}`)).toBe(false);
+  });
+});
+
+describe("a write that removes a media URL takes its file off the site", () => {
+  const upload = async () => (await api.upload("collection=projects&owner=p", file(PNG))).body as { key: string; url: string };
+  const imageBlock = (id: string, url: string) => ({ id, type: "image", is_shown: true, url });
+
+  it("a blocks save deletes the picture of a removed block, and keeps the others", async () => {
+    const kept = await upload();
+    const dropped = await upload();
+    await api.put("/projects/p/blocks", [imageBlock("a", kept.url), imageBlock("b", dropped.url)]);
+    expect((await api.put("/projects/p/blocks", [imageBlock("a", kept.url)])).status).toBe(200);
+    expect(api.stored.has(dropped.key)).toBe(false);
+    expect(api.stored.has(kept.key)).toBe(true);
+    // Not gone yet: it waits in trash/, same bytes, until the lifecycle rule empties it.
+    expect(api.stored.get(`trash/${dropped.key}`)?.bytes).toEqual(file(PNG));
+    expect(api.stored.has(`trash/${kept.key}`)).toBe(false);
+  });
+
+  it("a removed team photo is deleted outright, never kept in trash/", async () => {
+    const photo = await upload();
+    const member = (await api.post("/projects/p/team", memberBody({ photo: photo.url, is_photo_allowed: true }))).body._id;
+    await api.delete(`/projects/p/team/${member}`);
+    expect(api.stored.has(photo.key)).toBe(false);
+    expect(api.stored.has(`trash/${photo.key}`)).toBe(false);
+  });
+
+  it("the save still succeeds when R2 cannot clean up", async () => {
+    const pic = await upload();
+    await api.patch("/projects/p", { pics: [pic.url] });
+    api.faults.delete = true;
+    const res = await api.patch("/projects/p", { pics: [] });
+    expect(res.status).toBe(200);
+    expect(res.body.pics).toEqual([]);
+  });
+
+  it("a picture another document still uses stays", async () => {
+    const shared = await upload();
+    await api.post("/projects", projectBody("q", { pics: [shared.url] }));
+    await api.patch("/projects/p", { pics: [shared.url] });
+    await api.patch("/projects/p", { pics: [] });
+    expect(api.stored.has(shared.key)).toBe(true);
+  });
+
+  it("replacing a picture deletes the old one", async () => {
+    const old = await upload();
+    const now = await upload();
+    await api.patch("/projects/p", { org_chart_image: old.url });
+    await api.patch("/projects/p", { org_chart_image: now.url });
+    expect(api.stored.has(old.key)).toBe(false);
+    expect(api.stored.has(now.key)).toBe(true);
+  });
+
+  it("deleting a project deletes its pictures", async () => {
+    const pic = await upload();
+    await api.patch("/projects/p", { pics: [pic.url] });
+    expect((await api.delete("/projects/p")).status).toBe(204);
+    expect(api.stored.has(pic.key)).toBe(false);
+  });
+
+  it("links outside the media bucket are never touched", async () => {
+    await api.patch("/projects/p", { pics: ["https://elsewhere.example/a.png"] });
+    await api.patch("/projects/p", { pics: [] });
+    expect(api.deleted).toEqual([]);
   });
 });
 
