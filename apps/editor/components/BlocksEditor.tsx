@@ -2,7 +2,7 @@
 
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import { saveBlocks } from "@/app/actions";
-import { AddBlockDialog, ImageDialog } from "@/components/BlockDialogs";
+import { AddBlockDialog, MediaDialog } from "@/components/BlockDialogs";
 import FieldInput from "@/components/FieldInput";
 import { useSaveable } from "@/components/SaveGroup";
 import { SaveStatus, ShownMark, Switch } from "@/components/ui";
@@ -324,9 +324,10 @@ export default function BlocksEditor({
 
       {adding !== null ? <AddBlockDialog onPick={(type) => insert(adding, type)} onClose={() => setAdding(null)} /> : null}
       {picking && pickingRow ? (
-        <ImageDialog
+        <MediaDialog
           current={typeof pickingValue === "string" ? pickingValue : ""}
           uploadTo={uploadTo}
+          video={pickingRow.block.type === "hero" && picking.path === "media_url" && pickingRow.block.media_kind === "video"}
           canRemove={NULLABLE_IMAGES.has(picking.path)}
           onPick={(url) => {
             update(pickingRow.key, setPath(pickingRow.block, picking.path, url));

@@ -4,5 +4,11 @@ MONGODB_URI=
 JWT_SECRET=
 REVALIDATE_SECRET=
 
+# Vars, set in the Cloudflare dashboard in production (not in wrangler.jsonc)
+# Public URL of the R2 media bucket
+MEDIA_BASE_URL=
+# The client's /api/revalidate, e.g. http://localhost:3000/api/revalidate
+REVALIDATE_URL=
+
 # Local only: turns on Swagger UI at http://localhost:8787/api/docs
 DOCS_ENABLED=true

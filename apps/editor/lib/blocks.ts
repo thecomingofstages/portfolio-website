@@ -91,7 +91,7 @@ export const blockInfo: Record<BlockType, BlockInfo> = {
       { kind: "text", key: "subtitle", label: "Subtitle" },
       { kind: "text", key: "media_url", label: "Media URL", required: true, image: true, hint: "รูปหรือวิดีโอ ถ้าเป็นสไลด์โชว์ให้ใส่สไลด์แรก" },
       { kind: "enum", key: "media_kind", label: "Media kind", options: ["image", "video", "slideshow"] },
-      { kind: "strings", key: "slides", label: "Slides", images: true, hint: "ใช้กับสไลด์โชว์เท่านั้น ใส่ลิงก์รูปที่ต่อจากสไลด์แรก บรรทัดละรูป" },
+      { kind: "strings", key: "slides", label: "Slides", images: true, hint: "ใช้กับสไลด์โชว์เท่านั้น ใส่รูปที่ต่อจากสไลด์แรก" },
       { kind: "int", key: "slide_seconds", label: "Seconds per slide", nullable: true, hint: "เว้นว่างไว้: ใช้ค่าตั้งต้นของเว็บ" },
       buttons(false),
     ],

@@ -40,11 +40,11 @@ Server values are Worker settings: **secrets** are set with `npx wrangler secret
 | `JWT_SECRET` | server | secret | Signs and checks admin tokens |
 | `REVALIDATE_SECRET` | server | secret | Sent with calls to Next.js's `/api/revalidate` |
 | `MEDIA_BUCKET` | server | R2 binding | The site media bucket (see [Uploads](#uploads)). No R2 access keys are needed |
-| `MEDIA_BASE_URL` | server | var | Public URL of that bucket, e.g. a custom domain `<...>` |
-| `REVALIDATE_URL` | server | var | Where to tell Next.js a page changed |
+| `MEDIA_BASE_URL` | server | var | Public URL of that bucket, e.g. a custom domain `<...>`. Set in the Cloudflare dashboard, not in `wrangler.jsonc` |
+| `REVALIDATE_URL` | server | var | Where to tell Next.js a page changed. Set in the Cloudflare dashboard, not in `wrangler.jsonc` |
 | `API_URL` | client | env | The server's base URL (the Worker's URL) |
 | `REVALIDATE_SECRET` | client | env | Checks calls to `/api/revalidate` |
-| `MEDIA_BASE_URL` | client | env | The same bucket URL, allowed for `next/image` (read at build time) |
+| `MEDIA_BASE_URL` | client | env | The same bucket URL, allowed for `next/image` (read at build time: a build variable in the Cloudflare dashboard) |
 | `API_URL` | editor | env | The server's base URL, for the admin API (see [EDITOR.md](EDITOR.md)) |
 | `ADMIN_TOKEN` | editor | secret | A hand-made admin JWT, kept on the editor's server |
 | `SITE_URL` | editor | env | The public site's base URL, for "View on site" links |
@@ -254,7 +254,8 @@ It answers `200 { "revalidated": [...paths] }`, `401` without the right secret, 
 - **Public access:** the bucket is read through `MEDIA_BASE_URL`. Only the server writes, through the `MEDIA_BUCKET` binding.
 - **Streaming:** Workers have no disk, so uploads stream from the request straight into R2. No middleware that saves to disk first.
 - **Object keys:** `<collection>/<slug or key>/<random id>.<ext>`, e.g. `projects/tcos-2-the-hidden-saloon/<id>.webp`. Names are random, so a file's URL does not reveal a person's name.
-- **Allowed file types and maximum size:** `<...>`. See [question 1](#open-questions).
+- **Allowed file types:** JPEG, PNG, GIF, WebP and AVIF pictures, and MP4 or WebM video for the hero's `media_url`, recognised from the file's bytes. **Maximum size:** `FILE_SIZE_LIMIT` MB. See [question 1](#open-questions).
+- **Deleting:** `DELETE /api/admin/uploads/:key` refuses (`409`) while any document still uses the file. The editor calls it after a save for each media URL that the save removed or replaced, so a file shared with another page stays.
 
 ## Client components and what they read
 
@@ -277,7 +278,7 @@ Data blocks arrive filled in, so only the pages and the track popup call the API
 ## Open questions
 
 1. **Uploads:**
-   - Which file types: images only, or also video files for the hero?
+   - Which file types: decided, pictures and MP4/WebM video for the hero (see [Uploads](#uploads)).
    - What maximum size?
 2. **Token expiry:** should hand-made tokens carry an `exp`, and if so, how long?
 3. **R2 media bucket:** its name, and its public URL (a custom domain or the `r2.dev` URL).

@@ -166,14 +166,14 @@ Home (`/`) and the project list (`/projects`) render per request, so they always
 | `REVALIDATE_SECRET` | The same value as on the server                                                    |
 | `MEDIA_BASE_URL`    | The R2 media bucket's public URL, allowed in `next.config` `images.remotePatterns` |
 | `USE_FIXTURES`      | `true` serves the fixtures instead of calling `API_URL` (see below)                |
-| `EDITOR_ORIGIN`     | The editor's origin, e.g. `http://localhost:3001`, which may use edit mode. Unset: `/edit` is a 404 |
+| `EDITOR_ORIGIN`     | The editor's origins, comma-separated, e.g. `https://<editor>,http://localhost:3001`, which may use edit mode. Unset: `/edit` is a 404 |
 
 ### Edit mode
 
 The editor ([EDITOR.md](EDITOR.md) "Editing on the page") frames `/edit?page=home` or `/edit?project=<slug>` and sends it the page's unsaved blocks by `postMessage`, and for a project also its unsaved header fields (`name`, `start_date`, `end_date`, `venue`, `pics`) for `ProjectHeader`. The page renders them with the same block components as the site, so what the editor shows is what the site will show.
 
 - **Off by default.** `/edit` is a 404 unless `EDITOR_ORIGIN` is set. It is not indexed.
-- **Messages only from the editor.** It accepts messages only from `EDITOR_ORIGIN` and only from the window framing it, and sends only to that origin. It keeps no data and writes nothing: the editor holds the blocks and saves them through the admin API.
+- **Messages only from the editor.** It accepts messages only from an origin listed in `EDITOR_ORIGIN` and only from the window framing it, and sends only to those origins. It keeps no data and writes nothing: the editor holds the blocks and saves them through the admin API.
 - **No hidden data from the server.** The blocks, hidden ones too, come from the editor. Data blocks show their saved, filled version from the public API (shown blocks only, as on the site) while their settings are unchanged, and a note otherwise.
 - **Field markers.** Each content block component marks the elements that show a field with `data-field="<path>"` (`title`, `items.2.desc`), plus `data-field-kind="image"` or `"markdown"` where the field is not plain text. Edit mode makes marked text typeable in place, opens a text box for Markdown, and asks the editor for a new image. Markers change nothing on the site. A new or changed field in a component keeps its marker; the editor's tests compare the markers with the fields it accepts.
 

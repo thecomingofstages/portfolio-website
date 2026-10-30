@@ -50,12 +50,13 @@ function Note({ children }: { children: ReactNode }) {
  * of its own: the editor holds the blocks and saves them.
  */
 export default function EditCanvas({
-  editorOrigin,
+  editorOrigins,
   saved,
   header,
   home = false,
 }: {
-  editorOrigin: string;
+  /** EDITOR_ORIGIN's origins: the editors allowed to frame this page. */
+  editorOrigins: readonly string[];
   /** The page's shown blocks as last saved, filled in by the server, for data blocks. */
   saved: readonly Block[];
   /** The fixed header above a project's blocks. */
@@ -72,16 +73,19 @@ export default function EditCanvas({
   const pending = useRef<EditorMessage | null>(null);
   const root = useRef<HTMLDivElement>(null);
 
+  // Sent to each allowed origin: the browser delivers it only to the one actually framing the page.
   const send = useCallback(
-    (message: CanvasMessage) => window.parent.postMessage(message, editorOrigin),
-    [editorOrigin],
+    (message: CanvasMessage) => {
+      for (const origin of editorOrigins) window.parent.postMessage(message, origin);
+    },
+    [editorOrigins],
   );
 
   // Blocks from the editor. While a field is being typed into, they wait: re-rendering it
   // would move the cursor. The editor already has those keystrokes.
   useEffect(() => {
     function receive(event: MessageEvent) {
-      if (event.origin !== editorOrigin || event.source !== window.parent) return;
+      if (!editorOrigins.includes(event.origin) || event.source !== window.parent) return;
       const project = readProject(event.data);
       if (project) return setProject(project);
       const load = readLoad(event.data);
@@ -92,7 +96,7 @@ export default function EditCanvas({
     window.addEventListener("message", receive);
     send({ tcos: "edit", type: "ready" });
     return () => window.removeEventListener("message", receive);
-  }, [editorOrigin, send]);
+  }, [editorOrigins, send]);
 
   // Links on the page do not leave edit mode: a click on a button's label types into it.
   useEffect(() => {

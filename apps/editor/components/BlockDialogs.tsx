@@ -2,11 +2,9 @@
 
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import BlockSketch from "@/components/BlockSketch";
-import { OffSiteImageError } from "@/components/ui";
-import UploadButton from "@/components/UploadButton";
 import type { UploadOwner } from "@/lib/admin-api";
 import { blockInfo, ON_SITE } from "@/lib/blocks";
-import { isAllowedImage } from "@/lib/media";
+import { driveFileId, IMAGE_TYPES, isMediaUrl, OFF_SITE_IMAGE, VIDEO_TYPES } from "@/lib/media";
 import { BLOCK_TYPES } from "@/lib/schemas";
 import type { BlockType } from "@/types/admin";
 
@@ -74,58 +72,139 @@ export function AddBlockDialog({ onPick, onClose }: { onPick: (type: BlockType) 
   );
 }
 
-/** Replaces one image: an upload, a URL, or (when the field allows) no image. */
-export function ImageDialog({
+/** Sends a file (multipart) or a Drive link (JSON) to the editor's /api/upload; answers the new URL or an error. */
+async function upload(to: UploadOwner, body: FormData | { url: string }): Promise<{ url: string } | { error: string }> {
+  const isFile = body instanceof FormData;
+  try {
+    const response = await fetch(`/api/upload?collection=${to.collection}&owner=${encodeURIComponent(to.owner)}`, {
+      method: "POST",
+      headers: isFile ? undefined : { "content-type": "application/json" },
+      body: isFile ? body : JSON.stringify(body),
+    });
+    const answer = (await response.json().catch(() => ({}))) as { url?: string; error?: string };
+    if (!response.ok || !answer.url) return { error: answer.error ?? `The upload failed (${response.status}).` };
+    return { url: answer.url };
+  } catch {
+    return { error: "The upload did not reach the editor. Check the connection and try again." };
+  }
+}
+
+/**
+ * Picks one picture (or, with `video`, a video): a file to upload, or a link. A Google Drive
+ * share link is copied into the media bucket first; a media bucket link is used as it is.
+ * Other links are refused: the site shows media only from the bucket. Where the field allows,
+ * "No image" empties it.
+ */
+export function MediaDialog({
   current,
   uploadTo,
+  video = false,
   canRemove,
   onPick,
   onClose,
 }: {
   current: string;
-  uploadTo: UploadOwner;
+  /** Where uploads are filed; without it (not saved yet), only media bucket links work. */
+  uploadTo?: UploadOwner;
+  video?: boolean;
   canRemove: boolean;
   onPick: (url: string | null) => void;
   onClose: () => void;
 }) {
-  const [url, setUrl] = useState(current);
-  const allowed = isAllowedImage(url);
+  const input = useRef<HTMLInputElement>(null);
+  const [link, setLink] = useState("");
+  const [state, setState] = useState<{ busy: true } | { error: string } | null>(null);
+  const busy = state !== null && "busy" in state;
+  const kind = video ? "picture or video" : "picture";
+
+  async function send(body: FormData | { url: string }) {
+    if (!uploadTo) return;
+    setState({ busy: true });
+    const answer = await upload(uploadTo, body);
+    if ("error" in answer) setState(answer);
+    else onPick(answer.url);
+  }
+
+  function submitLink() {
+    const url = link.trim();
+    if (isMediaUrl(url)) onPick(url);
+    else if (driveFileId(url) && uploadTo) void send({ url });
+    else setState({ error: uploadTo ? OFF_SITE_IMAGE : "Save first: a new page or project takes files and Drive links once it is saved." });
+  }
+
   return (
-    <Dialog title="Image" onClose={onClose}>
-      <UploadButton to={uploadTo} onUploaded={onPick} />
-      <form
-        className="flex flex-col gap-1"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (allowed) onPick(url.trim());
-        }}
-      >
-        <label htmlFor="image-dialog-url" className="font-bold">
-          Or an image URL
+    <Dialog title={video ? "Picture or video" : "Picture"} onClose={onClose}>
+      {current ? <MediaPreview url={current} /> : null}
+      <div className="flex flex-col gap-1">
+        <span className="font-bold">Upload a file</span>
+        <div>
+          <button type="button" className="btn btn-primary" disabled={busy || !uploadTo} onClick={() => input.current?.click()}>
+            {busy ? "Uploading…" : `Choose a ${kind}`}
+          </button>
+        </div>
+        {uploadTo ? null : <span className="text-muted">Save first: uploads open once this is saved.</span>}
+        <input
+          ref={input}
+          type="file"
+          accept={video ? `${IMAGE_TYPES},${VIDEO_TYPES}` : IMAGE_TYPES}
+          hidden
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (!file) return;
+            const body = new FormData();
+            body.append("file", file);
+            void send(body);
+          }}
+        />
+      </div>
+      {/* Not a <form>: the dialog can open inside a document's form, and forms cannot nest. */}
+      <div className="flex flex-col gap-1">
+        <label htmlFor="media-dialog-link" className="flex flex-col">
+          <span className="font-bold">Or a link</span>
+          <span className="text-muted">A Google Drive share link (shared with anyone with the link), or a link from the media bucket</span>
         </label>
         <div className="flex gap-2">
           <input
-            id="image-dialog-url"
-            type="text"
+            id="media-dialog-link"
+            type="url"
             inputMode="url"
-            value={url}
-            aria-invalid={!allowed}
-            aria-describedby={allowed ? undefined : "image-dialog-error"}
-            onChange={(e) => setUrl(e.target.value)}
+            value={link}
+            aria-invalid={state !== null && "error" in state}
+            aria-describedby={state !== null && "error" in state ? "media-dialog-error" : undefined}
+            onChange={(e) => setLink(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
+              e.preventDefault();
+              if (!busy && link.trim() !== "") submitLink();
+            }}
           />
-          <button type="submit" className="btn" disabled={!allowed || url.trim() === "" || url.trim() === current}>
+          <button type="button" className="btn" disabled={busy || link.trim() === ""} onClick={submitLink}>
             Use it
           </button>
         </div>
-        {allowed ? null : <OffSiteImageError id="image-dialog-error" />}
-      </form>
-      {canRemove ? (
+      </div>
+      {state && "error" in state ? (
+        <p id="media-dialog-error" role="alert" className="text-red">
+          {state.error}
+        </p>
+      ) : null}
+      {canRemove && current ? (
         <div>
-          <button type="button" className="btn" onClick={() => onPick(null)}>
-            No image
+          <button type="button" className="btn" disabled={busy} onClick={() => onPick(null)}>
+            No {kind}
           </button>
         </div>
       ) : null}
     </Dialog>
   );
+}
+
+/** A small view of a media URL: the picture, the video, or the text when it is not a link (`<...>`). */
+export function MediaPreview({ url }: { url: string }) {
+  if (!/^https?:\/\//i.test(url)) return <span className="text-muted">{url}</span>;
+  const box = "h-20 w-32 shrink-0 rounded-[var(--radius-button)] border border-border bg-background object-cover";
+  if (/\.(mp4|webm)$/i.test(url)) return <video src={url} className={box} muted playsInline preload="metadata" aria-label="Video" />;
+  // eslint-disable-next-line @next/next/no-img-element -- a thumbnail from the bucket; next/image would need its host configured
+  return <img src={url} alt="" className={box} />;
 }

@@ -23,6 +23,9 @@
     "enabled": true,
   },
   "previews": {},
+  // EDITOR_ORIGIN is set in the Cloudflare dashboard, and MEDIA_BASE_URL as a build variable there
+  // (read at build time). keep_vars stops a deploy from wiping dashboard vars.
+  "keep_vars": true,
   "vars": {
     // Live data from the server; "true" serves fixtures instead.
     "USE_FIXTURES": "false",

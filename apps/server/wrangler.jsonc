@@ -8,11 +8,11 @@
   // swagger.yaml is imported as text by the docs controller.
   "rules": [{ "type": "Text", "globs": ["**/*.yaml"], "fallthrough": true }],
 
-  // Vars: not secret. Secrets (MONGODB_URI, JWT_SECRET, REVALIDATE_SECRET) go in with
-  // `npx wrangler secret put <NAME>`, and in .dev.vars for local runs (see .dev.vars.example).
+  // MEDIA_BASE_URL and REVALIDATE_URL are set in the Cloudflare dashboard, and in .dev.vars for
+  // local runs (see .dev.vars.example). keep_vars stops a deploy from wiping them.
+  // Secrets (MONGODB_URI, JWT_SECRET, REVALIDATE_SECRET) go in with `npx wrangler secret put <NAME>`.
+  "keep_vars": true,
   "vars": {
-    "MEDIA_BASE_URL": "https://portfolio-bucket-eztbma.thecomingofstages.com", // custom domain of the portfolio-images bucket
-    "REVALIDATE_URL": "https://portfolio-website.thecomingofstages.workers.dev/api/revalidate",
     // Swagger UI and /api/openapi.json. Off in production; .dev.vars turns it on locally.
     "DOCS_ENABLED": "false",
     // Largest upload in MB (agreed with the lead: 50 MB for 4K photos and a ~10 s 4K clip).

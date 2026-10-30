@@ -18,7 +18,7 @@ export const PART_SIZE = 5 * 1024 * 1024;
 /**
  * Allowed file types, recognised from the file's first bytes (its "magic number"),
  * never from its name or declared type.
- * TODO(uploads): images only until the lead decides (API.md open question 1: video for the hero?).
+ * Video (mp4, webm) is for the hero's media_url.
  * SVG and HTML stay out: on a public bucket they can run scripts in visitors' browsers.
  */
 const TYPES: { ext: string; mime: string; test: (b: Uint8Array) => boolean }[] = [
@@ -27,7 +27,12 @@ const TYPES: { ext: string; mime: string; test: (b: Uint8Array) => boolean }[] =
   { ext: "gif", mime: "image/gif", test: (b) => ascii(b, 0, 6) === "GIF87a" || ascii(b, 0, 6) === "GIF89a" },
   { ext: "webp", mime: "image/webp", test: (b) => ascii(b, 0, 4) === "RIFF" && ascii(b, 8, 12) === "WEBP" },
   { ext: "avif", mime: "image/avif", test: (b) => ascii(b, 4, 8) === "ftyp" && ["avif", "avis"].includes(ascii(b, 8, 12)) },
+  { ext: "mp4", mime: "video/mp4", test: (b) => ascii(b, 4, 8) === "ftyp" && MP4_BRANDS.includes(ascii(b, 8, 12)) },
+  // shortcut: any Matroska file passes as webm (its doctype lies past the first 12 bytes); browsers play most of them.
+  { ext: "webm", mime: "video/webm", test: (b) => [0x1a, 0x45, 0xdf, 0xa3].every((v, i) => b[i] === v) },
 ];
+/** The `ftyp` brands of an MP4 file; QuickTime (`qt  `) and HEIC stay out. */
+const MP4_BRANDS = ["isom", "iso2", "iso4", "iso5", "iso6", "mp41", "mp42", "avc1", "dash", "M4V "];
 /** Bytes needed to recognise every type above. */
 const SNIFF = 12;
 
@@ -140,5 +145,5 @@ export async function streamToR2(
 
 /** An object key that this API could have made: no "..", no leading slash, in one of the collections. */
 export function isMediaKey(key: string): boolean {
-  return /^(projects|tracks|apply|pages)\/[A-Za-z0-9_-]+\/[0-9a-f]{32}\.(jpg|png|gif|webp|avif)$/.test(key);
+  return /^(projects|tracks|apply|pages)\/[A-Za-z0-9_-]+\/[0-9a-f]{32}\.(jpg|png|gif|webp|avif|mp4|webm)$/.test(key);
 }

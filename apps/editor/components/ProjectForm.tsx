@@ -24,7 +24,7 @@ const requiredFields: FieldSpec[] = [
 const moreFields: FieldSpec[] = [
   { kind: "text", key: "venue", label: "Venue", nullable: true, hint: "สถานที่หลัก ถ้ามีหลายที่ให้ใส่ไว้ในไฮไลต์" },
   { kind: "text", key: "summary", label: "Summary", multiline: true, hint: "สรุปสั้น ๆ หนึ่งถึงสองบรรทัด ใช้บนการ์ดโปรเจกต์" },
-  { kind: "strings", key: "pics", label: "Pictures", images: true, hint: "ลิงก์รูป บรรทัดละรูป รูปแรกจะเป็นรูปหัวหน้าโปรเจกต์และสันหนังสือบนชั้น" },
+  { kind: "strings", key: "pics", label: "Pictures", images: true, hint: "รูปแรกจะเป็นรูปหัวหน้าโปรเจกต์และสันหนังสือบนชั้น" },
   { kind: "text", key: "org_chart_image", label: "Org chart image", nullable: true, image: true },
 ];
 
