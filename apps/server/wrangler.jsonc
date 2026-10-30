@@ -11,7 +11,7 @@
   // Vars: not secret. Secrets (MONGODB_URI, JWT_SECRET, REVALIDATE_SECRET) go in with
   // `npx wrangler secret put <NAME>`, and in .dev.vars for local runs (see .dev.vars.example).
   "vars": {
-    "MEDIA_BASE_URL": "<...>", // TODO(R2 media bucket): public URL of the site media bucket
+    "MEDIA_BASE_URL": "https://portfolio-bucket-eztbma.thecomingofstages.com", // custom domain of the portfolio-images bucket
     "REVALIDATE_URL": "https://portfolio-website.thecomingofstages.workers.dev/api/revalidate",
     // Swagger UI and /api/openapi.json. Off in production; .dev.vars turns it on locally.
     "DOCS_ENABLED": "false",
@@ -23,7 +23,7 @@
   "r2_buckets": [
     {
       "binding": "MEDIA_BUCKET",
-      "bucket_name": "todo-media-bucket" // TODO(R2 media bucket): real bucket name; wrangler rejects "<...>"
+      "bucket_name": "portfolio-images"
     }
   ]
 }
