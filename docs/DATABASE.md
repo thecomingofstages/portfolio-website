@@ -20,8 +20,8 @@ Every page is built from an ordered list of blocks. See [Blocks](#blocks-block_c
 ```
 tracks.key ◄──────── projects.team[].dept_key
      ▲                    projects.slug ◄──── tracks.achievements[].project_slug
-     │                         ▲
-     └──── apply.positions[].dept_key     apply.project_slug
+                               ▲
+                              apply.project_slug
 ```
 
 - References are by string key (`slug`, `key`), not ObjectId, so they read clearly in the admin and in URLs.
@@ -130,7 +130,7 @@ tracks.key ◄──────── projects.team[].dept_key
 
 One document per recruitment round, **for display only**. It replaces the รายละเอียดเพิ่มเติม PDFs, whose QR codes and folder links have gone dead. Applications are handled elsewhere (Google Forms now, your separate project later), so no applicant data is stored here.
 
-There is no `status` field. A round is **open** when `is_shown` is `true` and today is between `opens_at` and `extended_to` (or `closes_at` when there is no extension).
+There is no `status` field. A round is **open** when `is_shown` is `true` and today is between `opens_at` and `extended_to` (or `closes_at` when there is no extension). A closing date without a time counts through the end of that day.
 
 | Field            | Type           | Required | Description                                                         |
 | ---------------- | -------------- | -------- | ------------------------------------------------------------------- |
@@ -159,7 +159,7 @@ There is no `status` field. A round is **open** when `is_shown` is `true` and to
 
 | Field                | Type           | Required | Description                            |
 | -------------------- | -------------- | -------- | -------------------------------------- |
-| `dept_key`           | string         | yes      | Matches `tracks.key`                   |
+| `dept_key`           | string         | yes      | Free text, may be empty. Not tied to `tracks.key` |
 | `dept_name`          | string         |          | ฝ่าย as named in this round            |
 | `unit_name`          | string or null |          | แผนก, when the round lists one         |
 | `title`              | string         | yes      | Position                               |
@@ -615,6 +615,7 @@ Every query filters on `is_shown: true`, for the document and for the items it l
 ```js
 // Join page: rounds open today (NOW), closing soonest first.
 // A round closes at extended_to when it is set, else at closes_at.
+// A date without a time (midnight UTC) counts through the end of that day: the server adds one day to it.
 db.apply.aggregate([
   { $match: { is_shown: true, opens_at: { $lte: NOW } } },
   { $addFields: { closes_on: { $ifNull: ["$extended_to", "$closes_at"] } } },

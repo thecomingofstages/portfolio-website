@@ -34,6 +34,15 @@ describe("GET /api/join", () => {
     expect((await titles()).sort()).toEqual(["extended", "open"]);
   });
 
+  it("keeps a round whose closing date has no time open through that day", async () => {
+    const today = new Date("2030-06-15T00:00:00.000Z");
+    await db.models.apply.insertMany([
+      makeRound({ title: "closes today", closes_at: today }),
+      makeRound({ title: "closed yesterday", closes_at: day(-1.5) }),
+    ]);
+    expect(await titles()).toEqual(["closes today"]);
+  });
+
   it("sorts by the real closing date: extended_to when set, else closes_at", async () => {
     await db.models.apply.insertMany([
       makeRound({ title: "closes in 5", closes_at: day(5) }),

@@ -3,7 +3,7 @@
  * what the database validator cannot check.
  *
  * - Block ids are unique within a page's blocks.
- * - Every dept_key matches a tracks.key; every project_slug matches a project
+ * - Every team and block dept_key matches a tracks.key (a position's does not); every project_slug matches a project
  *   (null is allowed in data blocks and apply).
  * - A project or track still referenced cannot be deleted (409).
  * - Renaming a slug or key updates its references in the same request.
@@ -88,7 +88,6 @@ export async function assertProjectDeletable(m: Models, slug: string) {
 export async function assertTrackDeletable(m: Models, key: string) {
   refuse(`track "${key}"`, {
     "projects.team": await m.projects.countDocuments({ "team.dept_key": key }),
-    "apply.positions": await m.apply.countDocuments({ "positions.dept_key": key }),
     "projects.blocks": await m.projects.countDocuments({ "blocks.dept_keys": key }),
     "pages.blocks": await m.pages.countDocuments({ "blocks.dept_keys": key }),
   });
@@ -115,11 +114,6 @@ export async function renameProjectSlug(m: Models, from: string, to: string) {
 
 export async function renameTrackKey(m: Models, from: string, to: string) {
   await m.projects.updateMany({ "team.dept_key": from }, { $set: { "team.$[t].dept_key": to } }, { arrayFilters: [{ "t.dept_key": from }] });
-  await m.apply.updateMany(
-    { "positions.dept_key": from },
-    { $set: { "positions.$[p].dept_key": to } },
-    { arrayFilters: [{ "p.dept_key": from }] },
-  );
   for (const pages of [m.projects, m.pages] as const) {
     await (pages as typeof m.projects).updateMany(
       { "blocks.dept_keys": from },

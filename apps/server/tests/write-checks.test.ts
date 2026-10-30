@@ -36,12 +36,19 @@ describe("block ids are unique within a page", () => {
   });
 });
 
+describe("a position's dept_key is free text", () => {
+  it("is not checked against the tracks, and may be empty", async () => {
+    const round = await api.post("/apply", roundBody({ positions: [{ dept_key: "", title: "<...>", is_shown: true }] }));
+    expect(round.status).toBe(201);
+    const added = await api.post(`/apply/${round.body._id}/positions`, { dept_key: "nope", title: "<...>", is_shown: true });
+    expect(added.status).toBe(201);
+  });
+});
+
 describe("references point to things that exist", () => {
   it.each([
     ["team dept_key", () => api.post("/projects/p/team", memberBody({ dept_key: "nope" }))],
     ["team dept_key in a whole-project PUT", () => api.put("/projects/p", projectBody("p", { team: [memberBody({ dept_key: "nope" })] }))],
-    ["position dept_key", async () => api.post(`/apply/${(await api.post("/apply", roundBody())).body._id}/positions`, { dept_key: "nope", title: "<...>", is_shown: true })],
-    ["round positions dept_key", () => api.post("/apply", roundBody({ positions: [{ dept_key: "nope", title: "<...>", is_shown: true }] }))],
     ["round project_slug", () => api.post("/apply", roundBody({ project_slug: "nope" }))],
     ["achievement project_slug", () => api.post("/tracks/t/achievements", { project_slug: "nope", text: "<...>", is_shown: true })],
     ["data block project_slug", () => api.put("/projects/p/blocks", [{ id: "h", type: "highlights", project_slug: "nope", is_shown: true }])],
@@ -80,7 +87,6 @@ describe("deleting something still referenced → 409", () => {
 
   it.each([
     ["a team member", () => api.post("/projects/p/team", memberBody())],
-    ["an apply position", () => api.post("/apply", roundBody({ positions: [{ dept_key: "t", title: "<...>", is_shown: true }] }))],
     ["a team block", () => api.put("/projects/p/blocks", [{ id: "team", type: "team", dept_keys: ["t"], is_shown: true }])],
   ])("a track referenced by %s", async (_label, refer) => {
     expect([200, 201]).toContain((await refer()).status);
@@ -118,15 +124,13 @@ describe("renaming a slug or key updates its references", () => {
     expect((await api.get("/pages/home/blocks")).body[0].project_slug).toBe("renamed");
   });
 
-  it("track key: team, positions and team blocks follow", async () => {
+  it("track key: team and team blocks follow", async () => {
     await api.post("/projects/p/team", memberBody());
-    const round = (await api.post("/apply", roundBody({ positions: [{ dept_key: "t", title: "<...>", is_shown: true }] }))).body._id;
     await api.put("/projects/p/blocks", [{ id: "team", type: "team", dept_keys: ["t"], is_shown: true }]);
 
     expect((await api.patch("/tracks/t", { key: "renamed" })).status).toBe(200);
 
     expect((await api.get("/projects/p/team")).body[0].dept_key).toBe("renamed");
-    expect((await api.get(`/apply/${round}`)).body.positions[0].dept_key).toBe("renamed");
     expect((await api.get("/projects/p/blocks")).body[0].dept_keys).toEqual(["renamed"]);
   });
 

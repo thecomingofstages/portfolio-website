@@ -10,7 +10,7 @@ describe("Qualifications", () => {
   it("shows the age range as a bullet item when both age_min and age_max are set", () => {
     const { container } = render(<Qualifications qualifications={fixtureQualifications} />);
 
-    expect(screen.getByRole("heading", { level: 3, name: "Qualifications" })).not.toBeNull();
+    expect(screen.getByRole("heading", { level: 3, name: "คุณสมบัติ" })).not.toBeNull();
     const listItems = [...container.querySelectorAll("ul > li")].map((li) => li.textContent);
     expect(listItems).toEqual([
       `อายุอยู่ในช่วง ${fixtureQualifications.age_min}–${fixtureQualifications.age_max} ปี`,

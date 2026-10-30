@@ -2,10 +2,10 @@ import { formatDate } from "@/lib/dates";
 import type { TimelineEvent } from "@/types/api";
 
 // TODO(timeline wording): the docs do not specify the exact Thai/English labels;
-// kept in one constants object set to "<...>" until the wording is decided.
+// kept in one constants object.
 export const LABELS = {
-  heading: "<...>",
-  online: "<...>",
+  heading: "กำหนดการรับสมัคร",
+  online: "ออนไลน์",
 } as const;
 
 export type TimelineProps = {

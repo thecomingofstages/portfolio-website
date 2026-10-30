@@ -1,7 +1,7 @@
 import RoundCard from "@/components/join/RoundCard";
 import type { BlockProps } from ".";
 
-export const JOIN_EMPTY_TEXT = "<...>";
+export const JOIN_EMPTY_TEXT = "ยังไม่เปิดรับสมัคร";
 
 export default function Join({ block }: BlockProps<"join">) {
   const { title, rounds, empty_text } = block;

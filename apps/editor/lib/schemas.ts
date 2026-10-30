@@ -227,7 +227,7 @@ const audition = z
 const position = z
   .object({
     _id: itemId,
-    dept_key: z.string().min(1, "dept_key is empty"),
+    dept_key: str,
     dept_name: str.optional(),
     unit_name: strOrNull.optional(),
     title: str.min(1, "title is empty"),

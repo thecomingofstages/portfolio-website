@@ -3,6 +3,8 @@ import type { ApplyDoc, Models } from "../models";
 import { shownProjectNames } from "./project.helper";
 import { publicPositions, publicTimeline } from "./visibility.helper";
 
+const DAY_MS = 86_400_000;
+
 /**
  * Rounds open at `now`, closing soonest first (DATABASE.md "Pages and their queries").
  * A round closes at extended_to when it is set, else at closes_at.
@@ -13,6 +15,8 @@ export async function listOpenRounds(m: Models, now: Date, projectSlug?: string)
     .aggregate<ApplyDoc>([
       { $match: { is_shown: true, opens_at: { $lte: now }, ...(projectSlug ? { project_slug: projectSlug } : {}) } },
       { $addFields: { closes_on: { $ifNull: ["$extended_to", "$closes_at"] } } },
+      // A date without a time is midnight UTC: the round stays open through that day.
+      { $addFields: { closes_on: { $add: ["$closes_on", { $cond: [{ $eq: [{ $mod: [{ $toLong: "$closes_on" }, DAY_MS] }, 0] }, DAY_MS, 0] }] } } },
       { $match: { closes_on: { $gte: now } } },
       { $sort: { closes_on: 1, _id: 1 } },
       { $project: { closes_on: 0 } },

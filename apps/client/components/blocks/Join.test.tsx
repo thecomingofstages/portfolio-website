@@ -37,6 +37,6 @@ describe("Join", () => {
   });
 
   it("exports the empty-state constant for /join", () => {
-    expect(JOIN_EMPTY_TEXT).toBe("<...>");
+    expect(JOIN_EMPTY_TEXT).toBe("ยังไม่เปิดรับสมัคร");
   });
 });

@@ -303,7 +303,7 @@ create("apply", {
         required: ["_id", "dept_key", "title", "is_shown"],
         properties: {
           _id: item_id,
-          dept_key: str, // matches tracks.key
+          dept_key: str, // free text, may be empty; not tied to tracks.key
           dept_name: str, // ฝ่าย as named in this round
           unit_name: str_or_null, // แผนก, when the round lists one
           title: str,
