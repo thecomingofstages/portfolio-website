@@ -5,7 +5,7 @@ import PositionList from "./PositionList";
 import Qualifications from "./Qualifications";
 import Timeline from "./Timeline";
 
-export const APPLY_LABEL = "กรอกใบสมัตร";
+export const APPLY_LABEL = "กรอกใบสมัคร";
 
 export type RoundCardProps = {
   round: Round;
