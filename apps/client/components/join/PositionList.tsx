@@ -201,7 +201,9 @@ export default function PositionList({ positions }: PositionListProps) {
                     {/* audition.onsite (onsite audition after the clip round) */}
                     {auditionOnsite ? (
                       <div className="flex flex-col gap-0.5">
-                        <dt className="text-muted">{"สถานที่ออดิชั่น"}</dt>
+                        <dt className="text-muted">
+                          {"สถานที่ออดิชั่น Onsite หากผ่านการคัดเลือก"}
+                        </dt>
                         <dd
                           data-field="audition_onsite"
                           className="text-foreground"
