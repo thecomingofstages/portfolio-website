@@ -8,7 +8,9 @@ function nonEmpty(value: string | null | undefined): string | null {
   return value && value.trim() !== "" ? value : null;
 }
 
-function hasAuditionContent(audition: Audition | null | undefined): audition is Audition {
+function hasAuditionContent(
+  audition: Audition | null | undefined,
+): audition is Audition {
   if (!audition) {
     return false;
   }
@@ -16,10 +18,18 @@ function hasAuditionContent(audition: Audition | null | undefined): audition is 
   const hasMaxMinutes = typeof audition.clip_max_minutes === "number";
   const hasFileName = nonEmpty(audition.clip_file_name) !== null;
   const hasUpload = nonEmpty(audition.clip_upload) !== null;
-  const hasPieces = Array.isArray(audition.pieces) && audition.pieces.length > 0;
+  const hasPieces =
+    Array.isArray(audition.pieces) && audition.pieces.length > 0;
   const hasOnsite = audition.onsite === true;
 
-  return hasBrief || hasMaxMinutes || hasFileName || hasUpload || hasPieces || hasOnsite;
+  return (
+    hasBrief ||
+    hasMaxMinutes ||
+    hasFileName ||
+    hasUpload ||
+    hasPieces ||
+    hasOnsite
+  );
 }
 
 /**
@@ -42,13 +52,17 @@ export default function PositionList({ positions }: PositionListProps) {
   return (
     <section className="flex flex-col gap-4">
       {/* TODO(positions wording): the docs do not specify the exact labels for position flags or audition fields; using "<...>" until confirmed. */}
-      <h3 className="font-heading text-h3 font-semibold text-foreground">ตำแหน่งที่เปิดรับ</h3>
+      <h3 className="font-heading text-h3 font-semibold text-foreground">
+        ตำแหน่งที่เปิดรับ
+      </h3>
       <ul className="flex flex-col gap-4">
         {positions.map((position, index) => {
           const deptName = nonEmpty(position.dept_name);
           const unitName = nonEmpty(position.unit_name);
           const description = nonEmpty(position.description);
-          const requirements = Array.isArray(position.requirements) ? position.requirements : [];
+          const requirements = Array.isArray(position.requirements)
+            ? position.requirements
+            : [];
           const portfolioRequired = position.portfolio_required === true;
           const onsiteRequired = position.onsite_required === true;
           const showAudition = hasAuditionContent(position.audition);
@@ -56,7 +70,9 @@ export default function PositionList({ positions }: PositionListProps) {
           const audition = position.audition;
           const clipBrief = nonEmpty(audition?.clip_brief);
           const clipMaxMinutes =
-            typeof audition?.clip_max_minutes === "number" ? audition.clip_max_minutes : null;
+            typeof audition?.clip_max_minutes === "number"
+              ? audition.clip_max_minutes
+              : null;
           const clipFileName = nonEmpty(audition?.clip_file_name);
           const clipUpload = nonEmpty(audition?.clip_upload);
           const pieces = Array.isArray(audition?.pieces) ? audition.pieces : [];
@@ -71,7 +87,9 @@ export default function PositionList({ positions }: PositionListProps) {
                 {deptName || unitName ? (
                   <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-body text-body text-muted">
                     {deptName ? <span>{deptName}</span> : null}
-                    {deptName && unitName ? <span aria-hidden="true">·</span> : null}
+                    {deptName && unitName ? (
+                      <span aria-hidden="true">·</span>
+                    ) : null}
                     {unitName ? <span>{unitName}</span> : null}
                   </p>
                 ) : null}
@@ -90,7 +108,7 @@ export default function PositionList({ positions }: PositionListProps) {
                       data-field="portfolio_required"
                       className="rounded-button border border-accent bg-accent px-3.5 py-0.5 font-bold text-background"
                     >
-                      {"<...>"}
+                      {"ต้องส่ง Portfolio"}
                     </li>
                   ) : null}
                   {/* onsite_required (must be able to work onsite in Bangkok) */}
@@ -99,7 +117,7 @@ export default function PositionList({ positions }: PositionListProps) {
                       data-field="onsite_required"
                       className="rounded-button border border-accent bg-accent px-3.5 py-0.5 font-bold text-background"
                     >
-                      {"<...>"}
+                      {"สามารถมาทำงานที่กรุงเทพได้"}
                     </li>
                   ) : null}
                 </ul>
@@ -107,7 +125,9 @@ export default function PositionList({ positions }: PositionListProps) {
 
               {/* description */}
               {description ? (
-                <p className="font-body text-body text-foreground">{description}</p>
+                <p className="font-body text-body text-foreground">
+                  {description}
+                </p>
               ) : null}
 
               {/* requirements[] */}
@@ -123,13 +143,17 @@ export default function PositionList({ positions }: PositionListProps) {
               {showAudition ? (
                 <div className="flex flex-col gap-3 rounded-card bg-background/40 p-5">
                   {/* Audition section heading */}
-                  <h4 className="font-heading text-body-lg font-semibold text-accent">{"<...>"}</h4>
+                  <h4 className="font-heading text-body-lg font-semibold text-accent">
+                    {"<...>"}
+                  </h4>
 
                   <dl className="grid grid-cols-1 gap-4 font-body text-body sm:grid-cols-3">
                     {/* audition.clip_brief */}
                     {clipBrief ? (
                       <div className="flex flex-col gap-0.5 sm:col-span-3">
-                        <dt className="text-muted">{"<...>"}</dt>
+                        <dt className="text-muted">
+                          {"รายละเอียดคลิปที่ต้องส่ง"}
+                        </dt>
                         <dd className="text-foreground">{clipBrief}</dd>
                       </div>
                     ) : null}
@@ -137,7 +161,9 @@ export default function PositionList({ positions }: PositionListProps) {
                     {/* audition.clip_max_minutes */}
                     {clipMaxMinutes !== null ? (
                       <div className="flex flex-col gap-0.5">
-                        <dt className="text-muted">{"<...>"}</dt>
+                        <dt className="text-muted">
+                          {"ความยาวคลิปสูงสุด (นาที)"}
+                        </dt>
                         <dd className="text-foreground">{clipMaxMinutes}</dd>
                       </div>
                     ) : null}
@@ -145,7 +171,9 @@ export default function PositionList({ positions }: PositionListProps) {
                     {/* audition.clip_file_name */}
                     {clipFileName ? (
                       <div className="flex flex-col gap-0.5">
-                        <dt className="text-muted">{"<...>"}</dt>
+                        <dt className="text-muted">
+                          {"รูปแบบการตั้งชื่อไฟล์"}
+                        </dt>
                         <dd className="text-foreground">{clipFileName}</dd>
                       </div>
                     ) : null}
@@ -153,7 +181,7 @@ export default function PositionList({ positions }: PositionListProps) {
                     {/* audition.clip_upload */}
                     {clipUpload ? (
                       <div className="flex flex-col gap-0.5">
-                        <dt className="text-muted">{"<...>"}</dt>
+                        <dt className="text-muted">{"ลิงก์อัพโหลดคลิป"}</dt>
                         <dd className="text-foreground">{clipUpload}</dd>
                       </div>
                     ) : null}
@@ -175,9 +203,12 @@ export default function PositionList({ positions }: PositionListProps) {
                     {/* audition.onsite (onsite audition after the clip round) */}
                     {auditionOnsite ? (
                       <div className="flex flex-col gap-0.5">
-                        <dt className="text-muted">{"<...>"}</dt>
-                        <dd data-field="audition_onsite" className="text-foreground">
-                          {"<...>"}
+                        <dt className="text-muted">{"สถานที่ออดิชั่น"}</dt>
+                        <dd
+                          data-field="audition_onsite"
+                          className="text-foreground"
+                        >
+                          {"Casa Sardine"}
                         </dd>
                       </div>
                     ) : null}

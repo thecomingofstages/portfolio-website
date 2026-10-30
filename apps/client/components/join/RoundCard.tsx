@@ -5,14 +5,22 @@ import PositionList from "./PositionList";
 import Qualifications from "./Qualifications";
 import Timeline from "./Timeline";
 
-export const APPLY_LABEL = "Apply";
+export const APPLY_LABEL = "กรอกใบสมัตร";
 
 export type RoundCardProps = {
   round: Round;
 };
 
 export default function RoundCard({ round }: RoundCardProps) {
-  const { title, poster, opens_at, closes_at, extended_to, project_name, apply_url } = round;
+  const {
+    title,
+    poster,
+    opens_at,
+    closes_at,
+    extended_to,
+    project_name,
+    apply_url,
+  } = round;
   const dates = formatDate(opens_at, extended_to ?? closes_at);
 
   return (
@@ -29,10 +37,18 @@ export default function RoundCard({ round }: RoundCardProps) {
         </div>
       ) : null}
 
-      <div className={`flex min-w-0 flex-col gap-6 p-4 md:p-6 ${poster === null ? "md:col-span-2" : ""}`}>
+      <div
+        className={`flex min-w-0 flex-col gap-6 p-4 md:p-6 ${poster === null ? "md:col-span-2" : ""}`}
+      >
         <header className="flex flex-col gap-1">
-          {project_name ? <p className="font-body text-body text-muted break-words">{project_name}</p> : null}
-          <h2 className="font-heading text-h2 font-bold text-foreground break-words">{title}</h2>
+          {project_name ? (
+            <p className="font-body text-body text-muted break-words">
+              {project_name}
+            </p>
+          ) : null}
+          <h2 className="font-heading text-h2 font-bold text-foreground break-words">
+            {title}
+          </h2>
           {dates ? (
             <p className="font-body text-body-lg font-semibold text-accent">
               <time dateTime={opens_at}>{dates}</time>
