@@ -18,13 +18,13 @@ export default function RoundCard({ round }: RoundCardProps) {
   return (
     <article className="grid grid-cols-1 overflow-hidden rounded-card border border-border bg-card-bg md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
       {poster !== null ? (
-        <div className="relative aspect-square w-full self-center overflow-hidden">
+        <div className="relative aspect-square w-full self-start overflow-hidden">
           <Media
             src={poster}
             alt={title}
             fill
             sizes="(min-width: 768px) 27vw, 90vw"
-            className="object-contain"
+            className="object-contain object-top"
           />
         </div>
       ) : null}
