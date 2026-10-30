@@ -16,7 +16,7 @@ export const TRACK_FIELDS: readonly FieldSpec[] = [
     hint: "ชื่อที่ใช้ในลิงก์ /tracks/<key> ใช้ได้แค่ตัวพิมพ์เล็ก ตัวเลข และขีด (-) ถ้าเปลี่ยน ลิงก์เก่าที่เคยแชร์ไปจะเข้าไม่ได้",
   },
   { kind: "text", key: "desc", label: "Description", multiline: true, hint: "สายงานนี้ทำอะไร" },
-  { kind: "strings", key: "pics", label: "Pictures", images: true, hint: "ลิงก์รูป บรรทัดละรูป" },
+  { kind: "strings", key: "pics", label: "Pictures", images: true },
   { kind: "int", key: "order", label: "Order", hint: "ลำดับการแสดง เลขน้อยขึ้นก่อน" },
   {
     kind: "items",
@@ -28,7 +28,7 @@ export const TRACK_FIELDS: readonly FieldSpec[] = [
       { kind: "text", key: "project_slug", label: "Project slug", required: true, hint: "โปรเจกต์ที่ผลงานนี้อยู่" },
       { kind: "int", key: "year", label: "Year", nullable: true },
       { kind: "text", key: "text", label: "What the track did", required: true, multiline: true },
-      { kind: "strings", key: "pics", label: "Pictures", images: true, hint: "ลิงก์รูป บรรทัดละรูป" },
+      { kind: "strings", key: "pics", label: "Pictures", images: true },
       { kind: "bool", key: "is_shown", label: "Shown on the site" },
     ],
     newItem: () => ({ project_slug: "", text: "", is_shown: false }),

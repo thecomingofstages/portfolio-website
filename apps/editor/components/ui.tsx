@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { OFF_SITE_IMAGE } from "@/lib/media";
 
 /** Small shared pieces of the editor's forms. */
 
@@ -43,15 +42,6 @@ export function Switch({
 /** The star after a required field's label, in red. */
 export function RequiredMark() {
   return <span className="text-red"> *</span>;
-}
-
-/** Under a picture URL from another website, which the site cannot show (lib/media.ts). */
-export function OffSiteImageError({ id }: { id: string }) {
-  return (
-    <p id={id} className="text-red">
-      {OFF_SITE_IMAGE}
-    </p>
-  );
 }
 
 export function Label({ htmlFor, children, hint }: { htmlFor: string; children: ReactNode; hint?: string }) {

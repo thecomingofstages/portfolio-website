@@ -3,9 +3,9 @@
 // Runtime types generated with workerd@1.20261006.1 2025-09-15 nodejs_compat
 interface __BaseEnv_Env {
 	MEDIA_BUCKET: R2Bucket;
-	MEDIA_BASE_URL: "<...>";
-	REVALIDATE_URL: "<...>";
 	FILE_SIZE_LIMIT: "50";
+	MEDIA_BASE_URL: string;
+	REVALIDATE_URL: string;
 	MONGODB_URI: string;
 	JWT_SECRET: string;
 	REVALIDATE_SECRET: string;

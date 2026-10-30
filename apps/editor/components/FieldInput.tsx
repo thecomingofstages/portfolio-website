@@ -1,12 +1,11 @@
 "use client";
 
 import { type ReactNode, useState } from "react";
-import { Label, OffSiteImageError, RequiredMark, Switch } from "@/components/ui";
-import UploadButton from "@/components/UploadButton";
+import { MediaDialog, MediaPreview } from "@/components/BlockDialogs";
+import { Label, RequiredMark, Switch } from "@/components/ui";
 import type { UploadOwner } from "@/lib/admin-api";
 import { type FieldSpec, moveItem, parseStatValue, setField } from "@/lib/blocks";
 import { type DateParts, fromDateParts, toDateParts } from "@/lib/date-input";
-import { isAllowedImage } from "@/lib/media";
 
 type Obj = Record<string, unknown>;
 
@@ -24,6 +23,7 @@ export type Words = {
   moveDown: string;
   removeItem: string;
   uploadImage: string;
+  changeMedia: string;
   uploadAndAdd: string;
   undecided: (raw: string) => string;
   time: string;
@@ -39,8 +39,9 @@ export const WORDS = {
     moveUp: "Move up",
     moveDown: "Move down",
     removeItem: "Remove",
-    uploadImage: "Upload image",
-    uploadAndAdd: "Upload and add",
+    uploadImage: "Add picture",
+    changeMedia: "Change",
+    uploadAndAdd: "Add picture",
     undecided: (raw) => `Now "${raw}", not decided yet. Pick a date before saving.`,
     time: "Optional, Bangkok time",
     shown: "Shown on the site",
@@ -53,8 +54,9 @@ export const WORDS = {
     moveUp: "เลื่อนขึ้น",
     moveDown: "เลื่อนลง",
     removeItem: "ลบ",
-    uploadImage: "อัปโหลดรูป",
-    uploadAndAdd: "อัปโหลดแล้วเพิ่ม",
+    uploadImage: "เพิ่มรูป",
+    changeMedia: "เปลี่ยน",
+    uploadAndAdd: "เพิ่มรูป",
     undecided: (raw) => `ตอนนี้เป็น "${raw}" คือยังไม่ได้กำหนด เลือกวันที่ก่อนบันทึก`,
     time: "ไม่ใส่ก็ได้ เวลากรุงเทพฯ",
     shown: "แสดงบนเว็บ",
@@ -85,7 +87,7 @@ export default function FieldInput({
   projectSlugsListId?: string;
   /** The projects a `project_slug` field picks from, as a dropdown; without it, a text box. */
   projectOptions?: { slug: string; name: string }[];
-  /** Where uploaded images are filed; without it, image fields take URLs only. */
+  /** Where uploaded images are filed; without it, image fields take media bucket links only. */
   uploadTo?: UploadOwner;
   /** The form's language for its buttons and notes. */
   words?: Words;
@@ -127,9 +129,8 @@ export default function FieldInput({
                 </option>
               ))}
             </select>
-          ) : spec.image && value.media_kind !== "video" ? (
-            // Not a hero video: it plays in a plain <video>, which takes any URL.
-            <ImageUrlInput id={id} value={text} onChange={update} />
+          ) : spec.image ? (
+            <MediaInput id={id} value={text} uploadTo={uploadTo} video={value.media_kind === "video"} words={words} onChange={update} />
           ) : (
             <input
               id={id}
@@ -139,7 +140,6 @@ export default function FieldInput({
               list={spec.key === "project_slug" ? projectSlugsListId : undefined}
             />
           )}
-          {spec.image && uploadTo ? <UploadButton to={uploadTo} label={words.uploadImage} onUploaded={update} /> : null}
         </div>
       );
     }
@@ -210,14 +210,11 @@ export default function FieldInput({
     case "strings":
       return (
         <div className={ROW}>
-          <StringsInput id={id} label={label} hint={spec.hint} value={current} images={spec.images} onChange={set} />
-          {spec.images && uploadTo ? (
-            <UploadButton
-              to={uploadTo}
-              label={words.uploadAndAdd}
-              onUploaded={(url) => set([...(Array.isArray(current) ? current : []), url])}
-            />
-          ) : null}
+          {spec.images ? (
+            <MediaListInput id={id} label={label} hint={spec.hint} value={current} uploadTo={uploadTo} words={words} onChange={set} />
+          ) : (
+            <StringsInput id={id} label={label} hint={spec.hint} value={current} onChange={set} />
+          )}
         </div>
       );
 
@@ -343,35 +340,15 @@ export default function FieldInput({
                       />
                     </div>
                   ) : null}
-                  <button
-                    type="button"
-                    className="btn-icon"
-                    aria-label={`${words.moveUp}: ${spec.itemLabel} ${index + 1}`}
-                    title={words.moveUp}
-                    disabled={index === 0}
-                    onClick={() => setItems(moveItem(items, index, index - 1))}
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-icon"
-                    aria-label={`${words.moveDown}: ${spec.itemLabel} ${index + 1}`}
-                    title={words.moveDown}
-                    disabled={index === items.length - 1}
-                    onClick={() => setItems(moveItem(items, index, index + 1))}
-                  >
-                    ↓
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-icon"
-                    aria-label={`${words.removeItem}: ${spec.itemLabel} ${index + 1}`}
-                    title={words.removeItem}
-                    onClick={() => setItems(items.filter((_, i) => i !== index))}
-                  >
-                    ✕
-                  </button>
+                  <MoveRemoveButtons
+                    name={`${spec.itemLabel} ${index + 1}`}
+                    index={index}
+                    count={items.length}
+                    arrows={["↑", "↓"]}
+                    words={words}
+                    onMove={(to) => setItems(moveItem(items, index, to))}
+                    onRemove={() => setItems(items.filter((_, i) => i !== index))}
+                  />
                 </div>
                 {fields.map((field) => (
                   <FieldInput
@@ -408,27 +385,21 @@ function StringsInput({
   label,
   hint,
   value,
-  images,
   onChange,
 }: {
   id: string;
   label: ReactNode;
   hint?: string;
   value: unknown;
-  /** Picture URLs: a line from another website holds the whole list back (isAllowedImage). */
-  images?: boolean;
   onChange: (list: string[]) => void;
 }) {
-  const list = Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
-  const [text, setText] = useState(() => textOf(list, images));
-  // A list changed from outside (an upload added a line) replaces the text.
-  const lines = linesOf(text);
-  const allowed = !images || lines.every(isAllowedImage);
-  if (allowed && lines.join("\n") !== list.join("\n")) setText(textOf(list, images));
+  const list = stringsOf(value);
+  const [text, setText] = useState(() => textOf(list));
+  // A list changed from outside (a discard) replaces the text.
+  if (linesOf(text).join("\n") !== list.join("\n")) setText(textOf(list));
   const change = (next: string) => {
     setText(next);
-    const nextLines = linesOf(next);
-    if (!images || nextLines.every(isAllowedImage)) onChange(nextLines);
+    onChange(linesOf(next));
   };
   return (
     <>
@@ -439,14 +410,12 @@ function StringsInput({
         id={id}
         rows={Math.max(2, list.length + 1)}
         value={text}
-        aria-invalid={!allowed}
-        aria-describedby={allowed ? undefined : `${id}-error`}
         onFocus={() => {
-          if (!images && text === "") setText(BULLET);
+          if (text === "") setText(BULLET);
         }}
         onKeyDown={(e) => {
           // Not while a Thai input method is composing.
-          if (images || e.nativeEvent.isComposing) return;
+          if (e.nativeEvent.isComposing) return;
           const box = e.currentTarget;
           const at = box.selectionStart;
           if (e.key === "Enter") {
@@ -471,7 +440,7 @@ function StringsInput({
         onChange={(e) => {
           // A bullet deleted any other way (a selection, cutting) comes back, the cursor where it was.
           const box = e.currentTarget;
-          const next = images ? box.value : bulleted(box.value);
+          const next = bulleted(box.value);
           if (next !== box.value) {
             const before = box.value.slice(0, box.selectionStart);
             const at = before === "" ? BULLET.length : bulleted(before).length;
@@ -481,7 +450,6 @@ function StringsInput({
           change(next);
         }}
       />
-      {allowed ? null : <OffSiteImageError id={`${id}-error`} />}
     </>
   );
 }
@@ -492,7 +460,9 @@ const BULLET = "• ";
 export const bulleted = (text: string) =>
   text === "" ? "" : text.split("\n").map((line) => BULLET + line.replace(/^• ?/, "")).join("\n");
 
-const textOf = (list: string[], images?: boolean) => (images ? list : list.map((line) => BULLET + line)).join("\n");
+const textOf = (list: string[]) => list.map((line) => BULLET + line).join("\n");
+
+const stringsOf = (value: unknown) => (Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : []);
 
 export const linesOf = (text: string) =>
   text
@@ -500,38 +470,160 @@ export const linesOf = (text: string) =>
     .map((line) => line.replace(/^\s*•/, "").trim())
     .filter(Boolean);
 
-/**
- * A picture URL. A URL from another website stays in the box with a message and is passed on
- * as empty, so the page in the frame never gets a picture it cannot show.
- */
-function ImageUrlInput({ id, value, onChange }: { id: string; value: string; onChange: (url: string) => void }) {
-  const [text, setText] = useState(value);
-  const [seen, setSeen] = useState(value);
-  // A value changed from outside (an upload, a discard) replaces the text; this box's own does not.
-  if (seen !== value) {
-    setSeen(value);
-    setText(value);
-  }
-  const allowed = isAllowedImage(text);
+/** Move back, move forward and remove, for one item of a list; `name` ends each button's label. */
+function MoveRemoveButtons({
+  name,
+  index,
+  count,
+  arrows,
+  words,
+  onMove,
+  onRemove,
+}: {
+  name: string;
+  index: number;
+  count: number;
+  arrows: [back: string, forward: string];
+  words: Words;
+  onMove: (to: number) => void;
+  onRemove: () => void;
+}) {
   return (
     <>
-      <input
-        id={id}
-        type="text"
-        inputMode="url"
-        placeholder="https://"
-        value={text}
-        aria-invalid={!allowed}
-        aria-describedby={allowed ? undefined : `${id}-error`}
-        onChange={(e) => {
-          setText(e.target.value);
-          // A refused URL counts as no picture, so a save never keeps a half-typed one.
-          const sent = isAllowedImage(e.target.value) ? e.target.value : "";
-          setSeen(sent);
-          onChange(sent);
-        }}
-      />
-      {allowed ? null : <OffSiteImageError id={`${id}-error`} />}
+      <button
+        type="button"
+        className="btn-icon"
+        aria-label={`${words.moveUp}: ${name}`}
+        title={words.moveUp}
+        disabled={index === 0}
+        onClick={() => onMove(index - 1)}
+      >
+        {arrows[0]}
+      </button>
+      <button
+        type="button"
+        className="btn-icon"
+        aria-label={`${words.moveDown}: ${name}`}
+        title={words.moveDown}
+        disabled={index === count - 1}
+        onClick={() => onMove(index + 1)}
+      >
+        {arrows[1]}
+      </button>
+      <button type="button" className="btn-icon" aria-label={`${words.removeItem}: ${name}`} title={words.removeItem} onClick={onRemove}>
+        ✕
+      </button>
+    </>
+  );
+}
+
+/** One picture (or hero video) field: what it holds, a button that opens MediaDialog, and Remove. */
+function MediaInput({
+  id,
+  value,
+  uploadTo,
+  video,
+  words,
+  onChange,
+}: {
+  id: string;
+  value: string;
+  uploadTo?: UploadOwner;
+  video: boolean;
+  words: Words;
+  onChange: (url: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      {value ? <MediaPreview url={value} /> : null}
+      <button id={id} type="button" className="btn" onClick={() => setOpen(true)}>
+        {value ? words.changeMedia : words.uploadImage}
+      </button>
+      {value ? (
+        <button type="button" className="btn" onClick={() => onChange("")}>
+          {words.removeItem}
+        </button>
+      ) : null}
+      {open ? (
+        <MediaDialog
+          current={value}
+          uploadTo={uploadTo}
+          video={video}
+          canRemove={false}
+          onPick={(url) => {
+            if (url !== null) onChange(url);
+            setOpen(false);
+          }}
+          onClose={() => setOpen(false)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+/** A list of pictures, in order: each with move and remove, and a button that adds one through MediaDialog. */
+function MediaListInput({
+  id,
+  label,
+  hint,
+  value,
+  uploadTo,
+  words,
+  onChange,
+}: {
+  id: string;
+  label: ReactNode;
+  hint?: string;
+  value: unknown;
+  uploadTo?: UploadOwner;
+  words: Words;
+  onChange: (list: string[]) => void;
+}) {
+  const list = stringsOf(value);
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Label htmlFor={id} hint={hint}>
+        {label}
+      </Label>
+      <div className="flex flex-col items-start gap-2">
+        {list.length > 0 ? (
+          <ol className="flex flex-wrap gap-3">
+            {list.map((url, index) => (
+              <li key={`${index}-${url}`} className="flex flex-col items-start gap-1">
+                <MediaPreview url={url} />
+                <div className="flex">
+                  <MoveRemoveButtons
+                    name={String(index + 1)}
+                    index={index}
+                    count={list.length}
+                    arrows={["←", "→"]}
+                    words={words}
+                    onMove={(to) => onChange(moveItem(list, index, to))}
+                    onRemove={() => onChange(list.filter((_, i) => i !== index))}
+                  />
+                </div>
+              </li>
+            ))}
+          </ol>
+        ) : null}
+        <button id={id} type="button" className="btn" onClick={() => setOpen(true)}>
+          {words.uploadAndAdd}
+        </button>
+      </div>
+      {open ? (
+        <MediaDialog
+          current=""
+          uploadTo={uploadTo}
+          canRemove={false}
+          onPick={(url) => {
+            if (url) onChange([...list, url]);
+            setOpen(false);
+          }}
+          onClose={() => setOpen(false)}
+        />
+      ) : null}
     </>
   );
 }

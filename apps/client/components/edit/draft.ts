@@ -32,14 +32,18 @@ export type CanvasMessage =
   | { tcos: "edit"; type: "remove"; index: number }
   | { tcos: "edit"; type: "insert"; at: number };
 
-/** The origin of EDITOR_ORIGIN ("http://localhost:3001/" → "http://localhost:3001"), or null when unset or not a URL. */
-export function originOf(value: string | undefined): string | null {
-  if (!value) return null;
-  try {
-    return new URL(value).origin;
-  } catch {
-    return null;
-  }
+/**
+ * The origins in EDITOR_ORIGIN, a comma-separated list ("http://localhost:3001/, https://editor.example"
+ * → ["http://localhost:3001", "https://editor.example"]). Entries that are not URLs are skipped; none is [].
+ */
+export function originsOf(value: string | undefined): string[] {
+  return (value ?? "").split(",").flatMap((entry) => {
+    try {
+      return [new URL(entry.trim()).origin];
+    } catch {
+      return [];
+    }
+  });
 }
 
 /** The editor's "load" message, or null for anything else. */

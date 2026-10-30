@@ -20,6 +20,8 @@ const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 const JPEG = [0xff, 0xd8, 0xff, 0xe0];
 const WEBP = [..."RIFF"].map((c) => c.charCodeAt(0)).concat([0, 0, 0, 0], [..."WEBP"].map((c) => c.charCodeAt(0)));
 const AVIF = [0, 0, 0, 0x1c, ..."ftypavif"].map((c) => (typeof c === "string" ? c.charCodeAt(0) : c));
+const MP4 = [0, 0, 0, 0x20, ..."ftypisom"].map((c) => (typeof c === "string" ? c.charCodeAt(0) : c));
+const WEBM = [0x1a, 0x45, 0xdf, 0xa3];
 
 const KEY = /^projects\/p\/[0-9a-f]{32}\.(png|jpg|gif|webp|avif)$/;
 
@@ -49,6 +51,8 @@ describe("POST /api/admin/uploads", () => {
     ["gif", file("GIF89a"), "image/gif"],
     ["webp", WEBP, "image/webp"],
     ["avif", AVIF, "image/avif"],
+    ["mp4", MP4, "video/mp4"],
+    ["webm", WEBM, "video/webm"],
   ])("accepts %s, recognised from its bytes", async (ext, magic, mime) => {
     const res = await api.upload("collection=projects&owner=p", file(magic as number[]), "no-extension");
     expect(res.status).toBe(201);
@@ -62,6 +66,7 @@ describe("POST /api/admin/uploads", () => {
     ["an HTML file named .png", file("<html><script>alert(1)"), "photo.png"],
     ["a PDF", file("%PDF-1.7"), "a.pdf"],
     ["a program", file("MZ\x90\x00"), "a.exe"],
+    ["a QuickTime movie", file("\0\0\0\x14ftypqt  "), "a.mov"],
   ])("refuses %s, whatever its name says", async (_label, bytes, name) => {
     const res = await api.upload("collection=projects&owner=p", bytes, name);
     expect(res.status).toBe(400);
