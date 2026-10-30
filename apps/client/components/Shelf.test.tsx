@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import Shelf from "./Shelf";
 import { NO_YEARBOOK_SLUG, TCOS2_NAME, TCOS2_SLUG, noYearbookCard, tcos2Card } from "@/fixtures/shared";
 import type { ProjectCard } from "@/types/api";
@@ -35,6 +35,22 @@ describe("Shelf", () => {
     });
     expect(link).not.toBeNull();
     expect(link.getAttribute("href")).toBe(`/projects/${TCOS2_SLUG}`);
+  });
+
+  it("stays on the first project after loading, with no spin-in", () => {
+    vi.useFakeTimers();
+    try {
+      render(<Shelf projects={mockProjects} />);
+      // Checked every 50 ms: with two projects, a spin can land back on the first one.
+      for (let ms = 0; ms < 2000; ms += 50) {
+        act(() => {
+          vi.advanceTimersByTime(50);
+        });
+        expect(selectedProjectHref()).toBe(`/projects/${TCOS2_SLUG}`);
+      }
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("filters projects by year when filter tabs are on", () => {
