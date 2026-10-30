@@ -56,6 +56,17 @@ export default function RoundCard({ round }: RoundCardProps) {
           ) : null}
         </header>
 
+        {isApplyUrl(apply_url) ? (
+          <a
+            href={apply_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex w-full items-center justify-center rounded-button bg-accent px-6 py-2.5 font-body text-body-lg font-semibold text-background transition-colors hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-accent"
+          >
+            {APPLY_LABEL}
+          </a>
+        ) : null}
+
         <Qualifications qualifications={round.qualifications} />
         <PositionList positions={round.positions} />
         <Timeline timeline={round.timeline} />
