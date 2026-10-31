@@ -93,7 +93,7 @@ types/api.ts                         response types, matching API.md
 | `Nav`           | Static: TCOS (→ `/`), Projects (→ `/projects`), Tracks (→ `/tracks`), Join (→ `/join`)                                                                                                                                                                 |
 | `BlockRenderer` | Takes a page's `blocks` and renders the component for each `type`. Skips unknown types and types from sprints not built yet                                                                                                                            |
 | `ProjectHeader` | The fixed header on a project page: `name`, `start_date`–`end_date`, `venue`, `pics[0]`. Sprint 3 adds the Yearbook button (only when `is_yearbook_shown`)                                                                                             |
-| `Shelf`         | The bookshelf: one spine per project (`pics[0]`), the selected one larger in the middle, ← → to move, click opens the project page. Props turn on the year filter and the reverse toggle (on for `/projects`, off on Home) and a "See all" link (Home) |
+| `Shelf`         | The bookshelf: one spine per project (`cover`), the selected one larger in the middle, its `name` and year on one line and `summary` below, ← → to move, click opens the project page. Props turn on the year filter and the reverse toggle (on for `/projects`, off on Home) and a "See all" link (Home) |
 | `Media`         | Shows an image from a URL, with `alt`                                                                                                                                                                                                                  |
 
 ### Content blocks (sprint 1)
