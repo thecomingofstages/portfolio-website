@@ -33,13 +33,16 @@ describe("RoundCard", () => {
     expect(screen.getByText(round.timeline[1].event_name)).not.toBeNull();
   });
 
-  it("links the Apply button to apply_url in a new tab", () => {
+  it("links both Apply buttons to apply_url in a new tab", () => {
     render(<RoundCard round={round} />);
 
-    const apply = screen.getByRole("link", { name: APPLY_LABEL });
-    expect(apply.getAttribute("href")).toBe(round.apply_url);
-    expect(apply.getAttribute("target")).toBe("_blank");
-    expect(apply.getAttribute("rel")).toContain("noopener");
+    const applyLinks = screen.getAllByRole("link", { name: APPLY_LABEL });
+    expect(applyLinks).toHaveLength(2);
+    for (const apply of applyLinks) {
+      expect(apply.getAttribute("href")).toBe(round.apply_url);
+      expect(apply.getAttribute("target")).toBe("_blank");
+      expect(apply.getAttribute("rel")).toContain("noopener");
+    }
   });
 
   it("leaves out the Apply button without a usable apply_url", () => {

@@ -45,7 +45,6 @@ export default function Shelf({
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [isReversed, setIsReversed] = useState<boolean>(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
-  const [isSpinningIn, setIsSpinningIn] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const listboxId = useId();
 
@@ -90,48 +89,9 @@ export default function Shelf({
     setSelectedIndex(index);
   }, []);
 
-  // Initial spin-in: spins fast at first (35-45ms), then progressively decelerates to index 0
-  useEffect(() => {
-    if (count <= 1) return;
-
-    // Check if user prefers reduced motion
-    const prefersReducedMotion =
-      typeof window !== "undefined" &&
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    if (prefersReducedMotion) return;
-
-    // Fast-spinning sequence: begins very fast, then decelerates like a slot machine
-    const delays = [35, 35, 40, 45, 55, 75, 105, 150, 220, 320, 460, 680];
-    let step = 0;
-
-    const runStep = () => {
-      if (step >= delays.length) {
-        setSelectedIndex(0);
-        setIsSpinningIn(false);
-        return;
-      }
-      setSelectedIndex((prev) => (prev + 1) % count);
-      const nextDelay = delays[step];
-      step++;
-      setTimeout(runStep, nextDelay);
-    };
-
-    const initialTimeout = setTimeout(() => {
-      setIsSpinningIn(true);
-      runStep();
-    }, 150);
-
-    return () => {
-      clearTimeout(initialTimeout);
-      setIsSpinningIn(false);
-    };
-  }, [count]);
-
   // Auto-rotate: every time selectedIndex changes (user click or auto), cooldown resets to 5.5s
   useEffect(() => {
-    if (count <= 1 || isSpinningIn) return;
+    if (count <= 1) return;
 
     // Check prefers-reduced-motion
     const prefersReducedMotion =
@@ -146,7 +106,7 @@ export default function Shelf({
     }, 5500); // 5.5s cooldown before moving to next project
 
     return () => clearTimeout(timer);
-  }, [count, selectedIndex, isSpinningIn]);
+  }, [count, selectedIndex]);
 
   // Keyboard navigation for arrow keys ← and →
   const handleKeyDown = useCallback(
@@ -323,11 +283,7 @@ export default function Shelf({
                     aria-selected={isSelected}
                     type="button"
                     onClick={() => selectProjectIndex(index)}
-                    className={`absolute cursor-pointer flex flex-col items-center justify-center rounded-[var(--radius-card)] transition-all ${
-                      isSpinningIn
-                        ? "duration-150 ease-out"
-                        : "duration-1200 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"
-                    } motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-accent`}
+                    className={`absolute cursor-pointer flex flex-col items-center justify-center rounded-[var(--radius-card)] transition-all duration-1200 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-accent`}
                     style={{
                       width: "195px",
                       height: "280px",
@@ -340,11 +296,7 @@ export default function Shelf({
                   >
                     {/* Cover Art Card with clean rounded corners */}
                     <div
-                      className={`relative w-full h-full overflow-hidden rounded-[var(--radius-card)] bg-card-bg border transition-all ${
-                        isSpinningIn
-                          ? "duration-150 ease-out"
-                          : "duration-1200 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"
-                      } ${
+                      className={`relative w-full h-full overflow-hidden rounded-[var(--radius-card)] bg-card-bg border transition-all duration-1200 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] ${
                         isSelected
                           ? "border-accent ring-2 ring-accent"
                           : "border-border/80 hover:border-accent/40"
@@ -393,17 +345,18 @@ export default function Shelf({
               <div className="flex min-w-0 flex-1 flex-col items-center px-1 text-center">
                 <Link
                   href={`/projects/${encodeURIComponent(selectedProject.slug)}`}
-                  className="group inline-flex max-w-full flex-col items-center gap-1.5 rounded-button focus-visible:outline-2 focus-visible:outline-accent"
+                  className="group inline-flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1.5 rounded-button focus-visible:outline-2 focus-visible:outline-accent"
                 >
-                  <span className="font-heading text-body md:text-h3 font-bold text-foreground transition-colors group-hover:text-accent text-center break-words line-clamp-2">
+                  <span className="min-w-0 font-heading text-body md:text-h3 font-bold text-foreground transition-colors group-hover:text-accent text-center break-words line-clamp-2">
                     {selectedProject.name}
                   </span>
                   {(selectedYearText ?? selectedDateText) && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-0.5 font-body text-body font-medium text-accent">
+                    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-0.5 font-body text-body font-medium text-accent">
                       ● {selectedYearText ?? selectedDateText}
                     </span>
                   )}
                 </Link>
+                {/* TODO(summary below the name: GET /api/projects does not send `summary` yet; needs the lead's approval to add it to ProjectCard) */}
               </div>
 
               {/* Next button */}
