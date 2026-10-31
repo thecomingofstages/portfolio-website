@@ -138,7 +138,7 @@ export function mediaKey(url: string | undefined | null, mediaBaseUrl: string): 
 // Every field that can hold a media URL (docs/DATABASE.md "Conventions"), per collection.
 const BLOCK_MEDIA = ["media_url", "slides", "image", "url", "background_image", "items.url"].map((f) => `blocks.${f}`);
 const MEDIA_FIELDS = {
-  projects: ["team.photo", "pics", "org_chart_image", "sponsors.logo", "highlights.pics", ...BLOCK_MEDIA],
+  projects: ["team.photo", "pics", "cover", "org_chart_image", "sponsors.logo", "highlights.pics", ...BLOCK_MEDIA],
   tracks: ["pics", "achievements.pics"],
   apply: ["poster"],
   pages: BLOCK_MEDIA,

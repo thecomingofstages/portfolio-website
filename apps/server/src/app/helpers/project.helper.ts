@@ -11,10 +11,17 @@ import { publicTeam } from "./visibility.helper";
 /** `pics[0]` as a list of at most one (docs/API.md "Response shapes"). */
 export const firstPic = (pics: readonly string[] | null | undefined): string[] => (pics?.[0] ? [pics[0]] : []);
 
-const cardFields = { slug: 1, name: 1, start_date: 1, pics: 1 } as const;
+const cardFields = { slug: 1, name: 1, start_date: 1, summary: 1, cover: 1, pics: 1 } as const;
 
-export function toProjectCard(p: Pick<ProjectDoc, "slug" | "name" | "start_date" | "pics">) {
-  return { slug: p.slug, name: p.name, start_date: p.start_date, pics: firstPic(p.pics) };
+/** A shelf card. `cover` is the shelf's picture only; the project page header keeps `pics[0]`. */
+export function toProjectCard(p: Pick<ProjectDoc, "slug" | "name" | "start_date" | "summary" | "cover" | "pics">) {
+  return {
+    slug: p.slug,
+    name: p.name,
+    start_date: p.start_date,
+    summary: p.summary || null,
+    cover: p.cover || p.pics?.[0] || null,
+  };
 }
 
 /** GET /api/projects: shown projects, newest first by start_date. */

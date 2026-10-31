@@ -78,7 +78,7 @@ afterEach(() => {
 describe("card lists", () => {
   it("projects: shown projects newest first, up to limit", async () => {
     const get = await home([block("projects", { limit: 1 }), { ...block("projects"), id: "all" }]);
-    expect(get("projects").projects).toEqual([{ slug: "new", name: "<new>", start_date: "2003-01-01T00:00:00.000Z", pics: ["https://media.test/new.webp"] }]);
+    expect(get("projects").projects).toEqual([{ slug: "new", name: "<new>", start_date: "2003-01-01T00:00:00.000Z", summary: null, cover: "https://media.test/new.webp" }]);
     expect(get("all").projects.map((p: { slug: string }) => p.slug)).toEqual(["new", "old"]);
   });
 

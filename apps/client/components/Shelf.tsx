@@ -257,7 +257,7 @@ export default function Shelf({
             >
               {displayedProjects.map((project, index) => {
                 const isSelected = index === activeIndex;
-                const cover = project.pics && project.pics.length > 0 ? project.pics[0] : null;
+                const cover = project.cover;
                 
                 // Infinite circular wrap offset calculation
                 const offset = getCircularOffset(index, activeIndex, count);
@@ -356,7 +356,11 @@ export default function Shelf({
                     </span>
                   )}
                 </Link>
-                {/* TODO(summary below the name: GET /api/projects does not send `summary` yet; needs the lead's approval to add it to ProjectCard) */}
+                {selectedProject.summary && (
+                  <p className="mt-1.5 max-w-full font-body text-body text-muted line-clamp-2 break-words">
+                    {selectedProject.summary}
+                  </p>
+                )}
               </div>
 
               {/* Next button */}

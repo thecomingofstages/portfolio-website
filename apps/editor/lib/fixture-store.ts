@@ -51,6 +51,7 @@ const PROJECT_FIELDS = [
   "end_date",
   "venue",
   "summary",
+  "cover",
   "pics",
   "org_chart_image",
   "is_yearbook_shown",

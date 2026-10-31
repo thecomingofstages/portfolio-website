@@ -46,6 +46,7 @@ export type ProjectDoc = {
   venue?: string | null;
   summary?: string;
   org_chart_image?: string | null;
+  cover?: string | null;
   pics?: string[];
   team?: { _id: string; is_shown: boolean }[];
   sponsors?: { _id: string; is_shown: boolean }[];

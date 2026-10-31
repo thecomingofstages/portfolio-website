@@ -18,14 +18,16 @@ export const tcos2Card = {
   slug: TCOS2_SLUG,
   name: TCOS2_NAME,
   start_date: "2025-06-28T00:00:00.000Z",
-  pics: [],
+  summary: "<...>",
+  cover: null,
 } satisfies ProjectCard;
 
 export const noYearbookCard = {
   slug: NO_YEARBOOK_SLUG,
   name: "<...>",
   start_date: "<...>",
-  pics: [],
+  summary: null,
+  cover: null,
 } satisfies ProjectCard;
 
 export const tcos2YearbookCard = {

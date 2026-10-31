@@ -51,6 +51,7 @@ describe("project schemas", () => {
     end_date: null,
     venue: null,
     summary: "",
+    cover: null,
     pics: [],
     org_chart_image: null,
     is_yearbook_shown: false,

@@ -1162,7 +1162,8 @@ components:
         slug: { type: string }
         name: { type: string }
         start_date: { $ref: "#/components/schemas/Date" }
-        pics: { $ref: "#/components/schemas/OnePic" }
+        summary: { type: string, nullable: true }
+        cover: { type: string, nullable: true, description: "The project's cover, else pics[0]. Shelf only: the project page keeps pics[0]." }
 
     TrackCard:
       type: object

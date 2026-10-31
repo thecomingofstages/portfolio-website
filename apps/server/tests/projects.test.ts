@@ -8,10 +8,11 @@ const db = useTestDb();
 const date = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
 describe("GET /api/projects", () => {
-  it("returns shown projects newest first, as cards with at most one pic", async () => {
+  it("returns shown projects newest first, as cards with summary and cover", async () => {
     await db.models.projects.insertMany([
       makeProject({ slug: "old", start_date: date("2001-01-01"), pics: ["https://media.test/a.webp", "https://media.test/b.webp"] }),
       makeProject({ slug: "new", start_date: date("2003-01-01") }),
+      makeProject({ slug: "covered", start_date: date("2002-06-01"), summary: "<...>", cover: "https://media.test/c.webp", pics: ["https://media.test/a.webp"] }),
       makeProject({ slug: "hidden", start_date: date("2002-01-01"), is_shown: false }),
     ]);
 
@@ -19,9 +20,20 @@ describe("GET /api/projects", () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual([
-      { slug: "new", name: "<...>", start_date: "2003-01-01T00:00:00.000Z", pics: [] },
-      { slug: "old", name: "<...>", start_date: "2001-01-01T00:00:00.000Z", pics: ["https://media.test/a.webp"] },
+      { slug: "new", name: "<...>", start_date: "2003-01-01T00:00:00.000Z", summary: null, cover: null },
+      { slug: "covered", name: "<...>", start_date: "2002-06-01T00:00:00.000Z", summary: "<...>", cover: "https://media.test/c.webp" },
+      // No cover: the shelf falls back to pics[0].
+      { slug: "old", name: "<...>", start_date: "2001-01-01T00:00:00.000Z", summary: null, cover: "https://media.test/a.webp" },
     ]);
+  });
+
+  it("keeps pics[0], not cover, in the project page header", async () => {
+    await db.models.projects.insertOne(
+      makeProject({ slug: "covered", cover: "https://media.test/c.webp", pics: ["https://media.test/a.webp"] }),
+    );
+    const res = await request(db.app()).get("/api/projects/covered");
+    expect(res.body.pics).toEqual(["https://media.test/a.webp"]);
+    expect(res.body).not.toHaveProperty("cover");
   });
 
   it("returns [] when there are none", async () => {
