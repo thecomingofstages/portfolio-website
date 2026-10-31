@@ -37,6 +37,7 @@ export const projectSchema = z
     venue: strOrNull.optional(),
     summary: str.optional(),
     org_chart_image: strOrNull.optional(),
+    cover: strOrNull.optional(),
     pics: pics.optional(),
     team: z.array(teamMemberInDoc).optional(),
     sponsors: z.array(z.object({ _id: itemId, ...sponsorFields }).strict()).optional(),

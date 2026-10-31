@@ -47,6 +47,7 @@ export type ProjectDoc = {
   venue?: string | null;
   summary?: string;
   org_chart_image?: string | null;
+  cover?: string | null;
   pics?: string[];
   team?: TeamMember[];
   sponsors?: SponsorItem[];

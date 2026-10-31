@@ -18,8 +18,9 @@ export type ProjectCard = {
   slug: string;
   name: string;
   start_date: IsoDate;
-  /** At most one item: the project's pics[0]. */
-  pics: Url[];
+  summary: string | null;
+  /** The shelf's picture: the project's cover, else its pics[0]. Not used on the project page. */
+  cover: Url | null;
 };
 
 export type TrackCard = {

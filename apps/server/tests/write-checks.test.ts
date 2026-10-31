@@ -239,6 +239,14 @@ describe("a photo still in use is never deleted (review on PR #28)", () => {
     expect(api.deleted).toEqual([]);
   });
 
+  it("a shelf cover another project still uses is kept", async () => {
+    const cover = `${MEDIA}/projects/p/cover.webp`;
+    await api.patch("/projects/p", { cover });
+    await api.post("/projects", projectBody("other", { cover }));
+    await api.patch("/projects/p", { cover: null });
+    expect(api.deleted).toEqual([]);
+  });
+
   it("a URL still used elsewhere on the site (a page block) is kept", async () => {
     const id = (await api.post("/projects/p/team", memberBody({ photo, is_photo_allowed: true }))).body._id;
     await api.post("/pages", pageBody("home", { blocks: [{ id: "img", type: "image", url: photo, is_shown: true }] }));

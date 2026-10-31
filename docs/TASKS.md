@@ -189,7 +189,7 @@ Leave these as `TODO(<question>)` until the project lead answers:
 - **Read:** FRONTEND.md "Shared (sprint 1)" (Shelf); DATABASE.md "projects" block, "Pages and their queries" (Project list); the Project list section of `tcos_ui_flow.drawio`
 - **Files:** `components/Shelf.tsx`, `components/blocks/ProjectsBlock.tsx`
 - **Do:**
-  - One spine per project, using `pics[0]`, newest first by `start_date`.
+  - One spine per project, using `cover` (else `pics[0]`), newest first by `start_date`.
   - The selected project shows larger in the middle, with its `name` and year. ← and → move the selection, and clicking opens `/projects/<slug>`.
   - Options:
     - the year filter, built from `start_date`;

@@ -24,7 +24,8 @@ const requiredFields: FieldSpec[] = [
 const moreFields: FieldSpec[] = [
   { kind: "text", key: "venue", label: "Venue", nullable: true, hint: "สถานที่หลัก ถ้ามีหลายที่ให้ใส่ไว้ในไฮไลต์" },
   { kind: "text", key: "summary", label: "Summary", multiline: true, hint: "สรุปสั้น ๆ หนึ่งถึงสองบรรทัด ใช้บนการ์ดโปรเจกต์" },
-  { kind: "strings", key: "pics", label: "Pictures", images: true, hint: "รูปแรกจะเป็นรูปหัวหน้าโปรเจกต์และสันหนังสือบนชั้น" },
+  { kind: "text", key: "cover", label: "Shelf cover", nullable: true, image: true, hint: "รูปบนชั้นหนังสือเท่านั้น ถ้าว่างจะใช้รูปแรกใน Pictures" },
+  { kind: "strings", key: "pics", label: "Pictures", images: true, hint: "รูปแรกจะเป็นรูปหัวหน้าโปรเจกต์" },
   { kind: "text", key: "org_chart_image", label: "Org chart image", nullable: true, image: true },
 ];
 
@@ -38,6 +39,7 @@ function fieldsOf(project: ProjectDoc): Fields {
     end_date: project.end_date ? normalizeDate(project.end_date) : null,
     venue: project.venue ?? null,
     summary: project.summary ?? "",
+    cover: project.cover ?? null,
     pics: project.pics ?? [],
     org_chart_image: project.org_chart_image ?? null,
     is_yearbook_shown: project.is_yearbook_shown ?? false,

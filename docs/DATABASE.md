@@ -35,7 +35,7 @@ tracks.key ◄──────── projects.team[].dept_key
 - Every collection and listed item rejects fields it does not list (`additionalProperties: false`), so removed or renamed fields cannot linger.
 - Field names are `snake_case`. The camelCase words in the script (`bsonType`, `additionalProperties`, `createCollection` ...) are MongoDB's own and must stay.
 - Dates are BSON `Date`, and may carry a time. A date without a time is stored as midnight UTC (what `new Date("2025-06-28")` gives); the site shows a time only when it is not midnight UTC.
-- `pics`, `logo`, `poster`, `photo`, `media_url`, `slides` and `org_chart_image` hold URLs.
+- `pics`, `cover`, `logo`, `poster`, `photo`, `media_url`, `slides` and `org_chart_image` hold URLs.
 - Text is Thai-first plain strings. English is an open decision (see the end).
 - Validators run with `validationLevel: "moderate"`. Switch to `"strict"` once the data is clean.
 
@@ -54,6 +54,7 @@ tracks.key ◄──────── projects.team[].dept_key
 | `venue`             | string or null    |          | Main venue. A project with several venues (RPM Club) puts each one in `highlights[].venue` |
 | `summary`           | string            |          | One or two lines for project cards and the project list. Page text goes in article blocks  |
 | `org_chart_image`   | string or null    |          | Org chart image URL                                                                        |
+| `cover`             | string or null    |          | Shelf picture URL, only for the shelf. The project page header always shows `pics[0]`, never `cover`. When `cover` is empty, the shelf falls back to `pics[0]` |
 | `pics`              | string[]          |          | Image URLs, e.g. for cards                                                                 |
 | `team`              | object[]          |          | Who did what. See below                                                                    |
 | `sponsors`          | object[]          |          | See below                                                                                  |
@@ -255,7 +256,7 @@ A page is an ordered `blocks[]` array, stored in `projects.blocks` for project p
 | `team`       | `project_slug`, `dept_keys[]` (empty = all), `show_org_chart`, `layout` (list, yearbook) | `projects.team`, `projects.org_chart_image`. `yearbook` shows the photo grid grouped by department |
 | `sponsors`   | `project_slug`, `tiers[]` (empty = all)                                                  | `projects.sponsors`; logos only where `logo_permission` is true                                    |
 | `join`       | `project_slug`, `empty_text`                                                             | `apply` rounds open today; `empty_text` when none is open                                          |
-| `projects`   | `limit`                                                                                  | Shown `projects`, newest first, as the bookshelf (same component as `/projects`, without filters). Spine: `pics[0]`; each links to the project page |
+| `projects`   | `limit`                                                                                  | Shown `projects`, newest first, as the bookshelf (same component as `/projects`, without filters). Spine: `cover`, else `pics[0]`; each links to the project page |
 | `tracks`     | (none)                                                                                   | Shown `tracks`, by `order`. Cards: `display_name`, `pics[0]`; each links to `/tracks`             |
 | `yearbook`   | `limit`                                                                                  | Shown `projects` where `is_yearbook_shown`, newest first. Cards link to that project's yearbook    |
 
@@ -605,7 +606,7 @@ Every query filters on `is_shown: true`, for the document and for the items it l
 | Page                          | Query                                                                                                                                         |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | Home                          | `pages` where `key: "home"`, then one query per data block (`projects`, `yearbook`, `highlights`, `sponsors` read shown `projects`; `tracks` reads shown `tracks`; `join` reads open `apply` rounds) |
-| Project list (`/projects`)    | Bookshelf: one spine per shown project, newest first by `start_date`, with a toggle to reverse it (on screen, no query change). Year filter from `start_date`. The selected project shows `name`, year and `pics[0]`, and opens the project page |
+| Project list (`/projects`)    | Bookshelf: one spine per shown project, newest first by `start_date`, with a toggle to reverse it (on screen, no query change). Year filter from `start_date`. The selected project shows `name` and year on one line, `summary` below, and `cover` (else `pics[0]`), and opens the project page |
 | Project page (`/projects/<slug>`) | one `projects` document by `slug`. Fixed header: `name`, `start_date`–`end_date`, `venue`, `pics[0]`, and a Yearbook button when `is_yearbook_shown`. Below it, `blocks` in order. Plus `apply` where `project_slug` matches for a `join` block |
 | Tracks (`/tracks`)            | shown `tracks`, by `order`; one row per track                                                                                                 |
 | Track popup (`/tracks/<key>`, shown over `/tracks`) | one `tracks` document by `key`; a missing or hidden key returns 404. Each track has its own link, so it can be shared, and refresh and Back work. Shows `display_name`, `desc`, `pics`, shown `achievements` (project named as text, no link; an achievement whose project is not shown is hidden). No team list and no open positions for now |
@@ -642,6 +643,7 @@ Dates are shown as strings for readability. In the database they are `Date` valu
   "venue": "Lido Connect Hall 2",
   "summary": "<...>",
   "org_chart_image": "<...>",
+  "cover": null,
   "pics": [],
   "team": [
     {
@@ -824,4 +826,4 @@ Dates are shown as strings for readability. In the database they are `Date` valu
 - [ ] Track team and open positions: the requirements list a team (ทีมงาน) under each track, but department names and structure vary between projects. Decide how people map to tracks before the popup lists them.
 - [ ] Sponsor benefits: the overall list of what sponsors get, for the Support article, and the wording of the line that sends sponsors to the email for amounts. Packages vary by project and are left out.
 - [ ] A page per person, so members can see their own growth across projects ("เห็นพัฒนาการของตัวเอง"): it would need a `people` collection and a `person_key` on each team member, and its own consent (plus guardian consent for minors), since it puts one person's history in one place. Later.
-- [ ] Bookshelf images: the project list uses `pics[0]`. A dedicated spine and cover image per project would need new fields.
+- [x] Bookshelf images: `cover` is the shelf picture, falling back to `pics[0]` (project lead, 1 Nov 2026).

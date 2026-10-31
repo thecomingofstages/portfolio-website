@@ -151,6 +151,7 @@ export const projectFieldsSchema = z
     end_date: isoDate.nullable(),
     venue: strOrNull,
     summary: str,
+    cover: strOrNull,
     pics: strList,
     org_chart_image: strOrNull,
     is_yearbook_shown: z.boolean(),

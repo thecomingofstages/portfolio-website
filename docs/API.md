@@ -82,7 +82,7 @@ No token. Read-only. Shown items only. A hidden or missing document returns `404
 | Endpoint | Used by | Returns |
 | --- | --- | --- |
 | `GET /api/pages/home` | Home | `pages{key:"home"}`: `title` and shown `blocks`, with each data block filled in |
-| `GET /api/projects` | `/projects` bookshelf | Shown projects, newest first by `start_date`: `slug`, `name`, `start_date`, `pics[0]`. The year filter and the reverse toggle run in the browser |
+| `GET /api/projects` | `/projects` bookshelf | Shown projects, newest first by `start_date`: `slug`, `name`, `start_date`, `summary`, `cover` (the project's `cover`, else `pics[0]`). The year filter and the reverse toggle run in the browser |
 | `GET /api/projects/:slug` | Project page | Fixed header: `name`, `start_date`, `end_date`, `venue`, `pics[0]`, `is_yearbook_shown`. Then shown `blocks`, with each data block filled in |
 | `GET /api/projects/:slug/yearbook` | Yearbook | `name`, `pics[0]`, and shown `team` grouped by `dept_key` (`dept_name`, `name`, `nickname`, `position`, `photo` only where allowed). `404` unless `is_yearbook_shown` |
 | `GET /api/tracks` | `/tracks` list | Shown tracks by `order`: `key`, `display_name`, `desc` |
@@ -115,12 +115,13 @@ The exact JSON of each public response. The client's `types/api.ts` follows this
 - **Left out of every public response:** `_id` (documents and list items), `is_shown`, `is_photo_allowed`, `logo_permission`. Only shown things are sent, so the flags carry no information.
 - `photo` is `null` unless `is_photo_allowed`, and `logo` is `null` unless `logo_permission`.
 - **`pics[0]`** is sent as `pics` with at most one item (`[]` when the project has none), so the field keeps its schema name.
+- **`cover`** is only for the shelf (`ProjectCard`). The project page header and the yearbook never use it: they show `pics[0]`, so the two pictures can differ.
 - An optional field the document does not have is sent as `null` (strings, dates, numbers) or `[]` (lists).
 
 **Shared pieces**
 
 ```ts
-ProjectCard   = { slug, name, start_date, pics }          // pics: at most one
+ProjectCard   = { slug, name, start_date, summary, cover } // summary: string or null; cover: URL or null, the project's cover, else pics[0]
 TrackCard     = { key, display_name, desc, pics }         // pics: at most one
 YearbookCard  = { slug, name, pics }                      // pics: at most one
 Member        = { name, nickname, position, photo }

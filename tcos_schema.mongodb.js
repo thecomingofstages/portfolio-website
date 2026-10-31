@@ -175,6 +175,7 @@ create("projects", {
     venue: str_or_null, // main venue; per-event venues go in highlights
     summary: str, // one or two lines for project cards; page text goes in article blocks
     org_chart_image: str_or_null,
+    cover: str_or_null, // shelf picture; the shelf falls back to pics[0] when null
     pics,
     team: {
       bsonType: "array",

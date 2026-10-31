@@ -111,7 +111,15 @@ describe("Shelf", () => {
     expect(seeAllLink.getAttribute("href")).toBe("/projects");
   });
 
-  it("handles empty pics array without rendering broken image", () => {
+  it("shows the selected project's summary, and none when it has no summary", () => {
+    render(<Shelf projects={[{ ...tcos2Card, summary: "<summary>" }, olderPlaceholder]} />);
+    expect(screen.getByText("<summary>")).not.toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Next project" }));
+    expect(screen.queryByText("<summary>")).toBeNull();
+  });
+
+  it("shows a placeholder, not a broken image, without a cover", () => {
     const { container } = render(<Shelf projects={[tcos2Card]} />);
     expect(container.querySelector("img")).toBeNull();
     expect(container.querySelector("[data-placeholder]")).not.toBeNull();
