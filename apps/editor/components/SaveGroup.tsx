@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   createContext,
   type ReactNode,
@@ -14,6 +14,7 @@ import {
   useTransition,
 } from "react";
 import { createPortal } from "react-dom";
+import { isActivePath, NAV_ITEMS } from "@/components/Sidebar";
 
 /**
  * One Save and one Discard for everything on an edit page: the blocks and the page's or project's
@@ -138,9 +139,11 @@ export function HeaderSlot({ id, children }: { id: "header-title" | "header-acti
 
 const noSubscription = () => () => {};
 
-/** The page being edited, in the header, with a back button to the previous page (or the start). */
+/** The page being edited, in the header, with a back button to the previous page (or, opened in a new tab, its list). */
 export function BackTitle({ title }: { title: string }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const list = NAV_ITEMS.find((item) => isActivePath(pathname, item))?.href ?? "/";
   return (
     <div className="flex min-w-0 items-center gap-2">
       <button
@@ -148,7 +151,7 @@ export function BackTitle({ title }: { title: string }) {
         className="btn-icon"
         aria-label="Back"
         title="Back"
-        onClick={() => (window.history.length > 1 ? router.back() : router.push("/"))}
+        onClick={() => (window.history.length > 1 ? router.back() : router.push(list))}
       >
         <svg aria-hidden viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.75">
           <path d="M10 3 5 8l5 5" />
