@@ -51,7 +51,7 @@
   --radius-nav: 8px;
 }
 
-/* A floating bar, like the public site's nav: the editor's nav and its save bar. */
+/* A floating bar, like the public site's nav: the editor's title and save bar. */
 @utility bar {
   border: 1px solid var(--border);
   border-radius: var(--radius-nav);
