@@ -28,6 +28,17 @@ function Brand() {
   );
 }
 
+/**
+ * Scrolls to the section a sidebar link names (/#projects-heading), once the home list has rendered.
+ * Coming from another page, Next tries the hash while app/loading.tsx is still showing, so it lands at the top.
+ */
+export function ScrollToHash() {
+  useEffect(() => {
+    if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView();
+  }, []);
+  return null;
+}
+
 /** The editor's nav, as on the merch dashboard: a left column from md up, a Menu toggle on phones. */
 export function Sidebar() {
   const pathname = usePathname();
@@ -75,7 +86,7 @@ export function Sidebar() {
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   onClick={() => setOpenOnPath(null)}
-                  className={`flex min-h-10 items-center rounded-[var(--radius-nav)] px-3 font-heading transition-colors duration-150 ${
+                  className={`flex min-h-10 items-center rounded-nav px-3 font-heading transition-colors duration-150 ${
                     active ? "bg-card-bg font-semibold text-accent" : "text-muted hover:bg-card-bg hover:text-foreground"
                   }`}
                 >

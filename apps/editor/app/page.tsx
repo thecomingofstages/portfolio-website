@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { ScrollToHash } from "@/components/Sidebar";
 import { ShownMark } from "@/components/ui";
 import { listPages, listProjects, listRounds, listTracks } from "@/lib/admin-api";
 import { formatDate } from "@/lib/dates";
@@ -58,6 +59,7 @@ export default async function Dashboard() {
 
   return (
     <div className="flex flex-col gap-12">
+      <ScrollToHash />
       <h1 className="sr-only">Pages, projects, tracks and recruitment rounds</h1>
       <Section
         id="pages-heading"

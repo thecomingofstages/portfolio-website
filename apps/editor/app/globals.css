@@ -51,22 +51,6 @@
   --radius-nav: 8px;
 }
 
-/* The editor's column: full width up to a readable maximum, with a phone gutter. */
-@utility editor-width {
-  width: 100%;
-  max-width: 64rem;
-  margin-inline: auto;
-  padding-inline: 1rem;
-}
-
-/* With the site preview beside the forms (lg and up). */
-@utility editor-wide {
-  width: 100%;
-  max-width: 92rem;
-  margin-inline: auto;
-  padding-inline: 1rem;
-}
-
 /* A floating bar, like the public site's nav: the editor's nav and its save bar. */
 @utility bar {
   border: 1px solid var(--border);
