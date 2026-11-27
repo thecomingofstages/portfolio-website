@@ -14,7 +14,7 @@ function Section({ id, title, create, empty, rows }: { id: string; title: string
   return (
     <section aria-labelledby={id} className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id={id} className="text-h1 font-extrabold">
+        <h2 id={id} className="scroll-mt-6 text-h1 font-extrabold">
           {title}
         </h2>
         {create}
