@@ -73,7 +73,7 @@ describe("admin API client with the real API", () => {
     expect(await api.getProject(TCOS2_SLUG)).toBeNull();
 
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ error: "Invalid token" }), { status: 401 }));
-    await expect(api.listPages()).rejects.toMatchObject({ status: 401, message: "The admin token was refused. Check ADMIN_TOKEN." });
+    await expect(api.listProjects()).rejects.toMatchObject({ status: 401, message: "The admin token was refused. Check ADMIN_TOKEN." });
 
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ error: "Still referenced" }), { status: 409 }));
     await expect(api.saveProjectBlocks(TCOS2_SLUG, [])).rejects.toMatchObject({ status: 409, message: "Still referenced" });
@@ -99,7 +99,7 @@ describe("admin API client with the real API", () => {
 
   it("refuses to run without a token", async () => {
     vi.stubEnv("ADMIN_TOKEN", "");
-    await expect(api.listPages()).rejects.toThrow("ADMIN_TOKEN is not set.");
+    await expect(api.listProjects()).rejects.toThrow("ADMIN_TOKEN is not set.");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
