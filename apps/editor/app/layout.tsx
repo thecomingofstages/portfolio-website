@@ -29,8 +29,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <div className="min-h-screen md:flex">
           <Sidebar />
           <div className="min-w-0 flex-1 px-6">
-            {/* The page being edited, and its Save and Discard, come from the page (HeaderSlot). Hidden while both are empty (the start). */}
-            <header className="sticky top-0 z-20 pt-3 [&:not(:has(#header-title>*,#header-actions>*))]:hidden">
+            {/* The page being edited, and its Save and Discard, come from the page (HeaderSlot). Hidden while both are empty (the list pages). */}
+            {/* shortcut: a page Next keeps hidden (React sets display: none on it) leaves its slot content behind, so that does not count; breaks if a slot child gets its own inline display. */}
+            <header className="sticky top-0 z-20 pt-3 [&:not(:has(#header-title>:not([style*=none]),#header-actions>:not([style*=none])))]:hidden">
               {/* One look for everything in the bar: Prompt 600 at body size, controls 2rem tall. */}
               <div className="bar flex items-center gap-x-4 p-2 font-heading font-semibold sm:gap-x-6">
                 <div id="header-title" className="flex min-w-0 flex-1 items-center" />

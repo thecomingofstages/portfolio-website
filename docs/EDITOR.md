@@ -8,7 +8,8 @@ It is a Next.js (App Router) app. It talks only to the server's [Admin API](API.
 
 | Editor path | What | Admin API calls |
 | --- | --- | --- |
-| `/` | Lists pages, projects, recruitment rounds and tracks, hidden ones too | `GET /api/admin/pages`, `/projects`, `/apply`, `/tracks` |
+| `/` | Not a page: goes to `/pages/home`, the landing page | — |
+| `/projects`, `/apply`, `/tracks` | Lists the projects (newest first), recruitment rounds or tracks, hidden ones too, with a button to create one | `GET /api/admin/projects`, `/apply`, `/tracks` |
 | `/pages/[key]` | A page's `title`, `is_shown`, and its `blocks` | `GET /api/admin/pages/:key`, `PATCH /api/admin/pages/:key`, `PUT /api/admin/pages/:key/blocks` |
 | `/new/project` | A new project: the required fields only. Create pages live under `/new/`, so no slug or key (such as `new`) can clash with them | `POST /api/admin/projects` |
 | `/projects/[slug]` | A project's own fields (below), and its `blocks` | `GET /api/admin/projects/:slug`, `PATCH /api/admin/projects/:slug`, `PUT /api/admin/projects/:slug/blocks` |
@@ -90,4 +91,4 @@ With `USE_FIXTURES=true`, the editor reads and writes an in-memory copy of its f
 
 The editor uses the client's colour tokens, fonts and corner sizes ([FRONTEND.md](FRONTEND.md) "Design"), copied into `apps/editor/app/globals.css`. As on the client, every colour, font family and font size comes only from that file. It needs no background picture, and its width is not limited to 80%: the page being edited takes the width, with the panel beside it on wide screens and below it on phones.
 
-It is a quiet work tool in the site's look ([thecomingofstages.com](https://thecomingofstages.com)): pure black, a floating rounded bar for the nav and for saving, gold kept for the Save button, the current nav link and the "shown" mark. A hidden block is dimmed; the selected block is outlined in gold on the page, and its panel sits in a soft spotlight, the one decorative touch. Dates show in the site's Thai format (`lib/dates.ts`, a copy of the client's, kept identical by a test).
+A left sidebar, as on the merch dashboard, holds the nav: Pages (opens the landing page, `/pages/home`), Projects, Recruitment rounds and Tracks; on phones it folds behind a Menu button. It is a quiet work tool in the site's look ([thecomingofstages.com](https://thecomingofstages.com)): pure black, a floating rounded bar for the page title and saving, gold kept for the Save button, the current nav link and the "shown" mark. A hidden block is dimmed; the selected block is outlined in gold on the page, and its panel sits in a soft spotlight, the one decorative touch. Dates show in the site's Thai format (`lib/dates.ts`, a copy of the client's, kept identical by a test).

@@ -5,38 +5,25 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-// The home list's sections (app/page.tsx ids); `paths` are the editor routes that belong to each.
+// `paths` are the editor routes that belong to each item, so an edit or create page keeps its item lit.
 export const NAV_ITEMS = [
-  { href: "/", label: "Dashboard", paths: [] },
-  { href: "/#pages-heading", label: "Pages", paths: ["/pages"] },
-  { href: "/#projects-heading", label: "Projects", paths: ["/projects", "/new/project"] },
-  { href: "/#rounds-heading", label: "Recruitment rounds", paths: ["/apply", "/new/round"] },
-  { href: "/#tracks-heading", label: "Tracks", paths: ["/tracks", "/new/track"] },
+  { href: "/pages/home", label: "Pages", paths: ["/pages"] },
+  { href: "/projects", label: "Projects", paths: ["/projects", "/new/project"] },
+  { href: "/apply", label: "Recruitment rounds", paths: ["/apply", "/new/round"] },
+  { href: "/tracks", label: "Tracks", paths: ["/tracks", "/new/track"] },
 ] as const;
 
 export function isActivePath(pathname: string, item: (typeof NAV_ITEMS)[number]): boolean {
-  if (item.href === "/") return pathname === "/";
   return item.paths.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
 function Brand() {
   return (
-    <Link href="/" className="flex items-center gap-3" aria-label="Portfolio website editor, all pages and projects">
+    <Link href="/" className="flex items-center gap-3" aria-label="Portfolio website editor, start">
       <Image src="/logo.png" alt="The Coming of Stages" width={412} height={359} priority className="h-9 w-auto" />
       <span className="font-heading font-semibold">Portfolio website editor</span>
     </Link>
   );
-}
-
-/**
- * Scrolls to the section a sidebar link names (/#projects-heading), once the home list has rendered.
- * Coming from another page, Next tries the hash while app/loading.tsx is still showing, so it lands at the top.
- */
-export function ScrollToHash() {
-  useEffect(() => {
-    if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView();
-  }, []);
-  return null;
 }
 
 /** The editor's nav, as on the merch dashboard: a left column from md up, a Menu toggle on phones. */

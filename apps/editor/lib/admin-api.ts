@@ -26,10 +26,6 @@ const enc = encodeURIComponent;
 
 // --- pages ------------------------------------------------------------------
 
-export function listPages(): Promise<PageDoc[]> {
-  return required<PageDoc[]>("GET", "/api/admin/pages");
-}
-
 export function getPage(key: string): Promise<PageDoc | null> {
   return call<PageDoc>("GET", `/api/admin/pages/${enc(key)}`);
 }
